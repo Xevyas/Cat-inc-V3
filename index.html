@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🐱 Cat Clicker</title>
-  <link rel="stylesheet" href="style.css?v=0.0001" />
+  <link rel="stylesheet" href="style.css?v=0.0002" />
 </head>
 <body>
 
@@ -41,6 +41,17 @@
         <p class="intro-ligne"><span class="intro-perso enfant">Kid</span> Phew, this one was harder to catch, but it seems there's another kitty across the street. I'll go get it as well — we can never have enough <strong>KITTIES!</strong></p>
       </div>
       <button class="bouton-intro" onclick="fermerModal('ecran-story-2')">More kitties! 🐾</button>
+    </div>
+  </div>
+
+  <!-- OFFLINE PROGRESS SUMMARY -->
+  <div id="ecran-absence" class="ecran-intro" style="display:none">
+    <div class="intro-boite">
+      <div class="intro-dialogue">
+        <p class="intro-ligne intro-miaou">— While you were away —</p>
+        <div id="absence-contenu" class="absence-contenu"></div>
+      </div>
+      <button class="bouton-intro" onclick="fermerModal('ecran-absence')">Welcome back! 🐾</button>
     </div>
   </div>
 
@@ -359,6 +370,6 @@
     <div id="logs-liste"></div>
   </div>
 
-  <script src="jeu.js?v=0.0001"></script>
+  <script src="jeu.js?v=0.0002"></script>
 </body>
 </html>

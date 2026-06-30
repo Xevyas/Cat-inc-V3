@@ -109,6 +109,27 @@ body {
 .bouton-intro:hover  { background-color: var(--couleur-survol); }
 .bouton-intro:active { transform: scale(0.97); }
 
+/* ── Résumé d'absence (offline progress) ─────────────────*/
+.absence-contenu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.absence-ligne {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0e8dc;
+}
+.absence-ligne:last-child { border-bottom: none; padding-bottom: 0; }
+
+.absence-val { color: var(--couleur-accent); }
+
 /* ── Taux de production sous la ressource bois ───────────*/
 .ressource-taux {
   font-size: 0.68rem;
@@ -1014,6 +1035,7 @@ body {
   /* ── Gang tab: list ⇄ detail single-pane navigation ── */
   .management-layout {
     flex-direction: column;
+    align-items: stretch;
     padding: 12px;
     gap: 0;
   }
@@ -1040,14 +1062,16 @@ body {
   }
   .bouton-retour-mobile:hover { background: var(--couleur-survol); }
 
-  .detail-corps { flex-direction: column; }
+  .management-detail { padding: 14px; }
+  .detail-corps { flex-direction: row; }
   .detail-gauche {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1.5px solid #f0e8dc;
-    padding: 0 0 16px 0;
+    width: 38%;
+    border-right: 1.5px solid #f0e8dc;
+    padding: 0 10px 0 0;
   }
-  .detail-droite { padding: 16px 0 0 0; }
+  .detail-droite { padding: 0 0 0 14px; }
+  .detail-photo { width: 56px; height: 56px; font-size: 1.7rem; }
+  .detail-job-nom { font-size: 1rem; }
 
   /* Fixed side panels: shrink + stack so they don't smother small screens */
   #panneau-objectifs, #panneau-logs {

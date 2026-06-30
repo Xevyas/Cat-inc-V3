@@ -171,7 +171,10 @@ const etat = {
   cathouses:     [],
   kittiesData:   [],   // { nom, metier, niveau, tier, catchTs }
   objectifsComplis: [],
-  logs:          []
+  logs:          [],
+
+  // Last real-world timestamp the game state was saved (for offline progress)
+  dernierTimestamp: Date.now()
 };
 
 
@@ -280,7 +283,9 @@ function formaterCatchTime(ts) {
 // ════════════════════════════════════════════════════════════
 
 function sauvegarder() {
+  etat.dernierTimestamp = Date.now();
   localStorage.setItem("chatonClicker", JSON.stringify({
+    dernierTimestamp:     etat.dernierTimestamp,
     chatons:              etat.chatons,
     wood:                 etat.wood,              woodTotalRecolte:    etat.woodTotalRecolte,
     catnip:               etat.catnip,            catnipTotalRecolte:  etat.catnipTotalRecolte,
@@ -316,9 +321,10 @@ function sauvegarder() {
 
 function charger() {
   const raw = localStorage.getItem("chatonClicker");
-  if (!raw) return;
+  if (!raw) return false;
   const d = JSON.parse(raw);
 
+  etat.dernierTimestamp    = d.dernierTimestamp    || Date.now();
   etat.chatons             = d.chatons             || 0;
   etat.wood                = d.wood                || 0;
   etat.woodTotalRecolte    = d.woodTotalRecolte    || 0;
@@ -381,6 +387,7 @@ function charger() {
     const nom = NOMS_KITTIES[etat.kittiesData.length] || ("Kitty #" + (etat.kittiesData.length + 1));
     etat.kittiesData.push({ nom: nom, metier: null, niveau: 1, tier: 0, catchTs: null });
   }
+  return true;
 }
 
 function reset() {
@@ -406,7 +413,8 @@ function reset() {
     },
     allocation: { woodcatting: 0, grasscatting: 0, pebblegathering: 0, sawmill: 0, brickfactory: 0, catchen: 0 },
     ameliorations: { purrfectCathouse: false, sharpClaws: false },
-    cathouses: [], kittiesData: [], objectifsComplis: [], logs: []
+    cathouses: [], kittiesData: [], objectifsComplis: [], logs: [],
+    dernierTimestamp: Date.now()
   });
   rendu(); renduLogs(); renduObjectifs(); renduManagement();
 }
@@ -958,9 +966,10 @@ document.getElementById("btn-boost-pebblegathering").addEventListener("click", f
 let vitesse  = 1;
 const TICK_DT = 0.1; // seconds per tick
 
-function tickGathering(action, stockKey, totalKey, cumulKey, cfg, onUnlockCheck) {
+function tickGathering(action, stockKey, totalKey, cumulKey, cfg, onUnlockCheck, dt) {
   if (etat.allocation[action] <= 0) return;
-  etat[cumulKey] += etat.allocation[action] * productionParChaton(action) * vitesse * TICK_DT;
+  if (dt === undefined) dt = vitesse * TICK_DT;
+  etat[cumulKey] += etat.allocation[action] * productionParChaton(action) * dt;
   const prod = Math.floor(etat[cumulKey] / cfg.secondesParUnite);
   if (prod <= 0) return;
   etat[stockKey] += prod;
@@ -1103,6 +1112,181 @@ setInterval(sauvegarder, 30000);
 
 
 // ════════════════════════════════════════════════════════════
+// 11b. OFFLINE PROGRESS
+// ════════════════════════════════════════════════════════════
+
+const VITESSE_HORS_LIGNE  = 0.1;  // production catches up at 10% of real elapsed time
+const ABSENCE_MIN_MS      = 60000; // ignore gaps shorter than 1 minute
+
+// One simulated step of gathering/processing, no notifications/logs (used for offline catch-up)
+function simulerTickHorsLigne(dt) {
+  if (etat.cathouses.length > 0) {
+    etat.reductionCumulee += etat.cathouses.length * reductionParCathouse() * dt;
+  }
+
+  tickGathering("woodcatting",     "wood",    "woodTotalRecolte",    "secondesWoodCumulees",   CONFIG.woodcatting,     null, dt);
+  tickGathering("grasscatting",    "catnip",  "catnipTotalRecolte",  "secondesGrassCumulees",  CONFIG.grasscatting,    null, dt);
+  tickGathering("pebblegathering", "pebbles", "pebblesTotalRecolte", "secondesPebbleCumulees", CONFIG.pebblegathering, null, dt);
+
+  if (etat.allocation.sawmill > 0) {
+    if (etat.wood >= 1) {
+      etat.scieriBloquee = false;
+      const avant = etat.secondesPlanCumulees;
+      etat.secondesPlanCumulees += etat.allocation.sawmill * dt;
+      const boisCons = Math.floor(etat.secondesPlanCumulees / CONFIG.sawmill.secondesParBois)
+                     - Math.floor(avant / CONFIG.sawmill.secondesParBois);
+      if (boisCons > 0) etat.wood = Math.max(0, etat.wood - boisCons);
+      const planks = Math.floor(etat.secondesPlanCumulees / CONFIG.sawmill.secondesParPlanche);
+      if (planks > 0) {
+        etat.planks               += planks;
+        etat.secondesPlanCumulees -= planks * CONFIG.sawmill.secondesParPlanche;
+      }
+    } else {
+      etat.scieriBloquee = true;
+    }
+  }
+
+  if (etat.allocation.brickfactory > 0) {
+    if (etat.pebbles >= 1) {
+      etat.brickBloquee = false;
+      const avant = etat.secondesBrickCumulees;
+      etat.secondesBrickCumulees += etat.allocation.brickfactory * dt;
+      const pebblesCons = Math.floor(etat.secondesBrickCumulees / CONFIG.brickfactory.secondesParPebble)
+                        - Math.floor(avant / CONFIG.brickfactory.secondesParPebble);
+      if (pebblesCons > 0) etat.pebbles = Math.max(0, etat.pebbles - pebblesCons);
+      const bricks = Math.floor(etat.secondesBrickCumulees / CONFIG.brickfactory.secondesParBrique);
+      if (bricks > 0) {
+        etat.bricks                += bricks;
+        etat.secondesBrickCumulees -= bricks * CONFIG.brickfactory.secondesParBrique;
+      }
+    } else {
+      etat.brickBloquee = true;
+    }
+  }
+
+  if (etat.allocation.catchen > 0) {
+    const plein = etat.purrittos >= CONFIG.purrittoMax;
+    if (etat.catnip >= 1 && !plein) {
+      etat.catchenBloquee = false;
+      const avant = etat.secondesPurrittoCumulees;
+      etat.secondesPurrittoCumulees += etat.allocation.catchen * dt;
+      const catnipCons = Math.floor(etat.secondesPurrittoCumulees / CONFIG.catchen.secondesParCatnip)
+                       - Math.floor(avant / CONFIG.catchen.secondesParCatnip);
+      if (catnipCons > 0) etat.catnip = Math.max(0, etat.catnip - catnipCons);
+      const purrs = Math.floor(etat.secondesPurrittoCumulees / CONFIG.catchen.secondesParPurritto);
+      if (purrs > 0) {
+        const ajout = Math.min(purrs, CONFIG.purrittoMax - etat.purrittos);
+        etat.purrittos                += ajout;
+        etat.secondesPurrittoCumulees -= purrs * CONFIG.catchen.secondesParPurritto;
+      }
+    } else {
+      etat.catchenBloquee = true;
+    }
+  }
+}
+
+// Applies offline progress since the last save. Returns a summary object, or null if nothing to report.
+function appliquerProgressionHorsLigne() {
+  const maintenant   = Date.now();
+  const ecouleReelMs = maintenant - (etat.dernierTimestamp || maintenant);
+  if (ecouleReelMs < ABSENCE_MIN_MS) {
+    etat.dernierTimestamp = maintenant;
+    return null;
+  }
+
+  // Boosts that ran out during the absence
+  ["woodcatting", "grasscatting", "pebblegathering"].forEach(function(action) {
+    if (etat.boosts[action].actif && maintenant >= etat.boosts[action].finTs) {
+      etat.boosts[action].actif = false;
+    }
+  });
+
+  const avant = {
+    wood: etat.wood, catnip: etat.catnip, pebbles: etat.pebbles,
+    planks: etat.planks, bricks: etat.bricks, purrittos: etat.purrittos,
+    reductionCumulee: etat.reductionCumulee
+  };
+
+  const dtSimTotal = (ecouleReelMs / 1000) * VITESSE_HORS_LIGNE;
+  const nbChunks    = Math.min(2000, Math.max(1, Math.ceil(dtSimTotal)));
+  const tailleChunk = dtSimTotal / nbChunks;
+  for (let i = 0; i < nbChunks; i++) simulerTickHorsLigne(tailleChunk);
+
+  // The catch sequence cooldown runs on real wall-clock time already (tempsRestantSequence
+  // reads Date.now() directly), now also benefiting from the cathouse reduction caught up above.
+  let kittyAttrapeNom = null;
+  if (etat.sequenceEnCours && tempsRestantSequence() <= 0) {
+    kittyAttrapeNom = NOMS_KITTIES[etat.kittiesData.length] || ("Kitty #" + (etat.kittiesData.length + 1));
+    etat.sequenceEnCours = false;
+    etat.chatons        += 1;
+    etat.clicCount      += 1;
+    etat.kittiesData.push({ nom: kittyAttrapeNom, metier: null, niveau: 1, tier: 0, catchTs: maintenant });
+    ajouterLog("event", "🐱 " + kittyAttrapeNom + " was caught while you were away!");
+    verifierStoryModals();
+  }
+
+  etat.dernierTimestamp = maintenant;
+  verifierObjectifs();
+  sauvegarder();
+
+  return {
+    dureeReelleSec: ecouleReelMs / 1000,
+    wood:             etat.wood     - avant.wood,
+    catnip:           etat.catnip   - avant.catnip,
+    pebbles:          etat.pebbles  - avant.pebbles,
+    planks:           etat.planks   - avant.planks,
+    bricks:           etat.bricks   - avant.bricks,
+    purrittos:        etat.purrittos - avant.purrittos,
+    kittyAttrape:     kittyAttrapeNom,
+    reductionGagnee:  etat.reductionCumulee - avant.reductionCumulee
+  };
+}
+
+function afficherResumeAbsence(resume) {
+  const conteneur = document.getElementById("absence-contenu");
+  if (!conteneur) return;
+  conteneur.innerHTML = "";
+
+  function ligne(label, valeur) {
+    const el = document.createElement("div");
+    el.className = "absence-ligne";
+    const lbl = document.createElement("span");
+    lbl.textContent = label;
+    const val = document.createElement("span");
+    val.className   = "absence-val";
+    val.textContent = valeur;
+    el.appendChild(lbl);
+    el.appendChild(val);
+    conteneur.appendChild(el);
+  }
+
+  ligne("⏱ Time away", formaterTemps(resume.dureeReelleSec));
+
+  const ressources = [
+    ["🪵 Wood",      resume.wood],
+    ["🌿 Catnip",    resume.catnip],
+    ["🪨 Pebbles",   resume.pebbles],
+    ["📋 Planks",    resume.planks],
+    ["🧱 Bricks",    resume.bricks],
+    ["🌯 Purrittos", resume.purrittos]
+  ];
+  let produit = false;
+  ressources.forEach(function(r) {
+    if (r[1] > 0) { ligne(r[0], "+" + formaterNombre(r[1])); produit = true; }
+  });
+  if (!produit) ligne("🐾 Production", "Nothing produced");
+
+  if (resume.kittyAttrape) {
+    ligne("🐱 New kitty", resume.kittyAttrape + " joined the gang!");
+  } else if (resume.reductionGagnee > 0.5) {
+    ligne("⏱ Cooldown reduced", "-" + formaterTemps(resume.reductionGagnee) + " (Cathouses)");
+  }
+
+  afficherModal("ecran-absence");
+}
+
+
+// ════════════════════════════════════════════════════════════
 // 12. STORY MODALS
 // ════════════════════════════════════════════════════════════
 
@@ -1178,12 +1362,14 @@ function toggleObjectifs() {
 // 14. INITIALIZATION
 // ════════════════════════════════════════════════════════════
 
-charger();
+const partieExistante = charger();
+const resumeAbsence    = partieExistante ? appliquerProgressionHorsLigne() : null;
 rendu();
 renduLogs();
 renduObjectifs();
 verifierObjectifs();
 renduManagement();
+if (resumeAbsence) afficherResumeAbsence(resumeAbsence);
 
 if (window.matchMedia("(max-width: 768px)").matches) {
   document.getElementById("panneau-objectifs").classList.add("reduit");
