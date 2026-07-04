@@ -66,10 +66,11 @@ const ITEMS = {
 };
 
 const METIERS = {
-  lumberjack: { id: "lumberjack", nom: "Lumberjack", emoji: "🪓", famille: "wood",    duree: 3600 },
-  carpenter:  { id: "carpenter",  nom: "Carpenter",  emoji: "🔨", famille: "sawmill", duree: 3600 },
-  farmer:     { id: "farmer",     nom: "Farmer",     emoji: "🌾", famille: "food",    duree: 3600 },
-  chef:       { id: "chef",       nom: "Chef",       emoji: "🍳", famille: "catchen", duree: 3600 }
+  lumberjack:    { id: "lumberjack",   nom: "Lumberjack",  emoji: "🪓", famille: "wood",    familleNom: "Wood resource family",    duree: 3600 },
+  carpenter:     { id: "carpenter",   nom: "Carpenter",    emoji: "🔨", famille: "sawmill", familleNom: "Sawmill resource family", duree: 3600 },
+  farmer:        { id: "farmer",      nom: "Farmer",       emoji: "🌾", famille: "food",    familleNom: "Food resource family",    duree: 3600 },
+  chef:          { id: "chef",        nom: "Chef",         emoji: "🍳", famille: "catchen", familleNom: "Catchen resource family", duree: 3600 },
+  "gang-leader": { id: "gang-leader", nom: "Gang Leader",  emoji: "👑", famille: null,      familleNom: "any resource family",     duree: 0 }
 };
 
 const TIERS_KITTIES = [
@@ -377,6 +378,13 @@ function vitesseAttrapage() {
   return 1 + etat.cathouses.length * bonusBox + etat.cathouseCount * CONFIG.realCathouse.reductionParSeconde;
 }
 
+// XP / leveling
+const FOOD_XP = { salads: 1 };
+
+function xpPourNiveau(n) {
+  return Math.max(1, Math.floor(Math.pow(n, 1.7)));
+}
+
 function productionParChaton(action) {
   return 1 + (etat.ameliorations.sharpClaws && action === "woodcatting"
     ? CONFIG.ameliorations.sharpClaws.bonusParChaton : 0);
@@ -395,8 +403,8 @@ function multiplicateurFamille(action) {
   const managerIdx = etat.managers[famille];
   if (managerIdx === null || managerIdx === undefined) return 1;
   const kitty = etat.kittiesData[managerIdx];
-  if (!kitty || kitty.metier !== metierParFamille[famille]) return 1;
-  return 2;
+  if (!kitty || (kitty.metier !== metierParFamille[famille] && kitty.metier !== "gang-leader")) return 1;
+  return kitty.managerMult || 2;
 }
 
 function dureeBrute()     { return 5 * Math.pow(3, etat.clicCount); }
@@ -608,8 +616,16 @@ function charger() {
   // Migration: backfill kittiesData if save predates the feature
   while (etat.kittiesData.length < etat.chatons) {
     const nom = NOMS_KITTIES[etat.kittiesData.length] || ("Kitty #" + (etat.kittiesData.length + 1));
-    etat.kittiesData.push({ nom: nom, metier: null, niveau: 1, tier: 0, catchTs: null });
+    etat.kittiesData.push({ nom: nom, metier: null, niveau: 0, xp: 0, tier: 0, managerMult: 2, catchTs: null });
   }
+  // Migration: add xp field and reset niveau to 0-based for existing kitties
+  etat.kittiesData.forEach(function(k) {
+    if (k.xp === undefined) k.xp = 0;
+    if (k.niveau === undefined || k.niveau === 1) { k.niveau = 0; k.xp = 0; }
+    if (k.managerMult === undefined) k.managerMult = 2;
+  });
+  // Migration: assign Gang Leader to Bernardo if Job Center already built
+  if (etat.jobCenterConstruit) assignerGangLeader();
   return true;
 }
 
@@ -1120,7 +1136,7 @@ function renduManagement() {
     carte.onclick   = function() { selectionnerKitty(i); };
 
     const photo = document.createElement("div");
-    photo.className   = "kitty-photo";
+    photo.className   = "kitty-photo kitty-photo-tier-" + (kitty.tier || 0);
     photo.textContent = "🐱";
 
     const infos = document.createElement("div");
@@ -1128,11 +1144,13 @@ function renduManagement() {
 
     const tierIdx = kitty.tier || 0;
 
+    const metierLabel = kitty.metier
+      ? (METIERS[kitty.metier] ? METIERS[kitty.metier].emoji + " " + TIERS_KITTIES[tierIdx] + " " + METIERS[kitty.metier].nom : kitty.metier)
+      : "Stray Cat";
     const spans = [
       { cls: "kitty-nom",    txt: kitty.nom },
-      { cls: "kitty-metier" + (kitty.metier ? "" : " kitty-vagabond"), txt: kitty.metier || "Stray Cat" },
-      { cls: "kitty-niveau" + (kitty.metier ? "" : " kitty-niveau-bloque"), txt: kitty.metier ? "Lvl " + kitty.niveau : "Lvl — 🔒" },
-      { cls: "kitty-tier kitty-tier-" + tierIdx, txt: "T" + tierIdx + " · " + TIERS_KITTIES[tierIdx] }
+      { cls: "kitty-metier" + (kitty.metier ? "" : " kitty-vagabond"), txt: metierLabel },
+      { cls: "kitty-niveau", txt: "Lvl " + kitty.niveau }
     ];
     spans.forEach(function(s) {
       const el = document.createElement("span");
@@ -1167,18 +1185,32 @@ function renduManagement() {
   gauche.className = "detail-gauche";
   gauche.innerHTML =
     "<h3 class=\"detail-titre\">General Info</h3>" +
-    "<div class=\"kitty-photo detail-photo\">🐱</div>" +
+    "<div class=\"kitty-photo detail-photo kitty-photo-tier-" + tierIdx + "\">🐱</div>" +
     "<div class=\"detail-champ\"><span class=\"detail-label\">Name</span><span class=\"detail-val\">" + k.nom + "</span></div>" +
     "<div class=\"detail-champ\"><span class=\"detail-label\">Caught</span><span class=\"detail-val\">" + formaterCatchTime(k.catchTs) + "</span></div>" +
-    "<div class=\"detail-champ\"><span class=\"detail-label\">Level</span><span class=\"detail-val" + (k.metier ? "" : " detail-bloque") + "\">" + (k.metier ? "Level " + k.niveau : "— 🔒") + "</span></div>" +
+    "<div class=\"detail-champ\"><span class=\"detail-label\">Level</span><span class=\"detail-val\">Level " + k.niveau + " <span class='detail-xp-sub'>(" + k.xp + "/" + xpPourNiveau(k.niveau) + " XP)</span></span></div>" +
     "<div class=\"detail-champ\"><span class=\"detail-label\">Tier</span><span class=\"detail-val kitty-tier kitty-tier-" + tierIdx + "\">T" + tierIdx + " · " + TIERS_KITTIES[tierIdx] + "</span></div>";
 
   // Right two-thirds: Job Details
   const droite = document.createElement("div");
   droite.className = "detail-droite";
+  const xpNext = xpPourNiveau(k.niveau);
+  const xpPct  = Math.min(100, Math.floor((k.xp / xpNext) * 100));
+  const feedBtns = Object.keys(FOOD_XP).filter(function(f) { return etat[f] > 0; }).map(function(f) {
+    const label = f === "salads" ? "🥗 Salad" : f;
+    return "<button class='btn-xp-feed' onclick='nourrir(" + kittySelectionnee + ",\"" + f + "\")'>"+label+" <span class='xp-gain'>+"+FOOD_XP[f]+" XP</span> <span class='xp-stock'>×"+etat[f]+"</span></button>";
+  }).join("");
+
   droite.innerHTML =
     "<h3 class=\"detail-titre\">Job Details</h3>" +
-    "<div class=\"detail-job-nom" + (k.metier ? "" : " kitty-vagabond") + "\">" + (k.metier || "Stray Cat") + "</div>";
+    "<div class=\"detail-job-nom" + (k.metier ? "" : " kitty-vagabond") + "\">" + (k.metier ? (METIERS[k.metier] ? METIERS[k.metier].emoji + " " + (TIERS_KITTIES[k.tier || 0] || "") + " " + METIERS[k.metier].nom : k.metier) : "Stray Cat") + "</div>" +
+    (k.metier && METIERS[k.metier] ? "<div class='detail-job-bonus'><span class='bonus-var'>×" + k.managerMult + "</span> production speed on " + METIERS[k.metier].familleNom + " when assigned as manager</div>" : "") +
+    "<div class='xp-section'>" +
+      "<div class='xp-header'><span class='xp-label'>Experience</span><span class='xp-val'>" + k.xp + " / " + xpNext + " XP</span></div>" +
+      "<div class='conteneur-barre'><div class='barre barre-verte' style='width:" + xpPct + "%'></div></div>" +
+      (k.niveau > 0 ? "<div class='xp-bonus-actifs'><span class='xp-bonus-ligne'>📦 Production ×" + Math.pow(1.1, k.niveau).toFixed(2) + "</span><span class='xp-bonus-ligne'>⚡ Raw Power +" + k.niveau + "</span></div>" : "<div class='xp-bonus-actifs xp-bonus-vide'>No bonuses yet — feed your kitty!</div>") +
+      (feedBtns ? "<div class='xp-aliments'>" + feedBtns + "</div>" : "<div class='xp-aliments-vide'>No food available.</div>") +
+    "</div>";
 
   const corps = document.createElement("div");
   corps.className = "detail-corps";
@@ -1667,11 +1699,10 @@ function renduModalJC() {
     const metierParFamille = { wood: "lumberjack", food: "farmer", sawmill: "carpenter", catchen: "chef" };
     const metierId = metierParFamille[famille];
     if (titreEl) titreEl.textContent = "👤 Assign a Manager";
-    if (!metierId) {
-      html = '<p class="jc-modal-vide">No job available for this family yet.</p>';
-    } else {
+    const dejaMgr = new Set(Object.values(etat.managers).filter(function(v) { return v !== null && v !== undefined; }));
+    {
       const eligibles = etat.kittiesData.reduce(function(acc, k, i) {
-        if (k.metier === metierId) acc.push(i);
+        if ((k.metier === metierId || k.metier === "gang-leader") && !dejaMgr.has(i)) acc.push(i);
         return acc;
       }, []);
       if (eligibles.length === 0) {
@@ -1679,10 +1710,11 @@ function renduModalJC() {
       } else {
         eligibles.forEach(function(idx) {
           const k = etat.kittiesData[idx];
+          const m = METIERS[k.metier];
           html += '<div class="jc-modal-kitty" onclick="assignerManager(\'' + famille + '\',' + idx + ')">';
           html += '<div class="jc-modal-kitty-info">';
           html += '<span class="jc-modal-kitty-nom">' + k.nom + '</span>';
-          html += '<span class="jc-modal-kitty-tier">' + (METIERS[metierId] ? METIERS[metierId].emoji + " " + METIERS[metierId].nom : metierId) + '</span>';
+          html += '<span class="jc-modal-kitty-tier">' + (m ? m.emoji + " " + m.nom : k.metier) + '</span>';
           html += '</div></div>';
         });
       }
@@ -1771,7 +1803,7 @@ function renderManagerSlot(famille) {
   let kitty = null;
   if (managerIdx !== null && managerIdx !== undefined) {
     const k = etat.kittiesData[managerIdx];
-    if (k && k.metier === metierAttendu) kitty = k;
+    if (k && (k.metier === metierAttendu || k.metier === "gang-leader")) kitty = k;
     else etat.managers[famille] = null;
   }
 
@@ -1782,9 +1814,15 @@ function renderManagerSlot(famille) {
   el.dataset.slotState = newState;
 
   if (kitty) {
+    const tierIdx = kitty.tier || 0;
+    const m = METIERS[kitty.metier];
+    const bonusTxt = m ? '<span class="bonus-var">×' + kitty.managerMult + '</span> production speed on ' + m.familleNom : '';
     el.innerHTML = '<div class="manager-slot-filled">'
-      + '<span class="manager-kitty-nom">👤 ' + kitty.nom + '</span>'
-      + '<span class="manager-kitty-boost">×2</span>'
+      + '<div class="manager-cercle kitty-photo-tier-' + tierIdx + '">🐱</div>'
+      + '<div class="manager-info">'
+      +   '<span class="manager-kitty-nom">' + kitty.nom + '</span>'
+      +   '<span class="manager-bonus-txt">' + bonusTxt + '</span>'
+      + '</div>'
       + '<button class="manager-slot-remove" onclick="retirerManager(\'' + famille + '\');event.stopPropagation()">✕</button>'
       + '</div>';
   } else {
@@ -1927,7 +1965,7 @@ function renduJobCenter(u) {
 
       // Job selection
       html += '<div class="jc-metiers">';
-      Object.values(METIERS).forEach(function(m) {
+      Object.values(METIERS).filter(function(m) { return m.id !== "gang-leader"; }).forEach(function(m) {
         const pris = metierDejaAttribue(m.id);
         const sel  = jcMetierSelectionne === m.id;
         html += '<button class="jc-metier-btn' + (sel ? ' jc-metier-actif' : '') + '"';
@@ -1977,7 +2015,7 @@ function terminerSequence() {
   etat.chatons        += 1;
   etat.clicCount      += 1;
   const nom = NOMS_KITTIES[etat.kittiesData.length] || ("Kitty #" + (etat.kittiesData.length + 1));
-  etat.kittiesData.push({ nom: nom, metier: null, niveau: 1, tier: 0, catchTs: Date.now() });
+  etat.kittiesData.push({ nom: nom, metier: null, niveau: 0, xp: 0, tier: 0, managerMult: 2, catchTs: Date.now() });
   afficherNotification("🐱 " + nom + " joined the gang!");
   ajouterLog("event", "🐱 " + nom + " caught!");
   renduManagement();
@@ -2029,12 +2067,38 @@ function acheterCatHouse() {
   verifierObjectifs(); sauvegarder(); rendu();
 }
 
+function nourrir(kittyIdx, foodType) {
+  const xpGain = FOOD_XP[foodType];
+  if (!xpGain || etat[foodType] < 1) return;
+  const k = etat.kittiesData[kittyIdx];
+  if (!k) return;
+  etat[foodType] -= 1;
+  k.xp += xpGain;
+  while (k.xp >= xpPourNiveau(k.niveau)) {
+    k.xp -= xpPourNiveau(k.niveau);
+    k.niveau++;
+    ajouterLog("event", "🎉 " + k.nom + " reached Level " + k.niveau + "!");
+    afficherNotification("🎉 " + k.nom + " is now Level " + k.niveau + "!");
+  }
+  verifierObjectifs(); sauvegarder(); renduManagement();
+}
+
+function assignerGangLeader() {
+  const bernardo = etat.kittiesData.find(function(k) { return k.nom === "Bernardo"; });
+  if (bernardo && bernardo.metier !== "gang-leader") {
+    bernardo.metier = "gang-leader";
+    afficherNotification("👑 Bernardo is now the Gang Leader!");
+    ajouterLog("event", "👑 Bernardo has been promoted to Gang Leader. Assign him as manager to boost any family ×2.");
+  }
+}
+
 function acheterJobCenter() {
   if (etat.jobCenterConstruit) return;
   if (etat.pebbleBricks < 10 || etat.cardboardPlanks < 10) return;
   etat.pebbleBricks   -= 10;
   etat.cardboardPlanks -= 10;
   etat.jobCenterConstruit = true;
+  assignerGangLeader();
   jcDirty = true;
   afficherNotification("🏫 Job Center built!");
   ajouterLog("event", "🏫 Job Center built — ready to assign jobs to kitties.");
@@ -2067,7 +2131,9 @@ function tickWorkers(action, stockKey, totalKey, cfg, onUnlockCheck, dt) {
   let totalProd = 0;
   slots.forEach(function(slot) {
     if (slot.kittyIndex === null) return;
-    slot.progress += productionParChaton(action) * multiplicateurFamille(action) * dt / cfg.secondesParUnite;
+    const slotKitty = etat.kittiesData[slot.kittyIndex];
+    const levelBonus = slotKitty ? Math.pow(1.1, slotKitty.niveau) : 1;
+    slot.progress += productionParChaton(action) * multiplicateurFamille(action) * levelBonus * dt / cfg.secondesParUnite;
     if (slot.progress >= 1) {
       const units = Math.floor(slot.progress);
       slot.progress -= units;
@@ -2360,7 +2426,7 @@ function appliquerProgressionHorsLigne() {
     etat.sequenceEnCours = false;
     etat.chatons        += 1;
     etat.clicCount      += 1;
-    etat.kittiesData.push({ nom: kittyAttrapeNom, metier: null, niveau: 1, tier: 0, catchTs: maintenant });
+    etat.kittiesData.push({ nom: kittyAttrapeNom, metier: null, niveau: 0, xp: 0, tier: 0, managerMult: 2, catchTs: maintenant });
     ajouterLog("event", "🐱 " + kittyAttrapeNom + " was caught while you were away!");
     verifierStoryModals();
   }

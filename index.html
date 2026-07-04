@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.001" />
+  <link rel="stylesheet" href="style.css?v=0.0011" />
 </head>
 <body>
 
@@ -183,8 +183,8 @@
 
   <!-- ONGLETS -->
   <div class="barre-onglets">
-    <button id="onglet-gang"         class="onglet onglet-actif" onclick="changerOnglet('gang')">🐱 <span class="onglet-label">Gang</span></button>
-    <button id="onglet-work"         class="onglet" style="display:none" onclick="changerOnglet('work')">⚒️ <span class="onglet-label">Work</span></button>
+    <button id="onglet-gang"         class="onglet onglet-actif" onclick="changerOnglet('gang')"><img class="onglet-icone" src="img/interface/Gang_Final.png" alt="Gang"> <span class="onglet-label">Gang</span></button>
+    <button id="onglet-work"         class="onglet" style="display:none" onclick="changerOnglet('work')"><img class="onglet-icone" src="img/interface/Work_Final.png?v=2" alt="Work"> <span class="onglet-label">Work</span></button>
     <button id="onglet-buildings"    class="onglet" style="display:none" onclick="changerOnglet('buildings')">🏗️ <span class="onglet-label">Buildings</span></button>
     <button id="onglet-purrks"       class="onglet" style="display:none" onclick="changerOnglet('purrks')">✨ <span class="onglet-label">Purrks</span></button>
     <button id="onglet-explorations" class="onglet" style="display:none" onclick="changerOnglet('explorations')">🗺️ <span class="onglet-label">Explorations</span></button>
@@ -211,7 +211,8 @@
 
         <!-- WOOD family -->
         <div id="famille-wood" class="famille-section">
-          <div class="cathering-famille-header"><span>🪵 Wood</span><div id="manager-slot-wood" class="manager-slot-conteneur" style="display:none"></div></div>
+          <div class="cathering-famille-header"><span>🪵 Wood</span></div>
+          <div id="manager-slot-wood" class="manager-slot-conteneur" style="display:none"></div>
 
           <div class="bloc-action" id="bloc-woodcatting">
             <div class="bloc-entete bloc-entete-sprite">
@@ -247,7 +248,8 @@
 
         <!-- FOOD family -->
         <div id="famille-food" class="famille-section" style="display:none">
-          <div class="cathering-famille-header"><span>🌿 Food</span><div id="manager-slot-food" class="manager-slot-conteneur" style="display:none"></div></div>
+          <div class="cathering-famille-header"><span>🌿 Food</span></div>
+          <div id="manager-slot-food" class="manager-slot-conteneur" style="display:none"></div>
 
           <div class="bloc-action" id="bloc-grasscatting">
             <div class="bloc-entete bloc-entete-sprite">
@@ -266,7 +268,8 @@
 
         <!-- ROCK family -->
         <div id="famille-rock" class="famille-section" style="display:none">
-          <div class="cathering-famille-header"><span>🪨 Rock</span><div id="manager-slot-rock" class="manager-slot-conteneur" style="display:none"></div></div>
+          <div class="cathering-famille-header"><span>🪨 Rock</span></div>
+          <div id="manager-slot-rock" class="manager-slot-conteneur" style="display:none"></div>
 
           <div class="bloc-action" id="bloc-pebblegathering">
             <div class="bloc-entete bloc-entete-sprite">
@@ -290,7 +293,8 @@
 
         <!-- SAWMILL family -->
         <div id="famille-sawmill" class="famille-section">
-          <div class="cathering-famille-header"><span>🪚 Sawmill</span><div id="manager-slot-sawmill" class="manager-slot-conteneur" style="display:none"></div></div>
+          <div class="cathering-famille-header"><span>🪚 Sawmill</span></div>
+          <div id="manager-slot-sawmill" class="manager-slot-conteneur" style="display:none"></div>
           <div class="bloc-action" id="bloc-sawmill">
             <div class="bloc-entete bloc-entete-sprite">
               <img class="work-sprite" src="img/resources/Cardboard Plank_Final.png" alt="Cardboard Plank">
@@ -327,7 +331,8 @@
 
         <!-- CATCHEN family -->
         <div id="famille-catchen" class="famille-section" style="display:none">
-          <div class="cathering-famille-header"><span>🍳 Catchen</span><div id="manager-slot-catchen" class="manager-slot-conteneur" style="display:none"></div></div>
+          <div class="cathering-famille-header"><span>🍳 Catchen</span></div>
+          <div id="manager-slot-catchen" class="manager-slot-conteneur" style="display:none"></div>
           <div class="bloc-action" id="bloc-catchen">
             <div class="bloc-entete bloc-entete-sprite">
               <img class="work-sprite" src="img/resources/Catnip Salad_Final.png" alt="Catnip Salad">
@@ -346,7 +351,8 @@
 
         <!-- PAWSONRY family -->
         <div id="famille-pawsonry" class="famille-section" style="display:none">
-          <div class="cathering-famille-header"><span>🪨 Pawsonry</span><div id="manager-slot-pawsonry" class="manager-slot-conteneur" style="display:none"></div></div>
+          <div class="cathering-famille-header"><span>🪨 Pawsonry</span></div>
+          <div id="manager-slot-pawsonry" class="manager-slot-conteneur" style="display:none"></div>
           <div class="bloc-action" id="bloc-brickfactory">
             <div class="bloc-entete bloc-entete-sprite">
               <img class="work-sprite" src="img/resources/Pebble Brick_Final.png" alt="Pebble Brick">
@@ -568,6 +574,6 @@
     </div>
   </div>
 
-  <script src="jeu.js?v=0.001"></script>
+  <script src="jeu.js?v=0.0011"></script>
 </body>
 </html>
