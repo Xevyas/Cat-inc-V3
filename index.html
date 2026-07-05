@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0013" />
+  <link rel="stylesheet" href="style.css?v=0.0014" />
 </head>
 <body>
 
@@ -238,7 +238,7 @@
     </div>
   </div>
 
-  <!-- ONGLETS -->
+  <!-- ONGLETS — moved to bottom via flex order on mobile; stays here on desktop -->
   <div class="barre-onglets">
     <button id="onglet-gang"         class="onglet onglet-actif" onclick="changerOnglet('gang')"><img class="onglet-icone" src="img/interface/Gang_Final.png" alt="Gang"> <span class="onglet-label">Gang</span></button>
     <button id="onglet-work"         class="onglet" style="display:none" onclick="changerOnglet('work')"><img class="onglet-icone" src="img/interface/Work_Final.png?v=2" alt="Work"> <span class="onglet-label">Work</span></button>
@@ -247,6 +247,9 @@
     <button id="onglet-inventaire"   class="onglet" onclick="changerOnglet('inventaire')"><img class="onglet-icone" src="img/interface/Inventory_Final.png" alt="Inventory"> <span class="onglet-label">Inventory</span></button>
     <button id="onglet-logs"         class="onglet" onclick="changerOnglet('logs')"><img class="onglet-icone" src="img/interface/Logs_Final.png" alt="Logs"> <span class="onglet-label">Logs</span></button>
   </div>
+
+  <!-- SCROLLABLE CONTENT AREA -->
+  <div id="contenu-principal">
 
   <!-- CONTENU WORK (Cathering + Paw-cessing) -->
   <div id="contenu-work" style="display:none">
@@ -593,6 +596,8 @@
     <div id="logs-liste"></div>
   </div> <!-- /contenu-logs -->
 
+  </div> <!-- /contenu-principal -->
+
   <!-- MODAL JOB CENTER -->
   <div id="jc-modal" class="explo-modal" style="display:none">
     <div class="explo-modal-overlay" onclick="fermerModalJC()"></div>
@@ -629,6 +634,6 @@
     </div>
   </div>
 
-  <script src="jeu.js?v=0.0013"></script>
+  <script src="jeu.js?v=0.0014"></script>
 </body>
 </html>

@@ -456,6 +456,19 @@ body {
   flex-shrink: 0;
   border: 2px solid #e8ddd0;
 }
+.kitty-icon {
+  width: 1.4em;
+  height: 1.4em;
+  object-fit: contain;
+  vertical-align: middle;
+}
+.kitty-photo .kitty-icon,
+.manager-cercle .kitty-icon,
+.worker-ring-inner .kitty-icon,
+.detail-photo .kitty-icon {
+  width: 75%;
+  height: 75%;
+}
 
 .kitty-infos {
   display: flex;
@@ -2143,7 +2156,24 @@ body {
    ════════════════════════════════════════════════════════════*/
 @media (max-width: 768px) {
 
-  body { min-width: 0; padding-bottom: 90px; }
+  body {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .header      { order: 0; flex-shrink: 0; }
+  .ressources  { order: 1; flex-shrink: 0; }
+  #contenu-principal {
+    order: 2;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
+  }
+  .barre-onglets { order: 3; flex-shrink: 0; }
 
   /* ── Intro modal ── */
   .intro-boite { padding: 22px 18px; gap: 18px; }
@@ -2269,17 +2299,17 @@ body {
     gap: 10px;
   }
 
-  /* ── Objectives panel ── */
+  /* ── Objectives panel — sits above the bottom tab bar ── */
   #panneau-objectifs {
     width: calc(100% - 16px);
     max-height: 220px;
     font-size: 0.9em;
     left: 8px;
-    bottom: 8px;
+    bottom: calc(56px + 8px);
   }
 
-  /* ── Logs tab ── */
-  #contenu-logs { height: calc(100vh - 280px); }
+  /* ── Logs tab — fill the scrollable content area ── */
+  #contenu-logs { height: 100%; }
   #logs-filtres { flex-wrap: wrap; padding: 8px 12px; gap: 4px; }
   #logs-liste { padding: 8px 12px; }
 }

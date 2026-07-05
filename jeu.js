@@ -57,6 +57,22 @@ const CONFIG = {
       ],
       zone:           "D1",
       unlockCampaign: "checkTheTrash"
+    },
+    searchNeighborTrashAgain: {
+      id:             "searchNeighborTrashAgain",
+      nom:            "Search neighbor's trash again",
+      description:    "The right neighbor keeps throwing good stuff away. Worth another look.",
+      difficulte:     1,
+      duree:          240,
+      slots:          1,
+      recompense:     "humanLeftovers",
+      recompenseRange: [
+        { qty: 1, weight: 70 },
+        { qty: 2, weight: 20 },
+        { qty: 3, weight: 10 }
+      ],
+      zone:           "E1",
+      unlockCampaign: "searchNeighborTrash"
     }
   },
   campaigns: {
@@ -132,6 +148,7 @@ const NOMS_KITTIES = [
 ];
 
 const VITESSES = [1, 2, 5, 10, 50, 100];
+const KITTY_ICON = '<img src="img/interface/Gang_Final.png" class="kitty-icon" alt="kitty">';
 
 const OBJECTIFS = [
   // ── Kitties
@@ -569,11 +586,16 @@ function vitesseAttrapage() {
 const FOOD_XP = { salads: 1, grilledAnchovy: 10, humanLeftovers: 1 };
 
 function xpPourNiveau(n) {
-  return Math.max(1, Math.floor(Math.pow(n, 1.7)));
+  return Math.max(n + 1, Math.ceil(Math.pow(n, 1.7)));
 }
 
 function productionParChaton(action) {
   return 1;
+}
+
+// 5% bonus per level, multiplicative — amplifies every job effect
+function jobLevelMultiplier(kitty) {
+  return Math.pow(1.05, kitty ? kitty.niveau : 0);
 }
 
 function multiplicateurFamille(action) {
@@ -590,7 +612,7 @@ function multiplicateurFamille(action) {
   if (managerIdx === null || managerIdx === undefined) return 1;
   const kitty = etat.kittiesData[managerIdx];
   if (!kitty || (kitty.metier !== metierParFamille[famille] && kitty.metier !== "gang-leader")) return 1;
-  return kitty.managerMult || 2;
+  return (kitty.managerMult || 2) * jobLevelMultiplier(kitty);
 }
 
 function dureeBrute()     { return 5 * Math.pow(3, etat.clicCount); }
@@ -971,6 +993,8 @@ function renduObjectifs() {
   });
 
   elSection.style.display = complis.length > 0 ? "block" : "none";
+  const panneau = document.getElementById("panneau-objectifs");
+  if (panneau) panneau.style.display = actifs.length === 0 && OBJECTIFS.every(function(o) { return etat.objectifsComplis.indexOf(o.id) !== -1; }) ? "none" : "";
   elComplis.innerHTML = "";
   complis.slice().reverse().forEach(function(obj) {
     const el = document.createElement("div");
@@ -1356,7 +1380,7 @@ function renduManagement() {
 
     const photo = document.createElement("div");
     photo.className   = "kitty-photo kitty-photo-tier-" + (kitty.tier || 0);
-    photo.textContent = "🐱";
+    photo.innerHTML = KITTY_ICON;
 
     const infos = document.createElement("div");
     infos.className = "kitty-infos";
@@ -1406,7 +1430,7 @@ function renduManagement() {
   gauche.className = "detail-gauche";
   gauche.innerHTML =
     "<h3 class=\"detail-titre\">General Info</h3>" +
-    "<div class=\"kitty-photo detail-photo kitty-photo-tier-" + tierIdx + "\">🐱</div>" +
+    "<div class=\"kitty-photo detail-photo kitty-photo-tier-" + tierIdx + "\">" + KITTY_ICON + "</div>" +
     "<div class=\"detail-champ\"><span class=\"detail-label\">Name</span><span class=\"detail-val\">" + k.nom + "</span></div>" +
     "<div class=\"detail-champ\"><span class=\"detail-label\">Caught</span><span class=\"detail-val\">" + formaterCatchTime(k.catchTs) + "</span></div>" +
     "<div class=\"detail-champ\"><span class=\"detail-label\">Level</span><span class=\"detail-val\">Level " + k.niveau + " <span class='detail-xp-sub'>(" + k.xp + "/" + xpPourNiveau(k.niveau) + " XP)</span></span></div>" +
@@ -1426,11 +1450,11 @@ function renduManagement() {
   droite.innerHTML =
     "<h3 class=\"detail-titre\">Job Details</h3>" +
     "<div class=\"detail-job-nom" + (k.metier ? "" : " kitty-vagabond") + "\">" + (k.metier ? (METIERS[k.metier] ? METIERS[k.metier].emoji + " " + (TIERS_KITTIES[k.tier || 0] || "") + " " + METIERS[k.metier].nom : k.metier) : "Stray Cat") + "</div>" +
-    (k.metier && METIERS[k.metier] ? "<div class='detail-job-bonus'><span class='bonus-var'>×" + k.managerMult + "</span> production speed on " + METIERS[k.metier].familleNom + " when assigned as manager</div>" : "") +
+    (k.metier && METIERS[k.metier] ? "<div class='detail-job-bonus'><span class='bonus-var'>×" + ((k.managerMult || 2) * jobLevelMultiplier(k)).toFixed(2) + "</span> production speed on " + METIERS[k.metier].familleNom + " when assigned as manager</div>" : "") +
     "<div class='xp-section'>" +
       "<div class='xp-header'><span class='xp-label'>Experience</span><span class='xp-val'>" + k.xp + " / " + xpNext + " XP</span></div>" +
       "<div class='conteneur-barre'><div class='barre barre-verte' style='width:" + xpPct + "%'></div></div>" +
-      (k.niveau > 0 ? "<div class='xp-bonus-actifs'><span class='xp-bonus-ligne'>📦 Production ×" + Math.pow(1.1, k.niveau).toFixed(2) + "</span><span class='xp-bonus-ligne'>⚡ Exploration Power +" + k.niveau + "</span></div>" : "<div class='xp-bonus-actifs xp-bonus-vide'>No bonuses yet — feed your kitty!</div>") +
+      (k.niveau > 0 ? "<div class='xp-bonus-actifs'><span class='xp-bonus-ligne'>📦 Production ×" + Math.pow(1.1, k.niveau).toFixed(2) + "</span>" + (k.metier ? "<span class='xp-bonus-ligne'>🐱 Manager bonuses ×" + jobLevelMultiplier(k).toFixed(2) + "</span>" : "") + "<span class='xp-bonus-ligne'>⚡ Exploration Power +" + k.niveau + "</span></div>" : (k.metier ? "<div class='xp-bonus-actifs'><span class='xp-bonus-ligne'>🐱 Manager bonuses ×" + jobLevelMultiplier(k).toFixed(2) + "</span></div>" : "<div class='xp-bonus-actifs xp-bonus-vide'>No bonuses yet — feed your kitty!</div>")) +
       (feedBtns ? "<div class='xp-aliments'>" + feedBtns + "</div>" : "<div class='xp-aliments-vide'>No food available.</div>") +
     "</div>";
 
@@ -1558,7 +1582,7 @@ function renderCampaignCards() {
         } else {
           const k = etat.kittiesData[ki];
           html += '<div class="explo-slot explo-slot-filled" onclick="ouvrirModalExploZone(\'' + zoneId + '\',' + si + ')">';
-          html += '<span class="explo-slot-emoji">&#x1F431;</span>';
+          html += '<span class="explo-slot-emoji">' + KITTY_ICON + '</span>';
           html += '<div class="explo-slot-kitty-info">';
           html += '<span class="explo-slot-kitty-nom">' + (k ? k.nom : "?") + '</span>';
           html += '<span class="explo-slot-kitty-power">&#x26A1; EP ' + (k ? k.niveau + 1 : 1) + '</span>';
@@ -1630,7 +1654,7 @@ function renderCampaignCards() {
           } else {
             const k = etat.kittiesData[ki];
             html += '<div class="explo-slot explo-slot-filled" onclick="ouvrirModalExplo(\'' + camp.id + '\',' + si + ')">';
-            html += '<span class="explo-slot-emoji">&#x1F431;</span>';
+            html += '<span class="explo-slot-emoji">' + KITTY_ICON + '</span>';
             html += '<div class="explo-slot-kitty-info">';
             html += '<span class="explo-slot-kitty-nom">' + (k ? k.nom : "?") + '</span>';
             html += '<span class="explo-slot-kitty-power">&#x26A1; EP ' + (k ? k.niveau + 1 : 1) + '</span>';
@@ -1681,7 +1705,7 @@ function renderCampaignCards() {
           var kPower    = k ? k.niveau + 1 : 1;
           scoutHtml += '<div class="explo-slots">';
           scoutHtml += '<div class="explo-slot explo-slot-filled">';
-          scoutHtml += '<span class="explo-slot-emoji">&#x1F431;</span>';
+          scoutHtml += '<span class="explo-slot-emoji">' + KITTY_ICON + '</span>';
           scoutHtml += '<div class="explo-slot-kitty-info">';
           scoutHtml += '<span class="explo-slot-kitty-nom">' + kNom + '</span>';
           scoutHtml += '<span class="explo-slot-kitty-power">&#x26A1; EP ' + kPower + '</span>';
@@ -1699,7 +1723,7 @@ function renderCampaignCards() {
           scoutHtml += '<div class="explo-slots">';
           if (stagedKi !== undefined) {
             scoutHtml += '<div class="explo-slot explo-slot-filled" onclick="ouvrirModalScouting(\'' + sc.id + '\')">';
-            scoutHtml += '<span class="explo-slot-emoji">&#x1F431;</span>';
+            scoutHtml += '<span class="explo-slot-emoji">' + KITTY_ICON + '</span>';
             scoutHtml += '<div class="explo-slot-kitty-info">';
             scoutHtml += '<span class="explo-slot-kitty-nom">' + (stagedK ? stagedK.nom : "?") + '</span>';
             scoutHtml += '<span class="explo-slot-kitty-power">&#x26A1; EP ' + selPower + '</span>';
@@ -1781,7 +1805,7 @@ function renduCarteDetail() {
   html += '<div class="carte-detail-stats">';
   html += '<span>⚔️ Difficulty: ' + zone.difficulte + '</span>';
   html += '<span>⏱ Duration: ' + formaterTempsStat(zone.duree) + '</span>';
-  html += '<span>🐱 ' + zone.slots + ' slot' + (zone.slots > 1 ? 's' : '') + '</span>';
+  html += '<span>' + KITTY_ICON + ' ' + zone.slots + ' slot' + (zone.slots > 1 ? 's' : '') + '</span>';
   html += '</div>';
   if (exploree) {
     html += '<p class="carte-detail-statut exploree">✅ Explored — missions coming soon.</p>';
@@ -1791,7 +1815,7 @@ function renduCarteDetail() {
     const remaining = Math.max(0, ez.duree - elapsed);
     const prog      = Math.min(1, elapsed / ez.duree);
     const names     = ez.kittyIndices.map(function(i) { return etat.kittiesData[i] ? etat.kittiesData[i].nom : "?"; }).join(", ");
-    html += '<p class="carte-detail-desc">🐱 ' + names + ' are exploring...</p>';
+    html += '<p class="carte-detail-desc">' + KITTY_ICON + ' ' + names + ' are exploring...</p>';
     html += '<div class="conteneur-barre"><div class="barre barre-explo" id="barre-explo-zone" style="width:' + Math.round(prog * 100) + '%"></div></div>';
     html += '<div class="explo-timer" id="timer-explo-zone">' + formaterTempsStat(Math.ceil(remaining)) + ' remaining</div>';
   } else {
@@ -1809,7 +1833,7 @@ function renduCarteDetail() {
       } else {
         const k = etat.kittiesData[ki];
         html += '<div class="explo-slot explo-slot-filled" onclick="ouvrirModalExploZone(\'' + zoneId + '\',' + si + ')">';
-        html += '<span class="explo-slot-emoji">🐱</span>';
+        html += '<span class="explo-slot-emoji">' + KITTY_ICON + '</span>';
         html += '<div class="explo-slot-kitty-info">';
         html += '<span class="explo-slot-kitty-nom">' + (k ? k.nom : "?") + '</span>';
         html += '<span class="explo-slot-kitty-power">⚡ EP ' + (k ? k.niveau + 1 : 1) + '</span>';
@@ -1953,7 +1977,7 @@ function renduModalExplo() {
 
     html += '<div class="explo-modal-kitty' + (disabled ? ' explo-modal-kitty-disabled' : '') + '"' +
             (disabled ? '' : ' onclick="selectionnerKittySlot(' + i + ')"') + '>';
-    html += '<span class="explo-modal-kitty-emoji">🐱</span>';
+    html += '<span class="explo-modal-kitty-emoji">' + KITTY_ICON + '</span>';
     html += '<div class="explo-modal-kitty-info">';
     html += '<span class="explo-modal-kitty-nom">' + k.nom + '</span>';
     html += '<span class="explo-modal-kitty-power">&#x26A1; Exploration Power ' + (k.niveau + 1) + '</span>';
@@ -2357,7 +2381,7 @@ function renduModalJC() {
   let html = "";
 
   if (jcModalOuvert.mode === "formation") {
-    if (titreEl) titreEl.textContent = "🐱 Choose a Stray Cat";
+    if (titreEl) titreEl.innerHTML = KITTY_ICON + " Choose a Stray Cat";
     const stray = kittysSansMetier();
     if (stray.length === 0) {
       html = '<p class="jc-modal-vide">No Stray Cats available.</p>';
@@ -2502,9 +2526,9 @@ function renderManagerSlot(famille) {
   if (kitty) {
     const tierIdx = kitty.tier || 0;
     const m = METIERS[kitty.metier];
-    const bonusTxt = m ? '<span class="bonus-var">×' + kitty.managerMult + '</span> production speed on ' + m.familleNom : '';
+    const bonusTxt = m ? '<span class="bonus-var">×' + ((kitty.managerMult || 2) * jobLevelMultiplier(kitty)).toFixed(2) + '</span> production speed on ' + m.familleNom : '';
     el.innerHTML = '<div class="manager-slot-filled">'
-      + '<div class="manager-cercle kitty-photo-tier-' + tierIdx + '">🐱</div>'
+      + '<div class="manager-cercle kitty-photo-tier-' + tierIdx + '">' + KITTY_ICON + '</div>'
       + '<div class="manager-info">'
       +   '<span class="manager-kitty-nom">' + kitty.nom + '</span>'
       +   '<span class="manager-bonus-txt">' + bonusTxt + '</span>'
@@ -2532,7 +2556,7 @@ function updateWorkerSlotUI(action, slotIdx) {
       const kitty = etat.kittiesData[slot.kittyIndex];
       el.innerHTML =
         '<div class="worker-ring" id="worker-ring-' + action + '-' + slotIdx + '" style="--prog:' + (slot.progress || 0) + '">' +
-          '<div class="worker-ring-inner">🐱</div>' +
+          '<div class="worker-ring-inner">' + KITTY_ICON + '</div>' +
           '<button class="worker-ring-remove" onclick="retirerWorker(\'' + action + '\',' + slotIdx + ');event.stopPropagation()">✕</button>' +
         '</div>' +
         '<div class="worker-slot-name">' + (kitty ? kitty.nom : "?") + '</div>';
@@ -2578,7 +2602,7 @@ function renduModalWorker() {
     const status     = onExplo ? "on expedition" : inTraining ? "in training" : (inWorker ? "assigned to work" : "");
     html += '<div class="worker-modal-kitty' + (disabled ? ' worker-modal-kitty-disabled' : '') + '"' +
             (disabled ? '' : ' onclick="assignerWorkerSlot(' + i + ')"') + '>';
-    html += '<span class="worker-modal-kitty-emoji">🐱</span>';
+    html += '<span class="worker-modal-kitty-emoji">' + KITTY_ICON + '</span>';
     html += '<div class="worker-modal-kitty-info">';
     html += '<span class="worker-modal-kitty-nom">' + k.nom + '</span>';
     if (status) html += '<span class="worker-modal-kitty-status">' + status + '</span>';
@@ -2618,7 +2642,7 @@ function renduJobCenter(u) {
       const restant = Math.max(0, f.duree - elapsed);
       html += '<div class="jc-formation-en-cours">';
       html += '<div class="jc-slot-filled">';
-      html += '<span class="jc-slot-emoji">' + (m ? m.emoji : "🐱") + '</span>';
+      html += '<span class="jc-slot-emoji">' + (m ? m.emoji : KITTY_ICON) + '</span>';
       html += '<div class="jc-slot-info">';
       html += '<span class="jc-slot-nom">' + (kitty ? kitty.nom : "?") + '</span>';
       html += '<span class="jc-slot-metier">Becoming ' + (m ? m.nom : f.metier) + '...</span>';
@@ -2635,7 +2659,7 @@ function renduJobCenter(u) {
       if (jcFormationKittySelectionne !== null) {
         const kitty = etat.kittiesData[jcFormationKittySelectionne];
         html += '<div class="jc-slot-filled" onclick="ouvrirModalJC(\'formation\')">';
-        html += '<span class="jc-slot-emoji">🐱</span>';
+        html += '<span class="jc-slot-emoji">' + KITTY_ICON + '</span>';
         html += '<div class="jc-slot-info">';
         html += '<span class="jc-slot-nom">' + (kitty ? kitty.nom : "?") + '</span>';
         html += '<span class="jc-slot-metier">Stray Cat</span>';
@@ -2835,6 +2859,12 @@ function tick() {
     }
     etat.exploEnCours.forEach(function(explo) {
       explo.startTs -= avance;
+    });
+    if (etat.exploZoneEnCours) {
+      etat.exploZoneEnCours.startTs -= avance;
+    }
+    Object.values(etat.scoutingsEnCours).forEach(function(sc) {
+      sc.startTs -= avance;
     });
     if (etat.formationEnCours) {
       etat.formationEnCours.startTs -= avance;
