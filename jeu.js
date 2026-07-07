@@ -379,7 +379,7 @@ const etat = {
   zonesExplorees:      ["D1"], // D1 (home) always starts explored
   exploZoneEnCours:    null,   // { zoneId, kittyIndices, startTs, duree }
   scoutingsEnCours:    {},     // { scoutingId: { kittyIndex, startTs } }
-  managers:            { wood: null, food: null, sawmill: null, catchen: null },
+  managers:            { wood: null, food: null, sawmill: null, catchen: null, rock: null, pawsonry: null },
   managersDebloques:   false,
   objectifsComplis: [],
   logs:          [],
@@ -418,6 +418,10 @@ function kittyIsInTraining(kittyIdx) {
 
 function kittyIsOnExpedition(kittyIdx) {
   return etat.exploEnCours.some(function(e) { return e.kittyIndices.includes(kittyIdx); });
+}
+
+function kittyEstManager(kittyIdx) {
+  return Object.values(etat.managers).some(function(mi) { return mi === kittyIdx; });
 }
 
 function kittyIsOnZoneExplo(kittyIdx) {
@@ -598,20 +602,23 @@ function jobLevelMultiplier(kitty) {
   return Math.pow(1.05, kitty ? kitty.niveau : 0);
 }
 
+// Each family (raw gathering OR its processed output) has its own independent manager
+const MAP_FAMILLE = {
+  woodcatting: "wood", basicWoodcatting: "wood",
+  grasscatting: "food", fishcatting: "food",
+  sawmill: "sawmill",
+  catchen: "catchen", grilledAnchovy: "catchen",
+  pebblegathering: "rock", brickfactory: "pawsonry"
+};
+const METIER_PAR_FAMILLE = { wood: ["lumberjack"], food: ["farmer"], sawmill: ["carpenter"], catchen: ["chef"], rock: [], pawsonry: [] };
+
 function multiplicateurFamille(action) {
-  const mapFamille = {
-    woodcatting: "wood", basicWoodcatting: "wood",
-    grasscatting: "food", fishcatting: "food",
-    sawmill: "sawmill",
-    catchen: "catchen", grilledAnchovy: "catchen"
-  };
-  const metierParFamille = { wood: "lumberjack", food: "farmer", sawmill: "carpenter", catchen: "chef" };
-  const famille = mapFamille[action];
+  const famille = MAP_FAMILLE[action];
   if (!famille) return 1;
   const managerIdx = etat.managers[famille];
   if (managerIdx === null || managerIdx === undefined) return 1;
   const kitty = etat.kittiesData[managerIdx];
-  if (!kitty || (kitty.metier !== metierParFamille[famille] && kitty.metier !== "gang-leader")) return 1;
+  if (!kitty || (!METIER_PAR_FAMILLE[famille].includes(kitty.metier) && kitty.metier !== "gang-leader")) return 1;
   return (kitty.managerMult || 2) * jobLevelMultiplier(kitty);
 }
 
@@ -698,7 +705,10 @@ function formaterCatchTime(ts) {
 // 6. SAVE / LOAD / RESET
 // ════════════════════════════════════════════════════════════
 
+let sauvegardeVerrouillee = false; // set right before a reload we must not let a stale autosave clobber
+
 function sauvegarder() {
+  if (sauvegardeVerrouillee) return;
   etat.dernierTimestamp = Date.now();
   localStorage.setItem("chatonClicker", JSON.stringify({
     dernierTimestamp:     etat.dernierTimestamp,
@@ -820,13 +830,15 @@ function charger() {
   if (!etat.zonesExplorees.includes("D1")) etat.zonesExplorees.push("D1");
   etat.exploZoneEnCours    = d.exploZoneEnCours    || null;
   etat.scoutingsEnCours    = d.scoutingsEnCours    || {};
-  etat.managers            = d.managers            || { wood: null, food: null, sawmill: null, catchen: null };
+  etat.managers            = d.managers            || { wood: null, food: null, sawmill: null, catchen: null, rock: null, pawsonry: null };
   etat.managersDebloques   = d.managersDebloques   || false;
   // Migration: backfill manager keys added in later versions
-  if (etat.managers.wood    === undefined) etat.managers.wood    = null;
-  if (etat.managers.food    === undefined) etat.managers.food    = null;
-  if (etat.managers.sawmill === undefined) etat.managers.sawmill = null;
-  if (etat.managers.catchen === undefined) etat.managers.catchen = null;
+  if (etat.managers.wood     === undefined) etat.managers.wood     = null;
+  if (etat.managers.food     === undefined) etat.managers.food     = null;
+  if (etat.managers.sawmill  === undefined) etat.managers.sawmill  = null;
+  if (etat.managers.catchen  === undefined) etat.managers.catchen  = null;
+  if (etat.managers.rock     === undefined) etat.managers.rock     = null;
+  if (etat.managers.pawsonry === undefined) etat.managers.pawsonry = null;
   etat.objectifsComplis = d.objectifsComplis || [];
   etat.logs            = d.logs            || [];
   etat.kittiesData     = d.kittiesData     || [];
@@ -856,6 +868,7 @@ function charger() {
 
 function reset() {
   if (!confirm("Start over from scratch?")) return;
+  fermerModalSettings();
   localStorage.removeItem("chatonClicker");
   localStorage.removeItem("introVue");
   localStorage.removeItem("story1Vue");
@@ -883,12 +896,72 @@ function reset() {
     exploEnCours: [], campaignsCompletees: [],
     itemsAcquis: [], itemsAppris: [], jobCenterDebloque: false, jobCenterConstruit: false,
     formationEnCours: null, zonesExplorees: ["D1"], exploZoneEnCours: null, scoutingsEnCours: {},
-    managers: { wood: null, food: null, sawmill: null, catchen: null }, managersDebloques: false,
+    managers: { wood: null, food: null, sawmill: null, catchen: null, rock: null, pawsonry: null }, managersDebloques: false,
     objectifsComplis: [], logs: [],
     learningEnCours: null,
     dernierTimestamp: Date.now()
   });
   rendu(); renduLogs(); renduObjectifs(); renduManagement();
+}
+
+function ouvrirModalSettings() {
+  document.getElementById("settings-modal").style.display = "flex";
+}
+function fermerModalSettings() {
+  document.getElementById("settings-modal").style.display = "none";
+}
+
+function sauvegarderManuel() {
+  sauvegarder();
+  afficherNotification("💾 Game saved!");
+}
+
+function exporterSauvegarde() {
+  sauvegarder();
+  const raw = localStorage.getItem("chatonClicker");
+  if (!raw) return;
+  const date = new Date().toISOString().slice(0, 10);
+  const blob = new Blob([raw], { type: "text/plain" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = "cat-inc-save-" + date + ".txt";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  afficherNotification("⬇️ Save exported!");
+}
+
+function importerSauvegarde(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function() {
+    let parsed;
+    try {
+      parsed = JSON.parse(reader.result);
+    } catch (e) {
+      alert("This file isn't a valid save file.");
+      event.target.value = "";
+      return;
+    }
+    if (!parsed || typeof parsed !== "object") {
+      alert("This file isn't a valid save file.");
+      event.target.value = "";
+      return;
+    }
+    if (!confirm("Import this save? Your current progress will be replaced.")) {
+      event.target.value = "";
+      return;
+    }
+    sauvegardeVerrouillee = true; // block the visibilitychange autosave from clobbering the import during reload
+    localStorage.setItem("chatonClicker", reader.result);
+    // An imported save is never a fresh start — skip the intro overlay on reload.
+    localStorage.setItem("introVue", "1");
+    location.reload();
+  };
+  reader.readAsText(file);
 }
 
 
@@ -1189,8 +1262,125 @@ document.addEventListener("click", function(e) {
   }
 });
 
-// ── 9c. Cathering section
-function renduCathering(u) {
+// ── 9c. Work pairs (raw resource ➜ its processed output, shown as one linked card)
+const RESOURCE_PAIRS = [
+  {
+    rawAction: "woodcatting", rawRes: "cardboardPieces", rawCfg: CONFIG.woodcatting,
+    rawUnlocked: function(u) { return u.cathering; },
+    procAction: "sawmill", procRes: "cardboardPlanks", procCfg: CONFIG.sawmill,
+    procSecUnite: "secondesParPlanche", procSecRaw: "secondesParCardboard",
+    procMultAction: "sawmill", procUnlocked: function(u) { return u.scierie; },
+    bloqueeKey: "scieriBloquee"
+  },
+  {
+    rawAction: "basicWoodcatting", rawRes: "basicWood", rawCfg: CONFIG.basicWoodcatting,
+    rawUnlocked: function(u) { return u.basicWood; },
+    procAction: "basicSawmill", procRes: "basicWoodPlanks", procCfg: CONFIG.basicSawmill,
+    procSecUnite: "secondesParPlanche", procSecRaw: "secondesParBasicWood",
+    procMultAction: "sawmill", procUnlocked: function(u) { return u.basicSawmill; },
+    bloqueeKey: "basicSawmillBloquee"
+  },
+  {
+    rawAction: "grasscatting", rawRes: "catnip", rawCfg: CONFIG.grasscatting,
+    rawUnlocked: function(u) { return u.grasscat; },
+    procAction: "catchen", procRes: "salads", procCfg: CONFIG.catchen,
+    procSecUnite: "secondesParSalad", procSecRaw: "secondesParCatnip",
+    procMultAction: "catchen", procUnlocked: function(u) { return u.catchen; },
+    bloqueeKey: "catchenBloquee"
+  },
+  {
+    rawAction: "fishcatting", rawRes: "anchovy", rawCfg: CONFIG.fishcatting,
+    rawUnlocked: function(u) { return u.anchovy; },
+    procAction: "grilledAnchovy", procRes: "grilledAnchovy", procCfg: CONFIG.grilledAnchovy,
+    procSecUnite: "secondesParRecette", procSecRaw: "secondesParAnchovy",
+    procMultAction: "grilledAnchovy", procUnlocked: function(u) { return u.grilledAnchovy; },
+    bloqueeKey: "catchenAnchovyBloquee"
+  },
+  {
+    rawAction: "pebblegathering", rawRes: "pebbles", rawCfg: CONFIG.pebblegathering,
+    rawUnlocked: function(u) { return u.pebblecat; },
+    procAction: "brickfactory", procRes: "pebbleBricks", procCfg: CONFIG.brickfactory,
+    procSecUnite: "secondesParBrique", procSecRaw: "secondesParPebble",
+    procMultAction: "brickfactory", procUnlocked: function(u) { return u.brickfact; },
+    bloqueeKey: "brickBloquee"
+  }
+];
+
+// Units/second produced by every filled raw-gathering slot (matches tickWorkers exactly)
+function tauxProductionBrute(action, cfg) {
+  const slots = etat.workers[action];
+  if (!slots) return 0;
+  const mult = multiplicateurFamille(action);
+  let rate = 0;
+  slots.forEach(function(s) {
+    if (s.kittyIndex === null) return;
+    const k = etat.kittiesData[s.kittyIndex];
+    const levelBonus = k ? Math.pow(1.1, k.niveau) : 1;
+    rate += mult * levelBonus / cfg.secondesParUnite;
+  });
+  return rate;
+}
+
+// Units/second of processed output (matches the processing tick math exactly — no per-kitty level bonus there)
+function tauxProductionTransformee(pair) {
+  const n = allocationCount(pair.procAction);
+  if (n === 0) return 0;
+  const mult = multiplicateurFamille(pair.procMultAction);
+  return n * mult / pair.procCfg[pair.procSecUnite];
+}
+
+function renduPaireRessource(pair, u) {
+  const qtyRawEl = document.getElementById("pqty-" + pair.rawRes);
+  if (qtyRawEl) qtyRawEl.textContent = formaterNombre(etat[pair.rawRes]);
+  const qtyProcEl = document.getElementById("pqty-" + pair.procRes);
+  if (qtyProcEl) qtyProcEl.textContent = formaterNombre(etat[pair.procRes]);
+
+  updateWorkerSlotUI(pair.rawAction, 0);
+  updateWorkerSlotUI(pair.rawAction, 1);
+
+  const rawRate  = tauxProductionBrute(pair.rawAction, pair.rawCfg);
+  const procUnlocked = pair.procUnlocked(u);
+
+  const sideProcEl = document.getElementById("pairside-" + pair.procAction);
+  if (sideProcEl) sideProcEl.classList.toggle("pair-side-verrouille", !procUnlocked);
+
+  const feedEl = document.getElementById("pfeed-" + pair.procAction);
+
+  if (!procUnlocked) {
+    afficherTauxNet("prate-" + pair.rawRes, rawRate);
+    const rateProcEl = document.getElementById("prate-" + pair.procRes);
+    if (rateProcEl) rateProcEl.textContent = "";
+    if (feedEl) feedEl.textContent = "";
+    return;
+  }
+
+  updateWorkerSlotUI(pair.procAction, 0);
+  updateWorkerSlotUI(pair.procAction, 1);
+
+  const procOutRate  = tauxProductionTransformee(pair);
+  const procConsRate = procOutRate * (pair.procCfg[pair.procSecUnite] / pair.procCfg[pair.procSecRaw]);
+
+  afficherTauxNet("prate-" + pair.rawRes,  rawRate - procConsRate);
+  afficherTauxNet("prate-" + pair.procRes, procOutRate);
+
+  if (feedEl) {
+    const consommateurActif = allocationCount(pair.procAction) > 0;
+    if (!consommateurActif) {
+      feedEl.textContent = "";
+    } else if (etat[pair.bloqueeKey]) {
+      feedEl.textContent = "⏸";
+      feedEl.title = "Out of stock";
+    } else if (rawRate - procConsRate < -0.0005) {
+      feedEl.textContent = "⚠️";
+      feedEl.title = "Running low — raw production can't keep up";
+    } else {
+      feedEl.textContent = "✅";
+      feedEl.title = "Well fed";
+    }
+  }
+}
+
+function renduWorkPairs(u) {
   // Filter bar visibility — each button appears only when its family is unlocked
   const setDisplay = function(id, show) { const el = document.getElementById(id); if (el) el.style.display = show ? "" : "none"; };
   setDisplay("filtre-work-wood", u.cathering);
@@ -1200,50 +1390,33 @@ function renduCathering(u) {
   const filtresBar = document.querySelector(".work-filtres");
   if (filtresBar) filtresBar.style.display = u.cathering ? "" : "none";
 
-  if (!u.cathering) return;
+  const sectionEl = document.getElementById("section-work-pairs");
+  if (!u.cathering) { if (sectionEl) sectionEl.style.display = "none"; return; }
+  if (sectionEl) sectionEl.style.display = "";
 
   const showWood = workFiltre === null || workFiltre === "wood";
   const showFood = (workFiltre === null || workFiltre === "food") && u.grasscat;
   const showRock = (workFiltre === null || workFiltre === "rock") && u.pebblecat;
 
-  const sectionEl = document.getElementById("section-cathering");
-  if (sectionEl) sectionEl.style.display = (showWood || showFood || showRock) ? "block" : "none";
-
-  if (showWood) renderManagerSlot("wood");
-  if (showFood) renderManagerSlot("food");
-  if (showRock) renderManagerSlot("rock");
-
-  // WOOD family
   document.getElementById("famille-wood").style.display = showWood ? "block" : "none";
-  if (showWood) {
-    updateWorkerSlotUI("woodcatting", 0);
-    updateWorkerSlotUI("woodcatting", 1);
-    document.getElementById("sep-basicWoodcatting").style.display = u.basicWood ? "block" : "none";
-    if (u.basicWood) {
-      updateWorkerSlotUI("basicWoodcatting", 0);
-      updateWorkerSlotUI("basicWoodcatting", 1);
-    }
-  }
-
-  // FOOD family
   document.getElementById("famille-food").style.display = showFood ? "block" : "none";
-  if (showFood) {
-    updateWorkerSlotUI("grasscatting", 0);
-    updateWorkerSlotUI("grasscatting", 1);
-    const sepFish = document.getElementById("sep-fishcatting");
-    if (sepFish) sepFish.style.display = u.anchovy ? "block" : "none";
-    if (u.anchovy) {
-      updateWorkerSlotUI("fishcatting", 0);
-      updateWorkerSlotUI("fishcatting", 1);
-    }
-  }
-
-  // ROCK family
   document.getElementById("famille-rock").style.display = showRock ? "block" : "none";
-  if (showRock) {
-    updateWorkerSlotUI("pebblegathering", 0);
-    updateWorkerSlotUI("pebblegathering", 1);
-  }
+
+  if (showWood) { renderManagerSlot("wood"); renderManagerSlot("sawmill"); }
+  if (showFood) { renderManagerSlot("food"); renderManagerSlot("catchen"); }
+  if (showRock) { renderManagerSlot("rock"); renderManagerSlot("pawsonry"); }
+
+  const setRowDisplay = function(id, show) { const el = document.getElementById(id); if (el) el.style.display = show ? "flex" : "none"; };
+  setRowDisplay("sep-basicWoodcatting", u.basicWood);
+  setRowDisplay("pairside-basicSawmill", u.basicWood);
+  setRowDisplay("sep-fishcatting", u.anchovy);
+  setRowDisplay("pairside-grilledAnchovy", u.anchovy);
+
+  if (showWood)               renduPaireRessource(RESOURCE_PAIRS[0], u);
+  if (showWood && u.basicWood) renduPaireRessource(RESOURCE_PAIRS[1], u);
+  if (showFood)               renduPaireRessource(RESOURCE_PAIRS[2], u);
+  if (showFood && u.anchovy)  renduPaireRessource(RESOURCE_PAIRS[3], u);
+  if (showRock)               renduPaireRessource(RESOURCE_PAIRS[4], u);
 }
 
 // ── 9d. Buildings section
@@ -1276,68 +1449,6 @@ function renduBuildings(u) {
     const jcIface = document.getElementById("jc-interface");
     if (jcIface) jcIface.style.display = etat.jobCenterConstruit ? "block" : "none";
     if (etat.jobCenterConstruit) renduJobCenter(u);
-  }
-}
-
-// ── 9e. Paw-cessing section
-function renduPawcessing(u) {
-  if (!u.pawcessing) {
-    document.getElementById("section-pawcessing").style.display = "none";
-    return;
-  }
-
-  const showSawmill  = workFiltre === null || workFiltre === "wood";
-  const showCatchen  = (workFiltre === null || workFiltre === "food") && u.catchen;
-  const showPawsonry = (workFiltre === null || workFiltre === "rock") && u.brickfact;
-
-  document.getElementById("section-pawcessing").style.display = (showSawmill || showCatchen || showPawsonry) ? "flex" : "none";
-
-  if (showSawmill)  renderManagerSlot("sawmill");
-  if (showCatchen)  renderManagerSlot("catchen");
-  if (showPawsonry) renderManagerSlot("pawsonry");
-
-  // Sawmill
-  document.getElementById("famille-sawmill").style.display = showSawmill ? "block" : "none";
-  if (showSawmill) {
-    updateWorkerSlotUI("sawmill", 0);
-    updateWorkerSlotUI("sawmill", 1);
-    const statutSaw = document.getElementById("statut-sawmill");
-    if (statutSaw) statutSaw.textContent = etat.scieriBloquee ? "⏸ Waiting for Cardboard Pieces..." : "";
-
-    const sepBasicSaw = document.getElementById("sep-basicSawmill");
-    if (sepBasicSaw) sepBasicSaw.style.display = u.basicSawmill ? "block" : "none";
-    if (u.basicSawmill) {
-      updateWorkerSlotUI("basicSawmill", 0);
-      updateWorkerSlotUI("basicSawmill", 1);
-      const statutBasic = document.getElementById("statut-basicSawmill");
-      if (statutBasic) statutBasic.textContent = etat.basicSawmillBloquee ? "⏸ Waiting for basic wood..." : "";
-    }
-  }
-
-  // Catchen
-  document.getElementById("famille-catchen").style.display = showCatchen ? "block" : "none";
-  if (showCatchen) {
-    updateWorkerSlotUI("catchen", 0);
-    updateWorkerSlotUI("catchen", 1);
-    const statutCat = document.getElementById("statut-catchen");
-    if (statutCat) statutCat.textContent = etat.catchenBloquee ? "⏸ Waiting for catnip..." : "";
-    const sepAnchovy = document.getElementById("sep-grilled-anchovy");
-    if (sepAnchovy) sepAnchovy.style.display = u.grilledAnchovy ? "block" : "none";
-    if (u.grilledAnchovy) {
-      updateWorkerSlotUI("grilledAnchovy", 0);
-      updateWorkerSlotUI("grilledAnchovy", 1);
-      const statutAnchovy = document.getElementById("statut-grilled-anchovy");
-      if (statutAnchovy) statutAnchovy.textContent = etat.catchenAnchovyBloquee ? "⏸ Waiting for anchovy..." : "";
-    }
-  }
-
-  // Pawsonry
-  document.getElementById("famille-pawsonry").style.display = showPawsonry ? "block" : "none";
-  if (showPawsonry) {
-    updateWorkerSlotUI("brickfactory", 0);
-    updateWorkerSlotUI("brickfactory", 1);
-    const statutBrick = document.getElementById("statut-brickfactory");
-    if (statutBrick) statutBrick.textContent = etat.brickBloquee ? "⏸ Waiting for pebbles..." : "";
   }
 }
 
@@ -1470,9 +1581,8 @@ function rendu() {
   const u = unlocks();
   renduRessources(u);
   renduSequence();
-  renduCathering(u);
+  renduWorkPairs(u);
   renduBuildings(u);
-  renduPawcessing(u);
   renduExplorations(u);
   renduInventaire(u);
 }
@@ -1507,7 +1617,7 @@ let exploTabDirty  = true;
 let exploModalOuvert = null;  // { campId?, zoneId?, slotIndex } or null
 
 let carteDirty            = true;
-let carteZoneSelectionnee = null;
+let carteZoneSelectionnee = "D1"; // Home is always accessible — show its missions right away
 let carteExploSlots       = {};  // { zoneId: Array<kittyIndex|null> }
 
 function totalKittiesSelectionnees() {
@@ -1758,6 +1868,7 @@ function renduCarteGrille() {
   const el = document.getElementById("carte-grille");
   if (!el) return;
   const ROWS = 5, COLS = 7, LETTERS = "ABCDEFG";
+  const explorateurOk = explorateurPresent();
   let html = "";
   for (let row = ROWS; row >= 1; row--) {
     html += '<div class="carte-row-lbl">' + row + '</div>';
@@ -1770,11 +1881,13 @@ function renduCarteGrille() {
         const exploree    = etat.zonesExplorees.includes(zoneId);
         const inProgress  = !!(etat.exploZoneEnCours && etat.exploZoneEnCours.zoneId === zoneId);
         const selected    = carteZoneSelectionnee === zoneId;
+        const locked      = zone.type !== "home" && !explorateurOk;
         let cls = "carte-cellule carte-" + zone.type;
         if (!exploree) cls += " carte-inexploree";
         if (selected)  cls += " carte-selectionnee";
-        html += '<div class="' + cls + '" onclick="clicZoneCarte(\'' + zoneId + '\')">';
-        html += '<span class="carte-icone">' + zone.icone + '</span>';
+        if (locked)    cls += " carte-verrouillee";
+        html += '<div class="' + cls + '" onclick="clicZoneCarte(\'' + zoneId + '\')" title="' + (locked ? "Train an Explorator to unlock" : "") + '">';
+        html += '<span class="carte-icone">' + (locked ? "🔒" : zone.icone) + '</span>';
         html += '<span class="carte-nom">' + zone.nom + '</span>';
         if (inProgress) html += '<span class="carte-badge-encours">⏳</span>';
         html += '</div>';
@@ -1858,12 +1971,9 @@ function renduCarteDetail() {
 function renduCarte(u) {
   const el = document.getElementById("explo-map-section");
   if (!el) return;
-  if (!u || !u.explorateurPresent) {
-    el.innerHTML = '<p class="explo-map-hint">Train an <strong>Explorator</strong> in the Job Center to unlock the map.</p>';
-    return;
-  }
   if (carteDirty || !document.getElementById("carte-grille")) {
     el.innerHTML =
+      (!u || !u.explorateurPresent ? '<p class="explo-map-hint">Train an <strong>Explorator</strong> in the Job Center to unlock other zones.</p>' : '') +
       '<div class="carte-grille" id="carte-grille"></div>' +
       '<div class="carte-col-lbls" id="carte-col-lbls"></div>';
     const clEl = document.getElementById("carte-col-lbls");
@@ -2054,6 +2164,10 @@ function retirerKittySlot(campId, slotIndex) {
 function clicZoneCarte(zoneId) {
   const z = ZONES_CARTE[zoneId];
   if (!z) return;
+  if (z.type !== "home" && !explorateurPresent()) {
+    afficherNotification("🧭 Train an Explorator in the Job Center to unlock this zone.");
+    return;
+  }
   carteZoneSelectionnee = (carteZoneSelectionnee === zoneId) ? null : zoneId;
   if (carteZoneSelectionnee && !carteExploSlots[zoneId]) {
     carteExploSlots[zoneId] = new Array(z.slots).fill(null);
@@ -2402,13 +2516,12 @@ function renduModalJC() {
     }
   } else if (jcModalOuvert.mode === "manager") {
     const famille = jcModalOuvert.famille;
-    const metierParFamille = { wood: "lumberjack", food: "farmer", sawmill: "carpenter", catchen: "chef" };
-    const metierId = metierParFamille[famille];
+    const metiersEligibles = METIER_PAR_FAMILLE[famille] || [];
     if (titreEl) titreEl.textContent = "👤 Assign a Manager";
     const dejaMgr = new Set(Object.values(etat.managers).filter(function(v) { return v !== null && v !== undefined; }));
     {
       const eligibles = etat.kittiesData.reduce(function(acc, k, i) {
-        if ((k.metier === metierId || k.metier === "gang-leader") && !dejaMgr.has(i)) acc.push(i);
+        if ((metiersEligibles.includes(k.metier) || k.metier === "gang-leader") && !dejaMgr.has(i) && !kittyIsInWorkerSlot(i)) acc.push(i);
         return acc;
       }, []);
       if (eligibles.length === 0) {
@@ -2417,11 +2530,16 @@ function renduModalJC() {
         eligibles.forEach(function(idx) {
           const k = etat.kittiesData[idx];
           const m = METIERS[k.metier];
+          const bonus = ((k.managerMult || 2) * jobLevelMultiplier(k)).toFixed(2);
           html += '<div class="jc-modal-kitty" onclick="assignerManager(\'' + famille + '\',' + idx + ')">';
           html += '<div class="jc-modal-kitty-info">';
           html += '<span class="jc-modal-kitty-nom">' + k.nom + '</span>';
           html += '<span class="jc-modal-kitty-tier">' + (m ? m.emoji + " " + m.nom : k.metier) + '</span>';
-          html += '</div></div>';
+          html += '</div>';
+          html += '<div class="jc-modal-kitty-bonus">';
+          html += '<div class="jc-modal-kitty-bonus-ligne">×' + bonus + ' <span class="jc-modal-kitty-bonus-label">production speed</span></div>';
+          html += '</div>';
+          html += '</div>';
         });
       }
     }
@@ -2473,6 +2591,7 @@ function terminerFormation() {
     if (metierId === "explorator") {
       afficherNotification("🗺️ Exploration map unlocked!");
       ajouterLog("unlock", "🗺️ The exploration map is now available in the Explorations tab.");
+      carteDirty = true;
     }
   }
   if (!etat.managersDebloques) {
@@ -2506,14 +2625,13 @@ function renderManagerSlot(famille) {
   }
   el.style.display = "flex";
   const managerIdx = etat.managers[famille];
-  const metierParFamille = { wood: "lumberjack", food: "farmer", sawmill: "carpenter", catchen: "chef" };
-  const metierAttendu = metierParFamille[famille];
+  const metiersEligibles = METIER_PAR_FAMILLE[famille] || [];
 
   // Resolve actual state: filled (valid manager) or empty
   let kitty = null;
   if (managerIdx !== null && managerIdx !== undefined) {
     const k = etat.kittiesData[managerIdx];
-    if (k && (k.metier === metierAttendu || k.metier === "gang-leader")) kitty = k;
+    if (k && (metiersEligibles.includes(k.metier) || k.metier === "gang-leader")) kitty = k;
     else etat.managers[famille] = null;
   }
 
@@ -2594,19 +2712,28 @@ function renduModalWorker() {
   const conteneur = document.getElementById("worker-modal-kitties");
   if (!conteneur || !workerModalOuvert) return;
   let html = "";
-  etat.kittiesData.forEach(function(k, i) {
+  const ordre = etat.kittiesData.map(function(k, i) { return { k: k, i: i }; });
+  ordre.sort(function(a, b) { return Math.pow(1.1, b.k.niveau) - Math.pow(1.1, a.k.niveau); });
+  ordre.forEach(function(entry) {
+    const k = entry.k, i = entry.i;
     const onExplo    = kittyIsOnExpedition(i);
     const inWorker   = kittyIsInWorkerSlot(i);
     const inTraining = kittyIsInTraining(i);
-    const disabled   = onExplo || inWorker || inTraining;
-    const status     = onExplo ? "on expedition" : inTraining ? "in training" : (inWorker ? "assigned to work" : "");
+    const isManager  = kittyEstManager(i);
+    const disabled   = onExplo || inWorker || inTraining || isManager;
+    const status     = onExplo ? "on expedition" : inTraining ? "in training" : isManager ? "assigned as manager" : (inWorker ? "assigned to work" : "");
+    const prodMult   = Math.pow(1.1, k.niveau);
     html += '<div class="worker-modal-kitty' + (disabled ? ' worker-modal-kitty-disabled' : '') + '"' +
             (disabled ? '' : ' onclick="assignerWorkerSlot(' + i + ')"') + '>';
     html += '<span class="worker-modal-kitty-emoji">' + KITTY_ICON + '</span>';
     html += '<div class="worker-modal-kitty-info">';
     html += '<span class="worker-modal-kitty-nom">' + k.nom + '</span>';
     if (status) html += '<span class="worker-modal-kitty-status">' + status + '</span>';
-    html += '</div></div>';
+    html += '</div>';
+    html += '<div class="worker-modal-kitty-bonus">';
+    html += '<div class="worker-modal-kitty-bonus-ligne">📦 ×' + prodMult.toFixed(2) + ' <span class="worker-modal-kitty-bonus-label">production</span></div>';
+    html += '</div>';
+    html += '</div>';
   });
   conteneur.innerHTML = html || '<p class="worker-modal-vide">No free kitties available.</p>';
 }
@@ -3010,10 +3137,11 @@ function tick() {
     if (etat.pebbles >= 1) {
       etat.brickBloquee = false;
       const dt_bf = vitesse * TICK_DT;
+      const mult   = multiplicateurFamille("brickfactory");
       etat.workers.brickfactory.forEach(function(slot) {
         if (slot.kittyIndex === null) return;
         const prev = slot.progress;
-        slot.progress += dt_bf / CONFIG.brickfactory.secondesParBrique;
+        slot.progress += mult * dt_bf / CONFIG.brickfactory.secondesParBrique;
         etat.pebbles = Math.max(0, etat.pebbles - (slot.progress - prev) * (CONFIG.brickfactory.secondesParBrique / CONFIG.brickfactory.secondesParPebble));
         if (slot.progress >= 1) {
           const bricks = Math.floor(slot.progress);
@@ -3138,10 +3266,11 @@ function simulerTickHorsLigne(dt) {
   if (allocationCount("brickfactory") > 0) {
     if (etat.pebbles >= 1) {
       etat.brickBloquee = false;
+      const mult = multiplicateurFamille("brickfactory");
       etat.workers.brickfactory.forEach(function(slot) {
         if (slot.kittyIndex === null) return;
         const prev = slot.progress;
-        slot.progress += dt / CONFIG.brickfactory.secondesParBrique;
+        slot.progress += mult * dt / CONFIG.brickfactory.secondesParBrique;
         etat.pebbles = Math.max(0, etat.pebbles - (slot.progress - prev) * (CONFIG.brickfactory.secondesParBrique / CONFIG.brickfactory.secondesParPebble));
         if (slot.progress >= 1) { const b = Math.floor(slot.progress); slot.progress -= b; etat.pebbleBricks += b; }
       });
@@ -3278,8 +3407,33 @@ function afficherResumeAbsence(resume) {
 // 12. STORY MODALS
 // ════════════════════════════════════════════════════════════
 
+const STORY_IMAGES = {
+  "ecran-intro":    "Intro.png",
+  "ecran-story-3":  "Story 3.png",
+  "ecran-story-4":  "Story 4.png",
+  "ecran-story-6b": "Story 6b.png"
+};
+
 function fermerModal(id) { document.getElementById(id).style.display = "none"; }
-function afficherModal(id) { document.getElementById(id).style.display = "flex"; }
+function afficherModal(id) {
+  const el = document.getElementById(id);
+  el.style.display = "flex";
+  const boite = el.querySelector(".intro-boite");
+  const src = STORY_IMAGES[id];
+  if (boite) {
+    let img = boite.querySelector(".story-image");
+    if (src) {
+      if (!img) {
+        img = document.createElement("img");
+        img.className = "story-image";
+        boite.insertBefore(img, boite.firstChild);
+      }
+      img.src = "img/Story Scenes/" + src;
+    } else if (img) {
+      img.remove();
+    }
+  }
+}
 
 function verifierStoryModals() {
   if (etat.chatons === 1 && !localStorage.getItem("story1Vue")) {

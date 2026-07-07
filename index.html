@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0015" />
+  <link rel="stylesheet" href="style.css?v=0.0016" />
 </head>
 <body>
 
@@ -134,7 +134,7 @@
   <header class="header">
     <div class="titre-zone">
       <h1 class="titre"><img class="titre-icone" src="img/interface/Gang_Final.png" alt="Cat Inc"> Cat Inc</h1>
-      <button class="bouton-reset" onclick="reset()">↺ Start over</button>
+      <button class="bouton-settings" onclick="ouvrirModalSettings()" title="Settings">⚙️</button>
     </div>
     <div class="zone-sequence">
       <button id="bouton-vitesse" onclick="cyclerVitesse()">1×</button>
@@ -265,207 +265,183 @@
       </div>
       <button class="btn-unaffect-all" onclick="deallouerTous()">↩ Unaffect all workers</button>
     </div>
-    <div class="grille grille-2col">
+    <section class="panneau panneau-large" id="section-work-pairs">
 
-      <!-- Cathering -->
-      <section class="panneau" id="section-cathering">
-        <h2 class="panneau-titre">🐾 Cathering</h2>
-
-        <!-- WOOD family -->
-        <div id="famille-wood" class="famille-section">
-          <div class="cathering-famille-header"><span>🪵 Wood</span></div>
-          <div id="manager-slot-wood" class="manager-slot-conteneur" style="display:none"></div>
-
-          <div class="bloc-action" id="bloc-woodcatting">
-            <div class="bloc-entete bloc-entete-sprite">
-              <img class="work-sprite" src="img/resources/Cardboard Pieces_Final.png" alt="Cardboard Pieces">
-              <div class="bloc-entete-textes">
-                <span class="bloc-nom">Cardboard Pieces</span>
-                <span class="bloc-desc">1 Cardboard Piece / 60s per worker</span>
+      <!-- WOOD group: Wood column (raw) linked to Sawmill column (processed) -->
+      <div id="famille-wood" class="famille-pair-group">
+        <div class="pair-card">
+          <div class="pair-col pair-col-raw">
+            <div class="pair-col-header">
+              <span class="pair-col-titre">🪵 Wood</span>
+              <div id="manager-slot-wood" class="manager-slot-conteneur" style="display:none"></div>
+            </div>
+            <div class="pair-row">
+              <img class="pair-icon" src="img/resources/Cardboard Pieces_Final.png" alt="Cardboard Pieces">
+              <div class="pair-info">
+                <span class="pair-qty" id="pqty-cardboardPieces">0</span>
+                <span class="pair-nom">Cardboard Pieces <span class="pair-temps">60s</span></span>
+                <span class="pair-rate" id="prate-cardboardPieces"></span>
+              </div>
+              <div class="worker-slots-row pair-workers">
+                <div class="worker-slot" id="worker-slot-woodcatting-0"></div>
+                <div class="worker-slot" id="worker-slot-woodcatting-1"></div>
               </div>
             </div>
-            <div class="worker-slots-row">
-              <div class="worker-slot" id="worker-slot-woodcatting-0"></div>
-              <div class="worker-slot" id="worker-slot-woodcatting-1"></div>
-            </div>
-          </div>
-
-          <div id="sep-basicWoodcatting" style="display:none">
-            <hr class="tier-separator" />
-            <div class="bloc-action" id="bloc-basicWoodcatting">
-              <div class="bloc-entete bloc-entete-sprite">
-                <img class="work-sprite" src="img/resources/Basic Wood_Final.png" alt="Basic Wood">
-                <div class="bloc-entete-textes">
-                  <span class="bloc-nom">Basic Wood</span>
-                  <span class="bloc-desc">1 basic wood / 600s per worker</span>
-                </div>
+            <div class="pair-row" id="sep-basicWoodcatting" style="display:none">
+              <img class="pair-icon" src="img/resources/Basic Wood_Final.png" alt="Basic Wood">
+              <div class="pair-info">
+                <span class="pair-qty" id="pqty-basicWood">0</span>
+                <span class="pair-nom">Basic Wood <span class="pair-temps">600s</span></span>
+                <span class="pair-rate" id="prate-basicWood"></span>
               </div>
-              <div class="worker-slots-row">
+              <div class="worker-slots-row pair-workers">
                 <div class="worker-slot" id="worker-slot-basicWoodcatting-0"></div>
                 <div class="worker-slot" id="worker-slot-basicWoodcatting-1"></div>
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- FOOD family -->
-        <div id="famille-food" class="famille-section" style="display:none">
-          <div class="cathering-famille-header"><span>🌿 Food</span></div>
-          <div id="manager-slot-food" class="manager-slot-conteneur" style="display:none"></div>
-
-          <div class="bloc-action" id="bloc-grasscatting">
-            <div class="bloc-entete bloc-entete-sprite">
-              <img class="work-sprite" src="img/resources/Catnip_Final.png" alt="Catnip">
-              <div class="bloc-entete-textes">
-                <span class="bloc-nom">Grasscatting</span>
-                <span class="bloc-desc">1 catnip / 60s per worker</span>
+          <div class="pair-col pair-col-proc">
+            <div class="pair-col-header">
+              <span class="pair-col-titre">🪚 Sawmill</span>
+              <div id="manager-slot-sawmill" class="manager-slot-conteneur" style="display:none"></div>
+            </div>
+            <div class="pair-row" id="pairside-sawmill">
+              <img class="pair-icon" src="img/resources/Cardboard Plank_Final.png" alt="Cardboard Plank">
+              <div class="pair-info">
+                <span class="pair-qty" id="pqty-cardboardPlanks">0</span>
+                <span class="pair-nom">Cardboard Planks <span class="pair-temps">600s</span> <span class="pair-feed" id="pfeed-sawmill"></span></span>
+                <span class="pair-rate" id="prate-cardboardPlanks"></span>
+              </div>
+              <div class="worker-slots-row pair-workers">
+                <div class="worker-slot" id="worker-slot-sawmill-0"></div>
+                <div class="worker-slot" id="worker-slot-sawmill-1"></div>
               </div>
             </div>
-            <div class="worker-slots-row">
-              <div class="worker-slot" id="worker-slot-grasscatting-0"></div>
-              <div class="worker-slot" id="worker-slot-grasscatting-1"></div>
+            <div class="pair-row" id="pairside-basicSawmill" style="display:none">
+              <img class="pair-icon" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
+              <div class="pair-info">
+                <span class="pair-qty" id="pqty-basicWoodPlanks">0</span>
+                <span class="pair-nom">Basic Wood Planks <span class="pair-temps">6000s</span> <span class="pair-feed" id="pfeed-basicSawmill"></span></span>
+                <span class="pair-rate" id="prate-basicWoodPlanks"></span>
+              </div>
+              <div class="worker-slots-row pair-workers">
+                <div class="worker-slot" id="worker-slot-basicSawmill-0"></div>
+                <div class="worker-slot" id="worker-slot-basicSawmill-1"></div>
+              </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div id="sep-fishcatting" style="display:none">
-            <div class="bloc-action" id="bloc-fishcatting">
-              <div class="bloc-entete bloc-entete-sprite">
-                <span class="work-sprite" style="font-size:2rem;line-height:1">🐟</span>
-                <div class="bloc-entete-textes">
-                  <span class="bloc-nom">Anchovy Fishing</span>
-                  <span class="bloc-desc">1 anchovy / 600s per worker</span>
-                </div>
+      <!-- FOOD group: Food column (raw) linked to Catchen column (processed) -->
+      <div id="famille-food" class="famille-pair-group" style="display:none">
+        <div class="pair-card">
+          <div class="pair-col pair-col-raw">
+            <div class="pair-col-header">
+              <span class="pair-col-titre">🌿 Food</span>
+              <div id="manager-slot-food" class="manager-slot-conteneur" style="display:none"></div>
+            </div>
+            <div class="pair-row">
+              <img class="pair-icon" src="img/resources/Catnip_Final.png" alt="Catnip">
+              <div class="pair-info">
+                <span class="pair-qty" id="pqty-catnip">0</span>
+                <span class="pair-nom">Catnip <span class="pair-temps">60s</span></span>
+                <span class="pair-rate" id="prate-catnip"></span>
               </div>
-              <div class="worker-slots-row">
+              <div class="worker-slots-row pair-workers">
+                <div class="worker-slot" id="worker-slot-grasscatting-0"></div>
+                <div class="worker-slot" id="worker-slot-grasscatting-1"></div>
+              </div>
+            </div>
+            <div class="pair-row" id="sep-fishcatting" style="display:none">
+              <span class="pair-icon pair-icon-emoji">🐟</span>
+              <div class="pair-info">
+                <span class="pair-qty" id="pqty-anchovy">0</span>
+                <span class="pair-nom">Anchovy <span class="pair-temps">600s</span></span>
+                <span class="pair-rate" id="prate-anchovy"></span>
+              </div>
+              <div class="worker-slots-row pair-workers">
                 <div class="worker-slot" id="worker-slot-fishcatting-0"></div>
                 <div class="worker-slot" id="worker-slot-fishcatting-1"></div>
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- ROCK family -->
-        <div id="famille-rock" class="famille-section" style="display:none">
-          <div class="cathering-famille-header"><span>🪨 Rock</span></div>
-          <div id="manager-slot-rock" class="manager-slot-conteneur" style="display:none"></div>
-
-          <div class="bloc-action" id="bloc-pebblegathering">
-            <div class="bloc-entete bloc-entete-sprite">
-              <img class="work-sprite" src="img/resources/Pebbles_Final.png" alt="Pebbles">
-              <div class="bloc-entete-textes">
-                <span class="bloc-nom">Gathering Pebbles</span>
-                <span class="bloc-desc">1 pebble / 60s per worker</span>
+          <div class="pair-col pair-col-proc">
+            <div class="pair-col-header">
+              <span class="pair-col-titre">🍳 Catchen</span>
+              <div id="manager-slot-catchen" class="manager-slot-conteneur" style="display:none"></div>
+            </div>
+            <div class="pair-row" id="pairside-catchen">
+              <img class="pair-icon" src="img/resources/Catnip Salad_Final.png" alt="Catnip Salad">
+              <div class="pair-info">
+                <span class="pair-qty" id="pqty-salads">0</span>
+                <span class="pair-nom">Salads <span class="pair-temps">600s</span> <span class="pair-feed" id="pfeed-catchen"></span></span>
+                <span class="pair-rate" id="prate-salads"></span>
+              </div>
+              <div class="worker-slots-row pair-workers">
+                <div class="worker-slot" id="worker-slot-catchen-0"></div>
+                <div class="worker-slot" id="worker-slot-catchen-1"></div>
               </div>
             </div>
-            <div class="worker-slots-row">
-              <div class="worker-slot" id="worker-slot-pebblegathering-0"></div>
-              <div class="worker-slot" id="worker-slot-pebblegathering-1"></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Paw-cessing -->
-      <section class="panneau" id="section-pawcessing">
-        <h2 class="panneau-titre">⚙️ Paw-cessing</h2>
-
-        <!-- SAWMILL family -->
-        <div id="famille-sawmill" class="famille-section">
-          <div class="cathering-famille-header"><span>🪚 Sawmill</span></div>
-          <div id="manager-slot-sawmill" class="manager-slot-conteneur" style="display:none"></div>
-          <div class="bloc-action" id="bloc-sawmill">
-            <div class="bloc-entete bloc-entete-sprite">
-              <img class="work-sprite" src="img/resources/Cardboard Plank_Final.png" alt="Cardboard Plank">
-              <div class="bloc-entete-textes">
-                <span class="bloc-nom">Cardboard Plank</span>
-                <span class="bloc-desc">600s + 10 📦 per worker → 1 plank</span>
+            <div class="pair-row" id="pairside-grilledAnchovy" style="display:none">
+              <span class="pair-icon pair-icon-emoji">🍟</span>
+              <div class="pair-info">
+                <span class="pair-qty" id="pqty-grilledAnchovy">0</span>
+                <span class="pair-nom">Grilled Anchovy <span class="pair-temps">6000s</span> <span class="pair-feed" id="pfeed-grilledAnchovy"></span></span>
+                <span class="pair-rate" id="prate-grilledAnchovy"></span>
               </div>
-            </div>
-            <div class="worker-slots-row">
-              <div class="worker-slot" id="worker-slot-sawmill-0"></div>
-              <div class="worker-slot" id="worker-slot-sawmill-1"></div>
-            </div>
-            <p class="info-subtile" id="statut-sawmill"></p>
-          </div>
-
-          <div id="sep-basicSawmill" style="display:none">
-            <hr class="tier-separator" />
-            <div class="bloc-action" id="bloc-basicSawmill">
-              <div class="bloc-entete bloc-entete-sprite">
-                <img class="work-sprite" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
-                <div class="bloc-entete-textes">
-                  <span class="bloc-nom">Basic Wood Plank</span>
-                  <span class="bloc-desc">6000s + 10 🪵 per worker → 1 plank</span>
-                </div>
-              </div>
-              <div class="worker-slots-row">
-                <div class="worker-slot" id="worker-slot-basicSawmill-0"></div>
-                <div class="worker-slot" id="worker-slot-basicSawmill-1"></div>
-              </div>
-              <p class="info-subtile" id="statut-basicSawmill"></p>
-            </div>
-          </div>
-        </div>
-
-        <!-- CATCHEN family -->
-        <div id="famille-catchen" class="famille-section" style="display:none">
-          <div class="cathering-famille-header"><span>🍳 Catchen</span></div>
-          <div id="manager-slot-catchen" class="manager-slot-conteneur" style="display:none"></div>
-          <div class="bloc-action" id="bloc-catchen">
-            <div class="bloc-entete bloc-entete-sprite">
-              <img class="work-sprite" src="img/resources/Catnip Salad_Final.png" alt="Catnip Salad">
-              <div class="bloc-entete-textes">
-                <span class="bloc-nom">Salad</span>
-                <span class="bloc-desc">600s + 10 🌿 per worker → 1 salad</span>
-              </div>
-            </div>
-            <div class="worker-slots-row">
-              <div class="worker-slot" id="worker-slot-catchen-0"></div>
-              <div class="worker-slot" id="worker-slot-catchen-1"></div>
-            </div>
-            <p class="info-subtile" id="statut-catchen"></p>
-          </div>
-
-          <div id="sep-grilled-anchovy" style="display:none">
-            <div class="bloc-action" id="bloc-grilled-anchovy">
-              <div class="bloc-entete bloc-entete-sprite">
-                <span class="work-sprite" style="font-size:2rem;line-height:1">🍟</span>
-                <div class="bloc-entete-textes">
-                  <span class="bloc-nom">Grilled Anchovy</span>
-                  <span class="bloc-desc">6000s + 10 🐟 per worker → 1 grilled anchovy</span>
-                </div>
-              </div>
-              <div class="worker-slots-row">
+              <div class="worker-slots-row pair-workers">
                 <div class="worker-slot" id="worker-slot-grilledAnchovy-0"></div>
                 <div class="worker-slot" id="worker-slot-grilledAnchovy-1"></div>
               </div>
-              <p class="info-subtile" id="statut-grilled-anchovy"></p>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- PAWSONRY family -->
-        <div id="famille-pawsonry" class="famille-section" style="display:none">
-          <div class="cathering-famille-header"><span>🪨 Pawsonry</span></div>
-          <div id="manager-slot-pawsonry" class="manager-slot-conteneur" style="display:none"></div>
-          <div class="bloc-action" id="bloc-brickfactory">
-            <div class="bloc-entete bloc-entete-sprite">
-              <img class="work-sprite" src="img/resources/Pebble Brick_Final.png" alt="Pebble Brick">
-              <div class="bloc-entete-textes">
-                <span class="bloc-nom">Pebble Brick</span>
-                <span class="bloc-desc">600s + 10 🪨 per worker → 1 brick</span>
+      <!-- ROCK group: Rock column (raw) linked to Pawsonry column (processed) -->
+      <div id="famille-rock" class="famille-pair-group" style="display:none">
+        <div class="pair-card">
+          <div class="pair-col pair-col-raw">
+            <div class="pair-col-header">
+              <span class="pair-col-titre">🪨 Rock</span>
+              <div id="manager-slot-rock" class="manager-slot-conteneur" style="display:none"></div>
+            </div>
+            <div class="pair-row">
+              <img class="pair-icon" src="img/resources/Pebbles_Final.png" alt="Pebbles">
+              <div class="pair-info">
+                <span class="pair-qty" id="pqty-pebbles">0</span>
+                <span class="pair-nom">Pebbles <span class="pair-temps">60s</span></span>
+                <span class="pair-rate" id="prate-pebbles"></span>
+              </div>
+              <div class="worker-slots-row pair-workers">
+                <div class="worker-slot" id="worker-slot-pebblegathering-0"></div>
+                <div class="worker-slot" id="worker-slot-pebblegathering-1"></div>
               </div>
             </div>
-            <div class="worker-slots-row">
-              <div class="worker-slot" id="worker-slot-brickfactory-0"></div>
-              <div class="worker-slot" id="worker-slot-brickfactory-1"></div>
+          </div>
+          <div class="pair-col pair-col-proc">
+            <div class="pair-col-header">
+              <span class="pair-col-titre">🧱 Pawsonry</span>
+              <div id="manager-slot-pawsonry" class="manager-slot-conteneur" style="display:none"></div>
             </div>
-            <p class="info-subtile" id="statut-brickfactory"></p>
+            <div class="pair-row" id="pairside-brickfactory">
+              <img class="pair-icon" src="img/resources/Pebble Brick_Final.png" alt="Pebble Brick">
+              <div class="pair-info">
+                <span class="pair-qty" id="pqty-pebbleBricks">0</span>
+                <span class="pair-nom">Pebble Bricks <span class="pair-temps">600s</span> <span class="pair-feed" id="pfeed-brickfactory"></span></span>
+                <span class="pair-rate" id="prate-pebbleBricks"></span>
+              </div>
+              <div class="worker-slots-row pair-workers">
+                <div class="worker-slot" id="worker-slot-brickfactory-0"></div>
+                <div class="worker-slot" id="worker-slot-brickfactory-1"></div>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
 
-    </div>
+    </section>
   </div> <!-- /contenu-work -->
 
   <!-- CONTENU BUILDINGS -->
@@ -601,6 +577,25 @@
 
   </div> <!-- /contenu-principal -->
 
+  <!-- MODAL SETTINGS -->
+  <div id="settings-modal" class="explo-modal" style="display:none">
+    <div class="explo-modal-overlay" onclick="fermerModalSettings()"></div>
+    <div class="explo-modal-panneau">
+      <div class="explo-modal-header">
+        <span class="explo-modal-titre">⚙️ Settings</span>
+        <button class="explo-modal-close" onclick="fermerModalSettings()">✕</button>
+      </div>
+      <div class="settings-corps">
+        <button class="settings-btn" onclick="sauvegarderManuel()">💾 Save now</button>
+        <button class="settings-btn" onclick="exporterSauvegarde()">⬇️ Export save (.txt)</button>
+        <button class="settings-btn" onclick="document.getElementById('import-fichier').click()">⬆️ Import save (.txt)</button>
+        <input type="file" id="import-fichier" accept=".txt" style="display:none" onchange="importerSauvegarde(event)">
+        <div class="settings-separateur"></div>
+        <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL JOB CENTER -->
   <div id="jc-modal" class="explo-modal" style="display:none">
     <div class="explo-modal-overlay" onclick="fermerModalJC()"></div>
@@ -637,6 +632,6 @@
     </div>
   </div>
 
-  <script src="jeu.js?v=0.0015"></script>
+  <script src="jeu.js?v=0.0016"></script>
 </body>
 </html>
