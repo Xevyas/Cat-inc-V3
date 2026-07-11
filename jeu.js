@@ -4567,13 +4567,13 @@ const STORY_IMAGES = {
 
 const STORIES = [
   { id: "ecran-intro",    nom: "Intro",    flag: "introVue" },
-  { id: "ecran-story-1",  nom: "Story 1",  flag: "story1Vue" },
-  { id: "ecran-story-2",  nom: "Story 2",  flag: "story2Vue" },
-  { id: "ecran-story-3",  nom: "Story 3",  flag: "story3Vue" },
-  { id: "ecran-story-4",  nom: "Story 4",  flag: "story4Vue" },
-  { id: "ecran-story-5",  nom: "Story 5",  flag: "story5Vue" },
-  { id: "ecran-story-6a",    nom: "Story 6a",    flag: "story6aVue"    },
-  { id: "ecran-story-6b",    nom: "Story 6b",    flag: "story6bVue"    },
+  { id: "ecran-story-1",  nom: "Bernardo plan begins", flag: "story1Vue" },
+  { id: "ecran-story-2",  nom: "Mochi joins the gang", flag: "story2Vue" },
+  { id: "ecran-story-3",  nom: "The adventure begins",  flag: "story3Vue" },
+  { id: "ecran-story-4",  nom: "Our first creation",    flag: "story4Vue" },
+  { id: "ecran-story-5",  nom: "Gang on the rise",      flag: "story5Vue" },
+  { id: "ecran-story-6a", nom: "What's that thing?",    flag: "story6aVue" },
+  { id: "ecran-story-6b", nom: "A job for everyone",    flag: "story6bVue" },
   { id: "ecran-story-salad", nom: "Story Salad", flag: "storySaladVue" },
   { id: "ecran-story-seminar", nom: "Story Seminar", flag: "storySeminarVue" }
 ];
