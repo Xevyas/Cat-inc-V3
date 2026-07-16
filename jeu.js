@@ -51,39 +51,39 @@ function kittyIconHtml(kitty) {
 const OBJECTIFS = [
   // ── Kitties
   {
-    id: "firstKitty", label: "Catch your first kitty",
+    id: "firstKitty", label: "Catch your first cat",
     visible:  function(e) { return true; },
     accompli: function(e) { return e.chatons >= 1; }
   },
   {
-    id: "secondKitty", label: "Catch a second kitty",
+    id: "secondKitty", label: "Catch a second cat",
     visible:  function(e) { return e.chatons >= 1; },
     accompli: function(e) { return e.chatons >= 2; }
   },
   {
-    id: "thirdKitty", label: "Catch your third kitty",
+    id: "thirdKitty", label: "Catch your third cat",
     visible:  function(e) { return e.chatons >= 2; },
     accompli: function(e) { return e.chatons >= 3; }
   },
   {
-    id: "fiveKitties", label: "Recruit 5 kitties to unlock Grasscatting",
+    id: "fiveKitties", label: "Recruit 5 cats to unlock Grasscatting",
     visible:  function(e) { return e.chatons >= 3; },
     accompli: function(e) { return e.chatons >= 5; }
   },
   {
-    id: "sixKitties", label: "Recruit 6 kitties to unlock Explorations",
+    id: "sixKitties", label: "Recruit 6 cats to unlock Explorations",
     visible:  function(e) { return e.chatons >= 5; },
     accompli: function(e) { return e.chatons >= 6; }
   },
   {
-    id: "sevenKitties", label: "Recruit 7 kitties to unlock Pebble Gathering",
+    id: "sevenKitties", label: "Recruit 7 cats to unlock Pebble Gathering",
     visible:  function(e) { return e.chatons >= 6; },
     accompli: function(e) { return e.chatons >= 7; }
   },
 
   // ── Cardboard & Buildings
   {
-    id: "firstWoodcatter", label: "Put your first kitty to work",
+    id: "firstWoodcatter", label: "Put your first cat to work",
     visible:  function(e) { return e.chatons >= 3; },
     accompli: function(e) { return allocationCount("woodcatting") >= 1; }
   },
@@ -105,7 +105,7 @@ const OBJECTIFS = [
     accompli: function(e) { return e.cardboardPiecesTotalRecolte >= CONFIG.sawmill.deblocageA; }
   },
   {
-    id: "firstSawmillWorker", label: "Assign a kitty to the Sawmill",
+    id: "firstSawmillWorker", label: "Assign a cat to the Sawmill",
     visible:  function(e) { return e.cardboardPiecesTotalRecolte >= CONFIG.sawmill.deblocageA; },
     accompli: function(e) { return allocationCount("sawmill") >= 1; }
   },
@@ -122,7 +122,7 @@ const OBJECTIFS = [
 
   // ── Catnip & Catchen
   {
-    id: "firstGrasscatter", label: "Put a kitty to gather catnip",
+    id: "firstGrasscatter", label: "Put a cat to gather catnip",
     visible:  function(e) { return e.chatons >= 5; },
     accompli: function(e) { return allocationCount("grasscatting") >= 1; }
   },
@@ -132,7 +132,7 @@ const OBJECTIFS = [
     accompli: function(e) { return e.catnipTotalRecolte >= CONFIG.catchen.deblocageA; }
   },
   {
-    id: "firstCatchenWorker", label: "Assign a kitty to The Catchen",
+    id: "firstCatchenWorker", label: "Assign a cat to The Catchen",
     visible:  function(e) { return e.catnipTotalRecolte >= CONFIG.catchen.deblocageA; },
     accompli: function(e) { return allocationCount("catchen") >= 1; }
   },
@@ -151,7 +151,7 @@ const OBJECTIFS = [
 
   // ── Pebbles & Pawsonry
   {
-    id: "firstPebbleGatherer", label: "Assign a kitty to gather pebbles",
+    id: "firstPebbleGatherer", label: "Assign a cat to gather pebbles",
     visible:  function(e) { return e.chatons >= 7; },
     accompli: function(e) { return allocationCount("pebblegathering") >= 1; }
   },
@@ -161,7 +161,7 @@ const OBJECTIFS = [
     accompli: function(e) { return e.pebblesTotalRecolte >= CONFIG.brickfactory.deblocageA; }
   },
   {
-    id: "firstPawsonryWorker", label: "Assign a kitty to Pawsonry",
+    id: "firstPawsonryWorker", label: "Assign a cat to Pawsonry",
     visible:  function(e) { return e.pebblesTotalRecolte >= CONFIG.brickfactory.deblocageA; },
     accompli: function(e) { return allocationCount("brickfactory") >= 1; }
   },
@@ -189,19 +189,19 @@ const OBJECTIFS = [
     accompli: function(e) { return e.jobCenterConstruit; }
   },
   {
-    id: "firstJobTraining", label: "Train a kitty for their first job",
+    id: "firstJobTraining", label: "Train a cat for their first job",
     visible:  function(e) { return e.jobCenterConstruit; },
     accompli: function(e) { return e.kittiesData.some(function(k) { return k.metier !== null; }); }
   },
 
   // ── Basic Wood
   {
-    id: "firstBasicWoodGatherer", label: "Assign a kitty to gather Basic Wood",
+    id: "firstBasicWoodGatherer", label: "Assign a cat to gather Basic Wood",
     visible:  function(e) { return e.cardboardPlanks >= 10; },
     accompli: function(e) { return allocationCount("basicWoodcatting") >= 1; }
   },
   {
-    id: "firstBasicSawmill", label: "Assign a kitty to the Basic Wood Sawmill",
+    id: "firstBasicSawmill", label: "Assign a cat to the Basic Wood Sawmill",
     visible:  function(e) { return e.basicWoodTotalRecolte >= 1; },
     accompli: function(e) { return allocationCount("basicSawmill") >= 1; }
   },
@@ -269,7 +269,7 @@ const OBJECTIF_GUIDE = Object.freeze({
     return { actuel: Math.min(briques / 10, planches), cible: 1, texte: formaterNombre(briques) + "/10 bricks · " + formaterNombre(planches) + "/1 plank" };
   } },
   firstJobTraining:         { ordre: 290, onglet: "facilities",   cible: "#jc-interface",          progression: function(e) {
-    if (!e.formationEnCours) return { actuel: 0, cible: 1, texte: "Choose a kitty and a job" };
+    if (!e.formationEnCours) return { actuel: 0, cible: 1, texte: "Choose a cat and a job" };
     const ecoule = Math.min(e.formationEnCours.duree, Math.max(0, (Date.now() - e.formationEnCours.startTs) / 1000));
     return { actuel: ecoule, cible: e.formationEnCours.duree, texte: formaterTemps(Math.ceil(ecoule)) + " / " + formaterTemps(e.formationEnCours.duree) };
   } }
@@ -546,7 +546,9 @@ function terminerScouting(scoutingId) {
   if (!def || !sc) return;
   var kitty = etat.kittiesData[sc.kittyIndex];
   var kNom  = kitty ? kitty.nom : "Someone";
-  var power = kittyEP(sc.kittyIndex);
+  // Success power is frozen when each scouting run starts. The fallback keeps
+  // older saves (created before this field existed) compatible.
+  var power = Number.isFinite(sc.power) ? sc.power : kittyEP(sc.kittyIndex);
   var successChance = def.difficulte > 0 ? Math.min(1, power / def.difficulte) : 1;
   var success = Math.random() < successChance;
   if (success) {
@@ -584,7 +586,7 @@ function terminerScouting(scoutingId) {
   }
   // Auto-restart with same kitty, preserving the same effective duration
   var restartDuree = scoutingHalveTime(sc.kittyIndex) ? def.duree / 2 : def.duree;
-  etat.scoutingsEnCours[scoutingId] = { kittyIndex: sc.kittyIndex, startTs: Date.now(), duree: restartDuree };
+  etat.scoutingsEnCours[scoutingId] = { kittyIndex: sc.kittyIndex, power: kittyEP(sc.kittyIndex), startTs: Date.now(), duree: restartDuree };
   // No exploTabDirty here: the card structure is unchanged (same kitty, same scouting).
   // Timer bar and countdown are updated each tick via direct DOM in renduExplorations().
 }
@@ -599,7 +601,7 @@ function scoutingHalveTime(kittyIndex) {
 function assignerKittyScouting(scoutingId, kittyIndex) {
   var def = CONFIG.scoutings[scoutingId];
   var duree = def ? (scoutingHalveTime(kittyIndex) ? def.duree / 2 : def.duree) : 120;
-  etat.scoutingsEnCours[scoutingId] = { kittyIndex: kittyIndex, startTs: Date.now(), duree: duree };
+  etat.scoutingsEnCours[scoutingId] = { kittyIndex: kittyIndex, power: kittyEP(kittyIndex), startTs: Date.now(), duree: duree };
   exploTabDirty = true;
   sauvegarder();
   renderCampaignCards();
@@ -849,7 +851,7 @@ function basicWoodDebloquee()       { return etat.cardboardPlanks >= 10 || etat.
 function basicSawmillDebloquee()    { return etat.basicWoodTotalRecolte >= 1; }
 function catHouseDebloquee()        { return etat.basicWoodTotalRecolte >= 1 || etat.cathouseCount > 0; }
 function stoneHousesDebloques()     { return etat.pebbleBricks >= 1 || etat.stoneCathouseCount > 0 || etat.objectifsComplis.includes("firstBrick"); }
-function buildingsDebloques()       { return etat.cardboardPlanks >= 1; }
+function buildingsDebloques()       { return etat.cardboardPlanks >= 1 || etat.objectifsComplis.includes("unlockBuildings"); }
 function scierieDebloquee()         { return etat.cardboardPiecesTotalRecolte >= CONFIG.sawmill.deblocageA; }
 function brickfactoryDebloquee()    { return etat.pebblesTotalRecolte >= CONFIG.brickfactory.deblocageA; }
 function pawcessingDebloquee()      { return scierieDebloquee(); }
@@ -1032,6 +1034,13 @@ const analyserSauvegardeBrute = saveCore.analyserSauvegardeBrute;
 
 let sauvegardeVerrouillee = false; // set right before a reload we must not let a stale autosave clobber
 
+function jouerSonAffectation() {
+  const audio = globalThis.CatInc && globalThis.CatInc.audio;
+  if (audio && typeof audio.playCatAssignment === "function") {
+    audio.playCatAssignment(etat.volumeEffetsSonores);
+  }
+}
+
 function conserverSauvegardeRecuperation(raw, raison) {
   try {
     localStorage.setItem(SAVE_RECOVERY_KEY, JSON.stringify({
@@ -1090,12 +1099,35 @@ function reset() {
 
 function ouvrirModalSettings() {
   document.getElementById("toggle-adjusted-time").checked = etat.afficherTempsAjusteRecrutement;
+  const sfxInput = document.getElementById("settings-sfx-volume");
+  const musicInput = document.getElementById("settings-music-volume");
+  if (sfxInput) {
+    sfxInput.value = Math.round(etat.volumeEffetsSonores * 100);
+    actualiserVolumeAudioUI("sfx", sfxInput.value);
+  }
+  if (musicInput) {
+    musicInput.value = Math.round(etat.volumeMusique * 100);
+    actualiserVolumeAudioUI("music", musicInput.value);
+  }
   ouvrirDialogueModal("settings-modal", {
     dismissible: true,
     fermer: fermerModalSettings,
     focusSelector: ".explo-modal-close",
     returnFocusSelector: ".bouton-settings"
   });
+}
+function actualiserVolumeAudioUI(canal, rawValue) {
+  const value = Math.max(0, Math.min(100, Number(rawValue) || 0));
+  const output = document.getElementById(canal === "sfx" ? "settings-sfx-volume-value" : "settings-music-volume-value");
+  if (output) output.value = Math.round(value) + "%";
+  if (output) output.textContent = Math.round(value) + "%";
+}
+function gererVolumeAudio(canal, rawValue) {
+  const value = Math.max(0, Math.min(100, Number(rawValue) || 0)) / 100;
+  if (canal === "sfx") etat.volumeEffetsSonores = value;
+  if (canal === "music") etat.volumeMusique = value;
+  actualiserVolumeAudioUI(canal, value * 100);
+  sauvegarder();
 }
 function basculerAffichageTempsAjuste(checked) {
   etat.afficherTempsAjusteRecrutement = checked;
@@ -1568,8 +1600,10 @@ function renduRessources(u) {
   });
 
   var boostEl = domParId("work-boost-indicator");
+  var boostActif = !!(etat.workBoostFinTs && Date.now() < etat.workBoostFinTs);
+  if (document.body) document.body.classList.toggle("work-boost-actif", boostActif);
   if (boostEl) {
-    if (etat.workBoostFinTs && Date.now() < etat.workBoostFinTs) {
+    if (boostActif) {
       var boostRestant = Math.ceil((etat.workBoostFinTs - Date.now()) / 1000);
       ecrireTexte(boostEl, "⚡ Work ×10 — " + formaterTemps(boostRestant));
       ecrireStyle(boostEl, "display", "block");
@@ -1611,7 +1645,7 @@ function renduSequence() {
   basculerClasse(btnSeq, "recruit", recruit);
   ecrireTexte(btnSeq, enCours
     ? (recruit ? formaterTemps(restant) : "Catching... " + formaterTemps(restant))
-    : (recruit ? "Recruit a Kitty" : "Catch a kitty"));
+    : (recruit ? "Recruit a Cat" : "Catch a cat"));
   ecrireStyle(domParId("conteneur-barre-sequence"), "display", enCours ? "block" : "none");
   setBarreProgress("barre-sequence", progressionSequence());
   ecrireTexte(domParId("info-sequence"), enCours ? ""
@@ -2027,6 +2061,12 @@ function renduWorkPairs(u) {
   if (showRock && u.rockcat)  renduPaireRessource(RESOURCE_PAIRS[5], u);
 }
 
+function fermerWorkDiscoveryHint() {
+  localStorage.setItem("workDetailsHintSeen", "1");
+  const indiceEl = document.getElementById("work-discovery-hint");
+  if (indiceEl) ecrireStyle(indiceEl, "display", "none");
+}
+
 // Mobile: tapping a resource icon reveals its name/time/cost tooltip (.pair-info).
 // Desktop is unaffected — that info is already shown inline there.
 (function() {
@@ -2056,9 +2096,7 @@ function renduWorkPairs(u) {
       row.classList.add("pair-info-ouverte");
       icon.setAttribute("aria-expanded", "true");
     }
-    localStorage.setItem("workDetailsHintSeen", "1");
-    const indice = document.getElementById("work-discovery-hint");
-    if (indice) indice.style.display = "none";
+    fermerWorkDiscoveryHint();
     e.stopPropagation();
   });
   document.addEventListener("click", function() {
@@ -2146,56 +2184,116 @@ function renduFacilities(u) {
         ecrireHTML(btnTC, etat.trainingCenterConstruit ? CHECK_ICON + " Built" :
           '10 <img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"> + 20 <img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">');
       }
+      const tcOverview = domParId("tc-overview");
+      const tcEntry = domParId("tc-entry");
       const tcIface = domParId("tc-interface");
-      ecrireStyle(tcIface, "display", etat.trainingCenterConstruit ? "block" : "none");
-      if (etat.trainingCenterConstruit) renduTrainingCenter();
+      const facilities = domParId("contenu-facilities");
+      if (!etat.trainingCenterConstruit) tcTrainingOuvert = false;
+      if (facilities) facilities.classList.toggle("training-center-open", !!(etat.trainingCenterConstruit && tcTrainingOuvert));
+      ecrireStyle(tcOverview, "display", tcTrainingOuvert && etat.trainingCenterConstruit ? "none" : "block");
+      ecrireStyle(tcEntry, "display", etat.trainingCenterConstruit && !tcTrainingOuvert ? "block" : "none");
+      ecrireStyle(tcIface, "display", etat.trainingCenterConstruit && tcTrainingOuvert ? "block" : "none");
+      if (etat.trainingCenterConstruit && tcTrainingOuvert) renduTrainingCenter();
     }
   }
 }
 
+function ouvrirTrainingCenter() {
+  if (!etat.trainingCenterConstruit) return;
+  tcTrainingOuvert = true;
+  _tcKey = null;
+  rendu();
+  requestAnimationFrame(function() {
+    const section = document.getElementById("section-training-center");
+    if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
+function fermerTrainingCenter() {
+  tcTrainingOuvert = false;
+  _tcKey = null;
+  rendu();
+}
+
 // ── 9f-ii. Training Center specialization
+function trainingCenterKitties() {
+  const metierOrder = Object.keys(METIERS);
+  const roster = etat.kittiesData.reduce(function(acc, k, i) {
+    if (k && k.metier && METIERS[k.metier]) acc.push({ k: k, i: i });
+    return acc;
+  }, []);
+  roster.sort(function(a, b) {
+    const aBernardo = a.k.nom === "Bernardo";
+    const bBernardo = b.k.nom === "Bernardo";
+    if (aBernardo !== bBernardo) return aBernardo ? -1 : 1;
+    const aOrder = metierOrder.indexOf(a.k.metier);
+    const bOrder = metierOrder.indexOf(b.k.metier);
+    if (aOrder !== bOrder) return aOrder - bOrder;
+    return a.i - b.i;
+  });
+  return roster;
+}
+
 function renduTrainingCenter() {
   const el = document.getElementById("tc-interface");
-  if (!el || !etat.trainingCenterConstruit) return;
+  if (!el || !etat.trainingCenterConstruit || !tcTrainingOuvert) return;
 
+  const roster = trainingCenterKitties();
+  const rosterKey = roster.map(function(entry) {
+    return entry.i + ":" + entry.k.metier + ":" + (entry.k.jobNiveau || 0);
+  }).join(",");
+  const selectedExists = roster.some(function(entry) { return entry.i === tcSpecKittySelectionne; });
+  if (!selectedExists) tcSpecKittySelectionne = roster.length > 0 ? roster[0].i : null;
   const k = tcSpecKittySelectionne !== null ? etat.kittiesData[tcSpecKittySelectionne] : null;
-  const key = (tcSpecKittySelectionne ?? '') + '|' + (k ? k.metier + '|' + k.jobNiveau : '');
+  const selectedGrid = k && SPHERE_GRIDS[k.metier];
+  const sphereKey = selectedGrid ? selectedGrid.spheres.map(function(s) {
+    return s.id + ":" + ((etat.spherePerks && etat.spherePerks[s.id]) || s.etat);
+  }).join(",") : "";
+  const key = rosterKey + '|' + (tcSpecKittySelectionne ?? '') + '|' + (k ? k.metier + '|' + k.jobNiveau : '') + '|' + sphereKey;
   if (key === _tcKey) return;
   _tcKey = key;
 
-  let html = '<div class="jc-section-titre">Job Specialization</div>';
-
-  if (tcSpecKittySelectionne !== null) {
-    const kitty = etat.kittiesData[tcSpecKittySelectionne];
-    const m   = kitty && kitty.metier ? METIERS[kitty.metier] : null;
-    const _tlvl = kitty && kitty.metier ? jobLevelInfo(kitty.metier) : { cur: 1, max: 1 };
-    html += '<div class="jc-slot-wrap">';
-    html += '<div class="jc-slot-filled" data-jc-modal-trigger="spec"' + attributsActivationClavier("Change the cat selected for specialization") + ' onclick="ouvrirModalJC(\'spec\')">';
-    html += '<span class="jc-slot-emoji">' + kittyIconHtml(kitty) + '</span>';
-    html += '<div class="jc-slot-info">';
-    html += '<span class="jc-slot-nom">' + (kitty ? kitty.nom : "?") + '</span>';
-    html += '<span class="jc-slot-metier">' + (m ? m.emoji + ' ' + m.nom : '?') + ' — Lv. ' + _tlvl.cur + ' / ' + _tlvl.max + '</span>';
-    html += '</div>';
-    html += '</div>';
-    html += '<button class="jc-slot-remove" aria-label="Remove ' + echapperAttributHtml(kitty ? kitty.nom : "cat") + ' from specialization" onclick="tcSpecKittySelectionne=null;renduTrainingCenter()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>';
-    html += '</div>';
-    // Placeholder for sphere grid (populated after innerHTML is set)
-    if (kitty && kitty.metier && SPHERE_GRIDS[kitty.metier]) {
-      html += '<div id="sphere-grid-container" class="sphere-grid-wrapper"></div>';
-    }
+  let html = '<div class="tc-workspace">';
+  html += '<div class="tc-workspace-header">';
+  html += '<button type="button" class="tc-back-btn" onclick="fermerTrainingCenter()">← Back to Facilities</button>';
+  html += '<div><div class="tc-workspace-title">Job Specialization</div><div class="tc-workspace-desc">Select a cat to review its specialization sphere.</div></div>';
+  html += '</div>';
+  html += '<div class="tc-workspace-grid">';
+  html += '<aside class="tc-roster" aria-label="Cats with jobs">';
+  html += '<div class="tc-roster-title">Cats with jobs</div>';
+  html += '<div class="tc-roster-list" role="group" aria-label="Cats with jobs">';
+  if (roster.length === 0) {
+    html += '<p class="tc-empty">Train a cat in the Job Center first.</p>';
   } else {
-    html += '<div class="jc-slot-empty" data-jc-modal-trigger="spec"' + attributsActivationClavier("Select a kitty to specialize") + ' onclick="ouvrirModalJC(\'spec\')">';
-    html += '<span class="jc-slot-plus">+</span>';
-    html += '<span class="jc-slot-label">Select a kitty</span>';
+    roster.forEach(function(entry) {
+      const kitty = entry.k;
+      const metier = METIERS[kitty.metier];
+      const level = jobLevelInfo(kitty.metier);
+      const active = entry.i === tcSpecKittySelectionne;
+      html += '<button type="button" class="tc-cat-card' + (active ? ' tc-cat-card-active' : '') + '" aria-pressed="' + (active ? 'true' : 'false') + '" onclick="selectionnerTrainingCat(' + entry.i + ')">';
+      html += '<span class="tc-cat-icon">' + kittyIconHtml(kitty) + '</span>';
+      html += '<span class="tc-cat-info"><span class="tc-cat-name">' + echapperAttributHtml(kitty.nom) + '</span><span class="tc-cat-job">' + (metier ? metier.emoji + ' ' + metier.nom : kitty.metier) + '</span></span>';
+      html += '<span class="tc-cat-level">Lv. ' + level.cur + '/' + level.max + '</span>';
+      html += '</button>';
+    });
+  }
+  html += '</div></aside>';
+  html += '<section class="tc-sphere-column" aria-label="Selected cat specialization">';
+  if (k) {
+    const metier = METIERS[k.metier];
+    const level = jobLevelInfo(k.metier);
+    html += '<div class="tc-selected-cat">';
+    html += '<div class="tc-selected-icon">' + kittyIconHtml(k) + '</div>';
+    html += '<div><div class="tc-selected-name">' + echapperAttributHtml(k.nom) + '</div><div class="tc-selected-job">' + (metier ? metier.emoji + ' ' + metier.nom : k.metier) + ' · Specialization Lv. ' + level.cur + ' / ' + level.max + '</div></div>';
     html += '</div>';
+    if (selectedGrid) html += '<div id="sphere-grid-container" class="sphere-grid-wrapper"></div>';
+    else html += '<p class="tc-empty">This job does not have a specialization sphere yet.</p>';
+  } else {
+    html += '<div class="tc-empty tc-empty-large">Select a cat to view its sphere.</div>';
   }
-
+  html += '</section></div></div>';
   el.innerHTML = html;
-
-  // Render sphere grid after setting innerHTML (grid container was just created)
-  if (k && k.metier && SPHERE_GRIDS[k.metier]) {
-    renduSphereGrid(k.metier);
-  }
+  if (k && selectedGrid) renduSphereGrid(k.metier);
 }
 
 function renduSphereGrid(jobId) {
@@ -2268,7 +2366,7 @@ function renduSphereGrid(jobId) {
         '<text x="' + s.x + '" y="' + (baseY + i * lineH + fontSize * 0.38).toFixed(1) + '"'
         + ' text-anchor="middle" font-size="' + fontSize + 'px" font-weight="900"'
         + ' font-family="\'Nunito\',sans-serif" fill="' + textColor + '" pointer-events="none">'
-        + w + '</text>'
+        + w.toUpperCase() + '</text>'
       );
     });
     parts.push('</g>');
@@ -2307,7 +2405,7 @@ function clickerSphere(sphereId) {
   var actualEtat = sphere ? ((etat.spherePerks && etat.spherePerks[sphere.id]) || sphere.etat) : null;
   var nomEl  = document.getElementById('sphere-detail-nom');
   var descEl = document.getElementById('sphere-detail-desc');
-  if (nomEl)  nomEl.textContent = sphere ? sphere.nom : '';
+  if (nomEl)  nomEl.textContent = sphere ? String(sphere.nom).toUpperCase() : '';
   if (descEl) {
     var learnHtml = '';
     if (actualEtat === 'unlocked' && sphere && sphere.cout) {
@@ -2599,7 +2697,7 @@ function renduManagement() {
     kittySelectionnee = null;
     detailKittyMobileOuvert = false;
     if (layout) layout.classList.remove("affiche-detail-mobile");
-    liste.innerHTML = etatVideHtml("Your gang is waiting", "Catch your first kitty using the button above.");
+    liste.innerHTML = etatVideHtml("Your gang is waiting", "Catch your first cat using the button above.");
     detail.innerHTML = etatVideHtml("No profile yet", "Your first recruit's details will appear here.");
     return;
   }
@@ -2922,19 +3020,19 @@ function renderCampaignCards() {
       for (let si = 0; si < zone.slots; si++) {
         const ki = slots[si];
         if (ki === null) {
-          html += '<div class="explo-slot explo-slot-empty" data-explo-trigger="zone:' + zoneId + ':' + si + '"' + attributsActivationClavier("Assign a kitty to " + zone.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExploZone(\'' + zoneId + '\',' + si + ')">';
-          html += '<div class="explo-slot-plus">+</div><div class="explo-slot-label">Add kitty</div></div>';
+          html += '<div class="explo-slot explo-slot-empty" data-explo-trigger="zone:' + zoneId + ':' + si + '"' + attributsActivationClavier("Assign a cat to " + zone.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExploZone(\'' + zoneId + '\',' + si + ')">';
+          html += '<div class="explo-slot-plus">+</div><div class="explo-slot-label">Add cat</div></div>';
         } else {
           const k = etat.kittiesData[ki];
           html += '<div class="explo-slot-wrap">';
-          html += '<div class="explo-slot explo-slot-filled" data-explo-trigger="zone:' + zoneId + ':' + si + '"' + attributsActivationClavier("Change " + (k ? k.nom : "kitty") + " in " + zone.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExploZone(\'' + zoneId + '\',' + si + ')">';
+          html += '<div class="explo-slot explo-slot-filled" data-explo-trigger="zone:' + zoneId + ':' + si + '"' + attributsActivationClavier("Change " + (k ? k.nom : "cat") + " in " + zone.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExploZone(\'' + zoneId + '\',' + si + ')">';
           html += '<span class="explo-slot-emoji">' + kittyIconHtml(k) + '</span>';
           html += '<div class="explo-slot-kitty-info">';
           html += '<span class="explo-slot-kitty-nom">' + (k ? k.nom : "?") + '</span>';
           html += '<span class="explo-slot-kitty-power">&#x26A1; EP ' + kittyEP(ki) + '</span>';
           html += '</div>';
           html += '</div>';
-          html += '<button class="explo-slot-remove" aria-label="Remove ' + echapperAttributHtml(k ? k.nom : "kitty") + ' from ' + echapperAttributHtml(zone.nom) + '" onclick="retirerKittyExploZone(\'' + zoneId + '\',' + si + ')">&#x2715;</button>';
+          html += '<button class="explo-slot-remove" aria-label="Remove ' + echapperAttributHtml(k ? k.nom : "cat") + ' from ' + echapperAttributHtml(zone.nom) + '" onclick="retirerKittyExploZone(\'' + zoneId + '\',' + si + ')">&#x2715;</button>';
           html += '</div>';
         }
       }
@@ -2946,7 +3044,7 @@ function renderCampaignCards() {
         var zoneTimeNote = zoneHalves ? ' &nbsp;&middot;&nbsp; &#x23F1; <strong>' + formaterTempsStat(zoneEffDuree) + '</strong> (' + zoneHalvesLabel + ')' : '';
         html += '<div class="explo-power-display">Exploration Power: ' + power + ' / ' + zone.difficulte + ' &#x2014; <strong>' + chance + '%</strong> success' + zoneTimeNote + '</div>';
       } else {
-        html += '<div class="explo-power-display explo-power-hint">Assign kitties to start the exploration.</div>';
+        html += '<div class="explo-power-display explo-power-hint">Assign cats to start the exploration.</div>';
       }
       const canLaunch = allFilled && !etat.exploZoneEnCours;
       if (!etat.exploZoneEnCours && etat.spherePerks && etat.spherePerks['ex-qol'] === 'learned') {
@@ -2995,7 +3093,7 @@ function renderCampaignCards() {
         const remaining = Math.max(0, inProgress.duree - elapsed);
         const progress  = Math.min(1, elapsed / inProgress.duree);
         const names     = inProgress.kittyIndices.map(function(i) { return etat.kittiesData[i] ? etat.kittiesData[i].nom : "?"; }).join(", ");
-        const power     = inProgress.kittyIndices.reduce(function(s, i) { return s + kittyEP(i); }, 0);
+        const power     = Number.isFinite(inProgress.power) ? inProgress.power : inProgress.kittyIndices.reduce(function(s, i) { return s + kittyEP(i); }, 0);
         const chance    = Math.min(100, Math.round(power / camp.difficulte * 100));
         html += '<div class="explo-meta">&#x2694;&#xFE0F; Difficulty ' + camp.difficulte + ' &nbsp;&middot;&nbsp; &#x1F431; ' + names + ' &nbsp;&middot;&nbsp; ' + chance + '% success</div>';
         html += '<div class="conteneur-barre"><div class="barre barre-explo" id="explo-barre-' + camp.id + '" style="width:' + Math.round(progress * 100) + '%"></div></div>';
@@ -3009,19 +3107,19 @@ function renderCampaignCards() {
         for (let si = 0; si < camp.slots; si++) {
           const ki = slots[si];
           if (ki === null) {
-            html += '<div class="explo-slot explo-slot-empty" data-explo-trigger="campaign:' + camp.id + ':' + si + '"' + attributsActivationClavier("Assign a kitty to " + camp.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExplo(\'' + camp.id + '\',' + si + ')">';
-            html += '<div class="explo-slot-plus">+</div><div class="explo-slot-label">Add kitty</div></div>';
+            html += '<div class="explo-slot explo-slot-empty" data-explo-trigger="campaign:' + camp.id + ':' + si + '"' + attributsActivationClavier("Assign a cat to " + camp.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExplo(\'' + camp.id + '\',' + si + ')">';
+            html += '<div class="explo-slot-plus">+</div><div class="explo-slot-label">Add cat</div></div>';
           } else {
             const k = etat.kittiesData[ki];
             html += '<div class="explo-slot-wrap">';
-            html += '<div class="explo-slot explo-slot-filled" data-explo-trigger="campaign:' + camp.id + ':' + si + '"' + attributsActivationClavier("Change " + (k ? k.nom : "kitty") + " in " + camp.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExplo(\'' + camp.id + '\',' + si + ')">';
+            html += '<div class="explo-slot explo-slot-filled" data-explo-trigger="campaign:' + camp.id + ':' + si + '"' + attributsActivationClavier("Change " + (k ? k.nom : "cat") + " in " + camp.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExplo(\'' + camp.id + '\',' + si + ')">';
             html += '<span class="explo-slot-emoji">' + kittyIconHtml(k) + '</span>';
             html += '<div class="explo-slot-kitty-info">';
             html += '<span class="explo-slot-kitty-nom">' + (k ? k.nom : "?") + '</span>';
             html += '<span class="explo-slot-kitty-power">&#x26A1; EP ' + kittyEP(ki) + '</span>';
             html += '</div>';
             html += '</div>';
-            html += '<button class="explo-slot-remove" aria-label="Remove ' + echapperAttributHtml(k ? k.nom : "kitty") + ' from ' + echapperAttributHtml(camp.nom) + '" onclick="retirerKittySlot(\'' + camp.id + '\',' + si + ')">&#x2715;</button>';
+            html += '<button class="explo-slot-remove" aria-label="Remove ' + echapperAttributHtml(k ? k.nom : "cat") + ' from ' + echapperAttributHtml(camp.nom) + '" onclick="retirerKittySlot(\'' + camp.id + '\',' + si + ')">&#x2715;</button>';
             html += '</div>';
           }
         }
@@ -3033,7 +3131,7 @@ function renderCampaignCards() {
           var campTimeNote = campHalves ? ' &nbsp;&middot;&nbsp; &#x23F1; <strong>' + formaterTempsStat(campEffDuree) + '</strong> (' + campHalvesLabel + ')' : '';
           html += '<div class="explo-power-display">Exploration Power: ' + selPower + ' / ' + camp.difficulte + ' &#x2014; <strong>' + chance + '%</strong> success' + campTimeNote + '</div>';
         } else {
-          html += '<div class="explo-power-display explo-power-hint">Click a slot to assign a kitty.</div>';
+          html += '<div class="explo-power-display explo-power-hint">Click a slot to assign a cat.</div>';
         }
         if (etat.spherePerks && etat.spherePerks['ex-qol'] === 'learned') {
           html += '<button class="btn-auto-assign" onclick="autoAssignExplo(\'campaign\',\'' + camp.id + '\')">Auto Assign</button>';
@@ -3092,7 +3190,7 @@ function renderCampaignCards() {
           var prog      = Math.min(1, elapsed / effectiveDuree);
           var k         = etat.kittiesData[running.kittyIndex];
           var kNom      = k ? k.nom : "?";
-          var kPower    = kittyEP(running.kittyIndex);
+          var kPower    = Number.isFinite(running.power) ? running.power : kittyEP(running.kittyIndex);
           scoutHtml += '<div class="explo-slots">';
           scoutHtml += '<div class="explo-slot-wrap">';
           scoutHtml += '<div class="explo-slot explo-slot-filled">';
@@ -3115,18 +3213,18 @@ function renderCampaignCards() {
           scoutHtml += '<div class="explo-slots">';
           if (stagedKi !== undefined) {
             scoutHtml += '<div class="explo-slot-wrap">';
-            scoutHtml += '<div class="explo-slot explo-slot-filled" data-explo-trigger="scouting:' + sc.id + '"' + attributsActivationClavier("Change " + (stagedK ? stagedK.nom : "kitty") + " in " + sc.nom) + ' onclick="ouvrirModalScouting(\'' + sc.id + '\')">';
+            scoutHtml += '<div class="explo-slot explo-slot-filled" data-explo-trigger="scouting:' + sc.id + '"' + attributsActivationClavier("Change " + (stagedK ? stagedK.nom : "cat") + " in " + sc.nom) + ' onclick="ouvrirModalScouting(\'' + sc.id + '\')">';
             scoutHtml += '<span class="explo-slot-emoji">' + kittyIconHtml(stagedK) + '</span>';
             scoutHtml += '<div class="explo-slot-kitty-info">';
             scoutHtml += '<span class="explo-slot-kitty-nom">' + (stagedK ? stagedK.nom : "?") + '</span>';
             scoutHtml += '<span class="explo-slot-kitty-power">&#x26A1; EP ' + selPower + '</span>';
             scoutHtml += '</div>';
             scoutHtml += '</div>';
-            scoutHtml += '<button class="explo-slot-remove" aria-label="Remove ' + echapperAttributHtml(stagedK ? stagedK.nom : "kitty") + ' from ' + echapperAttributHtml(sc.nom) + '" onclick="retirerScoutingStaging(\'' + sc.id + '\')">&#x2715;</button>';
+            scoutHtml += '<button class="explo-slot-remove" aria-label="Remove ' + echapperAttributHtml(stagedK ? stagedK.nom : "cat") + ' from ' + echapperAttributHtml(sc.nom) + '" onclick="retirerScoutingStaging(\'' + sc.id + '\')">&#x2715;</button>';
             scoutHtml += '</div>';
           } else {
-            scoutHtml += '<div class="explo-slot explo-slot-empty" data-explo-trigger="scouting:' + sc.id + '"' + attributsActivationClavier("Assign a kitty to " + sc.nom) + ' onclick="ouvrirModalScouting(\'' + sc.id + '\')">';
-            scoutHtml += '<div class="explo-slot-plus">+</div><div class="explo-slot-label">Add kitty</div></div>';
+            scoutHtml += '<div class="explo-slot explo-slot-empty" data-explo-trigger="scouting:' + sc.id + '"' + attributsActivationClavier("Assign a cat to " + sc.nom) + ' onclick="ouvrirModalScouting(\'' + sc.id + '\')">';
+            scoutHtml += '<div class="explo-slot-plus">+</div><div class="explo-slot-label">Add cat</div></div>';
           }
           scoutHtml += '</div>';
           if (selPower > 0) {
@@ -3136,7 +3234,7 @@ function renderCampaignCards() {
             var scoutTimeNote = scoutHalves ? ' &nbsp;&middot;&nbsp; &#x23F1; <strong>' + formaterTempsStat(scoutEffDuree) + '</strong> (' + scoutHalvesLabel + ')' : '';
             scoutHtml += '<div class="explo-power-display">Exploration Power: ' + selPower + ' / ' + sc.difficulte + ' &#x2014; <strong>' + chance + '%</strong> success' + scoutTimeNote + '</div>';
           } else {
-            scoutHtml += '<div class="explo-power-display explo-power-hint">Click a slot to assign a kitty.</div>';
+            scoutHtml += '<div class="explo-power-display explo-power-hint">Click a slot to assign a cat.</div>';
           }
           if (etat.spherePerks && etat.spherePerks['ex-qol'] === 'learned') {
             scoutHtml += '<button class="btn-auto-assign" onclick="autoAssignExplo(\'scouting\',\'' + sc.id + '\')">Auto Assign</button>';
@@ -3355,19 +3453,19 @@ function renduCarteDetail() {
     for (let si = 0; si < zone.slots; si++) {
       const ki = slots[si];
       if (ki === null) {
-        html += '<div class="explo-slot explo-slot-empty" data-explo-trigger="zone:' + zoneId + ':' + si + '"' + attributsActivationClavier("Assign a kitty to " + zone.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExploZone(\'' + zoneId + '\',' + si + ')">';
-        html += '<div class="explo-slot-plus">+</div><div class="explo-slot-label">Add kitty</div></div>';
+        html += '<div class="explo-slot explo-slot-empty" data-explo-trigger="zone:' + zoneId + ':' + si + '"' + attributsActivationClavier("Assign a cat to " + zone.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExploZone(\'' + zoneId + '\',' + si + ')">';
+        html += '<div class="explo-slot-plus">+</div><div class="explo-slot-label">Add cat</div></div>';
       } else {
         const k = etat.kittiesData[ki];
         html += '<div class="explo-slot-wrap">';
-        html += '<div class="explo-slot explo-slot-filled" data-explo-trigger="zone:' + zoneId + ':' + si + '"' + attributsActivationClavier("Change " + (k ? k.nom : "kitty") + " in " + zone.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExploZone(\'' + zoneId + '\',' + si + ')">';
+        html += '<div class="explo-slot explo-slot-filled" data-explo-trigger="zone:' + zoneId + ':' + si + '"' + attributsActivationClavier("Change " + (k ? k.nom : "cat") + " in " + zone.nom + ", slot " + (si + 1)) + ' onclick="ouvrirModalExploZone(\'' + zoneId + '\',' + si + ')">';
         html += '<span class="explo-slot-emoji">' + kittyIconHtml(k) + '</span>';
         html += '<div class="explo-slot-kitty-info">';
         html += '<span class="explo-slot-kitty-nom">' + (k ? k.nom : "?") + '</span>';
         html += '<span class="explo-slot-kitty-power">⚡ EP ' + kittyEP(ki) + '</span>';
         html += '</div>';
         html += '</div>';
-        html += '<button class="explo-slot-remove" aria-label="Remove ' + echapperAttributHtml(k ? k.nom : "kitty") + ' from ' + echapperAttributHtml(zone.nom) + '" onclick="retirerKittyExploZone(\'' + zoneId + '\',' + si + ')"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>';
+        html += '<button class="explo-slot-remove" aria-label="Remove ' + echapperAttributHtml(k ? k.nom : "cat") + ' from ' + echapperAttributHtml(zone.nom) + '" onclick="retirerKittyExploZone(\'' + zoneId + '\',' + si + ')"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>';
         html += '</div>';
       }
     }
@@ -3375,7 +3473,7 @@ function renduCarteDetail() {
     if (power > 0) {
       html += '<div class="explo-power-display">Exploration Power: ' + power + ' / ' + zone.difficulte + ' — <strong>' + chance + '%</strong> success</div>';
     } else {
-      html += '<div class="explo-power-display explo-power-hint">Assign kitties to start the exploration.</div>';
+      html += '<div class="explo-power-display explo-power-hint">Assign cats to start the exploration.</div>';
     }
     const canLaunch = allFilled && !etat.exploZoneEnCours;
     if (!etat.exploZoneEnCours && etat.spherePerks && etat.spherePerks['ex-qol'] === 'learned') {
@@ -3466,7 +3564,7 @@ function renduZoneInfo() {
   const scouts   = Object.values(CONFIG.scoutings).filter(function(s) { return s.zone === zoneId; });
   const unlocked = scouts.filter(function(s) { return scoutingDebloquee(s); });
   if (unlocked.length === 0) {
-    html += '<div class="zone-info-item">?</div>';
+    html += '<div class="zone-info-item">—</div>';
   } else {
     html += unlocked.map(function(s) {
       const active = !!etat.scoutingsEnCours[s.id];
@@ -3608,7 +3706,7 @@ function renduModalExplo() {
     html += '</div>';
   });
 
-  conteneurEl.innerHTML = html || '<p class="explo-vide">No kitties available.</p>';
+  conteneurEl.innerHTML = html || '<p class="explo-vide">No cats available.</p>';
 }
 
 function selectionnerKittySlot(kittyIndex) {
@@ -3619,11 +3717,12 @@ function selectionnerKittySlot(kittyIndex) {
     const alreadyStaged = scoutingsStagingKitty[scoutingId] !== undefined;
     if (!alreadyStaged && chatonsLibres() <= 0) {
       fermerModalExplo();
-      afficherNotification("⚠️ Not enough free kitties!");
+      afficherNotification("⚠️ Not enough free cats!");
       return;
     }
     scoutingsStagingKitty[scoutingId] = kittyIndex;
     exclusifyStagedKitty(kittyIndex, 'scouting', scoutingId);
+    jouerSonAffectation();
     fermerModalExplo();
     exploTabDirty = true;
     renderCampaignCards();
@@ -3637,6 +3736,7 @@ function selectionnerKittySlot(kittyIndex) {
     if (!carteExploSlots[zoneId]) carteExploSlots[zoneId] = new Array(z.slots).fill(null);
     carteExploSlots[zoneId][slotIndex] = kittyIndex;
     exclusifyStagedKitty(kittyIndex, 'zone', zoneId);
+    jouerSonAffectation();
     fermerModalExplo();
     exploTabDirty = true;
     renderCampaignCards();
@@ -3655,12 +3755,13 @@ function selectionnerKittySlot(kittyIndex) {
   const wasEmpty = exploKittiesSelectionnees[campId][slotIndex] === null;
   if (wasEmpty && totalKittiesSelectionnees() >= chatonsLibres()) {
     fermerModalExplo();
-    afficherNotification("⚠️ Not enough free kitties!");
+    afficherNotification("⚠️ Not enough free cats!");
     return;
   }
 
   exploKittiesSelectionnees[campId][slotIndex] = kittyIndex;
   exclusifyStagedKitty(kittyIndex, 'campaign', campId);
+  jouerSonAffectation();
   fermerModalExplo();
   exploTabDirty = true;
   renduExplorations(unlocks());
@@ -3720,7 +3821,8 @@ function lancerExploZone() {
   const slots = carteExploSlots[zoneId] || [];
   if (!slots.every(function(k) { return k !== null; })) return;
   var hasHalvesTime = slots.some(function(ki) { return ki !== null && scoutingHalveTime(ki); });
-  etat.exploZoneEnCours = { zoneId: zoneId, kittyIndices: slots.slice(), startTs: Date.now(), duree: hasHalvesTime ? z.duree / 2 : z.duree };
+  var launchPower = slots.reduce(function(s, ki) { return s + kittyEP(ki); }, 0);
+  etat.exploZoneEnCours = { zoneId: zoneId, kittyIndices: slots.slice(), power: launchPower, startTs: Date.now(), duree: hasHalvesTime ? z.duree / 2 : z.duree };
   carteDirty = true;
   exploTabDirty = true;
   sauvegarder(); rendu();
@@ -3731,7 +3833,7 @@ function terminerExploZone() {
   const mission = etat.exploZoneEnCours;
   const zoneId = mission.zoneId;
   const z = ZONES_CARTE[zoneId];
-  const power = mission.kittyIndices.reduce(function(s, i) {
+  const power = Number.isFinite(mission.power) ? mission.power : mission.kittyIndices.reduce(function(s, i) {
     return s + kittyEP(i);
   }, 0);
   const success = Boolean(z) && Math.random() < Math.min(1, power / z.difficulte);
@@ -3764,11 +3866,12 @@ function lancerExplo(id) {
   const kittyIndices = slots.filter(function(x) { return x !== null; });
   if (kittyIndices.length < camp.slots) return;
   if (kittyIndices.length > chatonsLibres()) {
-    afficherNotification("⚠️ Not enough free kitties!");
+    afficherNotification("⚠️ Not enough free cats!");
     return;
   }
   var hasHalvesTime = kittyIndices.some(function(ki) { return scoutingHalveTime(ki); });
-  etat.exploEnCours.push({ id: id, kittyIndices: kittyIndices, startTs: Date.now(), duree: hasHalvesTime ? camp.duree / 2 : camp.duree });
+  var launchPower = kittyIndices.reduce(function(s, ki) { return s + kittyEP(ki); }, 0);
+  etat.exploEnCours.push({ id: id, kittyIndices: kittyIndices, power: launchPower, startTs: Date.now(), duree: hasHalvesTime ? camp.duree / 2 : camp.duree });
   exploKittiesSelectionnees[id] = new Array(camp.slots).fill(null);
   exploTabDirty = true;
   sauvegarder(); rendu();
@@ -3778,7 +3881,7 @@ function terminerExplo(explo) {
   const camp = CONFIG.campaigns[explo.id];
   if (!camp) return;
 
-  const power   = explo.kittyIndices.reduce(function(s, i) {
+  const power   = Number.isFinite(explo.power) ? explo.power : explo.kittyIndices.reduce(function(s, i) {
     return s + kittyEP(i);
   }, 0);
   const success = Math.random() < Math.min(1, power / camp.difficulte);
@@ -4041,9 +4144,10 @@ function selectionnerItem(itemId) {
 function filtrerResources(cat) {
   const conserverFocus = document.activeElement && document.activeElement.classList.contains("inv-res-tab");
   resCategorieFiltree = cat;
+  inventaireDirty = true;
   var resEl  = document.getElementById("inv-resources");
   if (resEl) resEl.dataset.visibleKey = "";  // force rebuild
-  renderResourcesSection(unlocks());
+  renduInventaire(unlocks());
   if (conserverFocus) {
     requestAnimationFrame(function() {
       const onglet = document.querySelector(".inv-res-tab-actif");
@@ -4154,6 +4258,8 @@ function renduInventaire(u) {
     inventaireDirty = false;
   }
 
+  renderInventoryTabs(u);
+  actualiserVisibiliteInventaire();
   renderResourcesSection(u);
 }
 
@@ -4186,9 +4292,62 @@ function buildRessourcesList(u) {
   ];
 }
 
+function renderInventoryTabs(u) {
+  const tabsEl = document.getElementById("inv-res-tabs");
+  if (!tabsEl) return;
+
+  const allVisible = buildRessourcesList(u).filter(function(r) { return r.visible; });
+  const itemIds = etat.itemsAcquis.filter(function(itemId) { return !!ITEMS[itemId]; });
+  const hasBooks = itemIds.some(function(itemId) { return ITEMS[itemId].type !== "unique"; });
+  const hasUnique = itemIds.some(function(itemId) { return ITEMS[itemId].type === "unique"; });
+  const availableCats = RES_CATEGORIES.filter(function(cat) {
+    return allVisible.some(function(r) { return r.category === cat.id; });
+  });
+  const availableTabs = [{ id: "all", label: "All" }];
+  if (hasBooks) availableTabs.push({ id: "books", label: "Books" });
+  if (hasUnique) availableTabs.push({ id: "unique", label: "Unique" });
+  availableCats.forEach(function(cat) { availableTabs.push(cat); });
+
+  const validFilter = availableTabs.some(function(tab) { return tab.id === resCategorieFiltree; });
+  if (!validFilter) resCategorieFiltree = "all";
+
+  const tabsKey = availableTabs.map(function(tab) { return tab.id; }).join(",") + "|" + resCategorieFiltree;
+  if (tabsEl.dataset.tabsKey === tabsKey) return;
+  tabsEl.dataset.tabsKey = tabsKey;
+
+  if (availableTabs.length <= 1) {
+    tabsEl.innerHTML = "";
+    delete tabsEl.dataset.hasTabs;
+    return;
+  }
+
+  let tabsHtml = '<div class="inv-res-tabs" role="group" aria-label="Inventory categories">';
+  availableTabs.forEach(function(tab) {
+    const actif = resCategorieFiltree === tab.id;
+    tabsHtml += '<button class="inv-res-tab' + (actif ? " inv-res-tab-actif" : "") + '" aria-pressed="' + (actif ? "true" : "false") + '" onclick="filtrerResources(\'' + tab.id + '\')">' + tab.label + '</button>';
+  });
+  tabsHtml += '</div>';
+  tabsEl.innerHTML = tabsHtml;
+  tabsEl.dataset.hasTabs = "true";
+}
+
+function actualiserVisibiliteInventaire() {
+  const afficheItems = resCategorieFiltree === "all" || resCategorieFiltree === "books" || resCategorieFiltree === "unique";
+  const afficheResources = resCategorieFiltree !== "books" && resCategorieFiltree !== "unique";
+  const itemsSection = document.getElementById("section-items");
+  const resourcesSection = document.getElementById("section-inv-resources");
+  if (itemsSection) {
+    itemsSection.style.display = afficheItems ? "" : "none";
+    itemsSection.setAttribute("aria-hidden", afficheItems ? "false" : "true");
+  }
+  if (resourcesSection) {
+    resourcesSection.style.display = afficheResources ? "" : "none";
+    resourcesSection.setAttribute("aria-hidden", afficheResources ? "false" : "true");
+  }
+}
+
 function renderResourcesSection(u) {
   const resEl  = document.getElementById("inv-resources");
-  const tabsEl = document.getElementById("inv-res-tabs");
   if (!resEl) return;
 
   const ressources = buildRessourcesList(u);
@@ -4200,29 +4359,13 @@ function renderResourcesSection(u) {
     resEl.dataset.visibleKey = visibleKey;
 
     if (allVisible.length === 0) {
-      if (tabsEl) tabsEl.innerHTML = "";
-      resEl.innerHTML = etatVideHtml("No resources yet", "Unlock Work and assign a kitty to begin gathering materials.");
+      resEl.innerHTML = etatVideHtml("No resources yet", "Unlock Work and assign a cat to begin gathering materials.");
       return;
     }
 
-    // Show tabs only when more than one category has visible resources
     const availableCats = RES_CATEGORIES.filter(function(cat) {
       return allVisible.some(function(r) { return r.category === cat.id; });
     });
-    if (tabsEl) {
-      if (availableCats.length > 1) {
-        let tabsHtml = '<div class="inv-res-tabs" role="group" aria-label="Resource categories">';
-        tabsHtml += '<button class="inv-res-tab' + (resCategorieFiltree === "all" ? " inv-res-tab-actif" : "") + '" aria-pressed="' + (resCategorieFiltree === "all" ? "true" : "false") + '" onclick="filtrerResources(\'all\')">All</button>';
-        availableCats.forEach(function(cat) {
-          tabsHtml += '<button class="inv-res-tab' + (resCategorieFiltree === cat.id ? " inv-res-tab-actif" : "") + '" aria-pressed="' + (resCategorieFiltree === cat.id ? "true" : "false") + '" onclick="filtrerResources(\'' + cat.id + '\')">' + cat.label + '</button>';
-        });
-        tabsHtml += '</div>';
-        tabsEl.innerHTML = tabsHtml;
-      } else {
-        tabsEl.innerHTML = "";
-      }
-    }
-
     // Resources grid — filtered or all
     const showAll = resCategorieFiltree === "all";
     const catsToShow = showAll ? availableCats : availableCats.filter(function(c) { return c.id === resCategorieFiltree; });
@@ -4328,14 +4471,18 @@ function renderItemsList() {
   const itemIdsConnus = etat.itemsAcquis.filter(function(itemId) { return !!ITEMS[itemId]; });
   const uniqueIds = itemIdsConnus.filter(function(itemId) { return ITEMS[itemId].type === "unique"; });
   const bookIds = itemIdsConnus.filter(function(itemId) { return ITEMS[itemId].type !== "unique"; });
+  const afficheBooks = resCategorieFiltree === "all" || resCategorieFiltree === "books";
+  const afficheUnique = resCategorieFiltree === "all" || resCategorieFiltree === "unique";
   let html = "";
-  if (uniqueIds.length > 0) {
+  if (afficheBooks) {
     html += '<div class="inv-items-section-titre">BOOKS</div>';
     html += bookIds.length > 0 ? bookIds.map(carteItemHtml).join("") : '<p class="inv-vide inv-items-section-vide">No books yet.</p>';
+  }
+  if (afficheUnique) {
     html += '<div class="inv-items-section-titre">UNIQUE ITEMS</div>';
-    html += '<div class="inv-unique-grille">' + uniqueIds.map(carteUniqueItemHtml).join("") + '</div>';
-  } else {
-    html += itemIdsConnus.map(carteItemHtml).join("");
+    html += uniqueIds.length > 0
+      ? '<div class="inv-unique-grille">' + uniqueIds.map(carteUniqueItemHtml).join("") + '</div>'
+      : '<p class="inv-vide inv-items-section-vide">No unique items yet.</p>';
   }
   listeEl.innerHTML = html;
 }
@@ -4350,6 +4497,7 @@ let jcFormationKittySelectionne = null;
 let jcMetierSelectionne = null;
 
 let tcSpecKittySelectionne = null;
+let tcTrainingOuvert       = false;
 let _sphereGridJob        = null;  // job id of the currently rendered sphere grid
 let _sphereSelectionnee   = null;  // id of the selected sphere node
 
@@ -4428,7 +4576,7 @@ function renduModalJC() {
         return acc;
       }, []);
       if (eligibles.length === 0) {
-        html = '<p class="jc-modal-vide">No kitty with the required job.</p>';
+        html = '<p class="jc-modal-vide">No cat with the required job.</p>';
       } else {
         eligibles.forEach(function(idx) {
           const k = etat.kittiesData[idx];
@@ -4458,13 +4606,13 @@ function renduModalJC() {
       }
     }
   } else if (jcModalOuvert.mode === "spec") {
-    if (titreEl) titreEl.textContent = "🎓 Select a kitty to specialize";
+    if (titreEl) titreEl.textContent = "🎓 Select a cat to specialize";
     const avecMetier = etat.kittiesData.reduce(function(acc, k, i) {
       if (k.metier !== null) acc.push(i);
       return acc;
     }, []);
     if (avecMetier.length === 0) {
-      html = '<p class="jc-modal-vide">No kitties have a job yet.</p>';
+      html = '<p class="jc-modal-vide">No cats have a job yet.</p>';
     } else {
       avecMetier.forEach(function(idx) {
         const k = etat.kittiesData[idx];
@@ -4488,15 +4636,24 @@ function renduModalJC() {
 
 function selectionnerKittyFormation(kittyIndex) {
   jcFormationKittySelectionne = kittyIndex;
+  jouerSonAffectation();
   fermerModalJC();
   jcDirty = true;
   renduJobCenter(unlocks());
 }
 
-function selectionnerKittySpec(kittyIndex) {
+function selectionnerTrainingCat(kittyIndex) {
+  const kitty = etat.kittiesData[kittyIndex];
+  if (!kitty || !kitty.metier || !METIERS[kitty.metier]) return;
   tcSpecKittySelectionne = kittyIndex;
-  fermerModalJC();
+  _tcKey = null;
   renduTrainingCenter();
+}
+
+function selectionnerKittySpec(kittyIndex) {
+  selectionnerTrainingCat(kittyIndex);
+  jouerSonAffectation();
+  fermerModalJC();
 }
 
 function forcerKittyFormation(kittyIndex) {
@@ -4555,6 +4712,7 @@ function terminerFormation() {
 
 function assignerManager(famille, kittyIndex) {
   etat.managers[famille] = kittyIndex;
+  jouerSonAffectation();
   fermerModalJC();
   jcDirty = true;
   sauvegarder(); rendu(); renduManagement();
@@ -4577,6 +4735,7 @@ function forcerWorkerSlot(kittyIdx, action, slotIdx) {
   retirerKittyDeSesRoles(kittyIdx);
   etat.workers[action][slotIdx].kittyIndex = kittyIdx;
   etat.workers[action][slotIdx].progress   = 0;
+  jouerSonAffectation();
   fermerModalWorker();
   jcDirty = true;
   sauvegarder(); rendu();
@@ -4585,6 +4744,7 @@ function forcerWorkerSlot(kittyIdx, action, slotIdx) {
 function forcerManager(famille, kittyIdx) {
   retirerKittyDeSesRoles(kittyIdx);
   etat.managers[famille] = kittyIdx;
+  jouerSonAffectation();
   fermerModalJC();
   jcDirty = true;
   sauvegarder(); rendu(); renduManagement();
@@ -4658,12 +4818,12 @@ function updateWorkerSlotUI(action, slotIdx) {
       el.innerHTML =
         '<div class="worker-ring" id="worker-ring-' + action + '-' + slotIdx + '" style="--prog:' + (slot.progress || 0) + '">' +
           '<div class="worker-ring-inner">' + kittyIconHtml(kitty) + '</div>' +
-          '<button class="worker-ring-remove" aria-label="Remove ' + echapperAttributHtml(kitty ? kitty.nom : "kitty") + ' from ' + echapperAttributHtml(ACTION_DISPLAY[action] || "work") + ' production" onclick="retirerWorker(\'' + action + '\',' + slotIdx + ');event.stopPropagation()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>' +
+          '<button class="worker-ring-remove" aria-label="Remove ' + echapperAttributHtml(kitty ? kitty.nom : "cat") + ' from ' + echapperAttributHtml(ACTION_DISPLAY[action] || "work") + ' production" onclick="retirerWorker(\'' + action + '\',' + slotIdx + ');event.stopPropagation()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>' +
         '</div>' +
         '<div class="worker-slot-name">' + (kitty ? kitty.nom : "?") + '</div>';
     } else {
       el.innerHTML =
-        '<button class="worker-slot-empty" aria-label="Assign a kitty to ' + echapperAttributHtml(ACTION_DISPLAY[action] || "work") + ' production" onclick="ouvrirModalWorker(\'' + action + '\',' + slotIdx + ')">' +
+        '<button class="worker-slot-empty" aria-label="Assign a cat to ' + echapperAttributHtml(ACTION_DISPLAY[action] || "work") + ' production" onclick="ouvrirModalWorker(\'' + action + '\',' + slotIdx + ')">' +
           '+' +
         '</button>' +
         '<div class="worker-slot-name-placeholder"></div>';
@@ -4732,7 +4892,7 @@ function renduModalWorker() {
     else html += '<div></div>';
     html += '</div>';
   });
-  conteneur.innerHTML = html || '<p class="worker-modal-vide">No free kitties available.</p>';
+  conteneur.innerHTML = html || '<p class="worker-modal-vide">No free cats available.</p>';
 }
 
 function assignerWorkerSlot(kittyIndex) {
@@ -4740,6 +4900,7 @@ function assignerWorkerSlot(kittyIndex) {
   const { action, slotIdx } = workerModalOuvert;
   etat.workers[action][slotIdx].kittyIndex = kittyIndex;
   etat.workers[action][slotIdx].progress   = 0;
+  jouerSonAffectation();
   fermerModalWorker();
   verifierObjectifs(); sauvegarder(); rendu();
 }
@@ -4793,9 +4954,9 @@ function renduJobCenter(u) {
         html += '<button class="jc-slot-remove" aria-label="Remove ' + echapperAttributHtml(kitty ? kitty.nom : "cat") + ' from job training" onclick="jcFormationKittySelectionne=null;jcDirty=true"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>';
         html += '</div>';
       } else {
-        html += '<div class="jc-slot-empty" data-jc-modal-trigger="formation"' + attributsActivationClavier("Select an unassigned kitty for job training") + ' onclick="ouvrirModalJC(\'formation\')">';
+        html += '<div class="jc-slot-empty" data-jc-modal-trigger="formation"' + attributsActivationClavier("Select an unassigned cat for job training") + ' onclick="ouvrirModalJC(\'formation\')">';
         html += '<span class="jc-slot-plus">+</span>';
-        html += '<span class="jc-slot-label">Select an unassigned kitty</span>';
+        html += '<span class="jc-slot-label">Select an unassigned cat</span>';
         html += '</div>';
       }
 
@@ -4857,7 +5018,7 @@ function terminerSequence() {
   etat.sequenceEnCours = false;
   etat.chatons        += 1;
   etat.clicCount      += 1;
-  const nom = NOMS_KITTIES[etat.kittiesData.length] || ("Kitty #" + (etat.kittiesData.length + 1));
+  const nom = NOMS_KITTIES[etat.kittiesData.length] || ("Cat #" + (etat.kittiesData.length + 1));
   etat.kittiesData.push({ nom: nom, metier: null, niveau: 0, xp: 0, tier: 0, managerMult: 2, catchTs: Date.now(), visage: assignerVisageChaton(nom), jobNiveau: 0 });
   afficherNotification("🐱 " + nom + " joined the gang!");
   ajouterLog("event", nom + " caught!");
@@ -4871,8 +5032,8 @@ function terminerSequence() {
     ajouterLog("unlock", "Grasscatting unlocked — gather Catnip in Work.");
   }
   if (etat.chatons === 6) {
-    afficherNotification("🗺️ Explorations unlocked! Send your kitties on expeditions.");
-    ajouterLog("unlock", "Explorations unlocked — send kitties on campaigns and scoutings.");
+    afficherNotification("🗺️ Explorations unlocked! Send your cats on expeditions.");
+    ajouterLog("unlock", "Explorations unlocked — send cats on campaigns and scoutings.");
   }
   exploTabDirty = true;
   verifierStoryModals();
@@ -4983,7 +5144,7 @@ function acheterJobCenter() {
   etat.jobCenterConstruit = true;
   jcDirty = true;
   afficherNotification("🏫 Job Center built!");
-  ajouterLog("event", "Job Center built — ready to assign jobs to kitties.");
+  ajouterLog("event", "Job Center built — ready to assign jobs to cats.");
   sauvegarder(); rendu();
 }
 
@@ -5186,7 +5347,7 @@ function tick() {
   if (resultatCatchen && resultatCatchen.produit > 0 && !etat.premiereSaladeFaite) {
     etat.premiereSaladeFaite = true;
     const cookIndex = resultatCatchen.premierProducteurIndex;
-    const cookName = etat.kittiesData[cookIndex] ? etat.kittiesData[cookIndex].nom : "a kitty";
+    const cookName = etat.kittiesData[cookIndex] ? etat.kittiesData[cookIndex].nom : "a cat";
     const el1 = document.getElementById("story-salad-cook-name");
     const el2 = document.getElementById("story-salad-cook-name-2");
     const tag = document.getElementById("story-salad-cook-tag");
@@ -5270,7 +5431,7 @@ function appliquerProgressionHorsLigne() {
   // reads Date.now() directly), now also benefiting from the cathouse reduction caught up above.
   let kittyAttrapeNom = null;
   if (etat.sequenceEnCours && tempsRestantSequence() <= 0) {
-    kittyAttrapeNom = NOMS_KITTIES[etat.kittiesData.length] || ("Kitty #" + (etat.kittiesData.length + 1));
+    kittyAttrapeNom = NOMS_KITTIES[etat.kittiesData.length] || ("Cat #" + (etat.kittiesData.length + 1));
     etat.sequenceEnCours = false;
     etat.chatons        += 1;
     etat.clicCount      += 1;
@@ -5336,7 +5497,7 @@ function afficherResumeAbsence(resume) {
   if (!produit) ligne("🐾 Production", "Nothing produced");
 
   if (resume.kittyAttrape) {
-    ligne("🐱 New kitty", resume.kittyAttrape + " joined the gang!");
+    ligne("🐱 New cat", resume.kittyAttrape + " joined the gang!");
   }
 
   afficherModal("ecran-absence");

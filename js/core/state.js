@@ -38,6 +38,8 @@ function creerEtatInitial() {
   clicCount:               0,
   reductionAuMomentDuClic: 0,
   afficherTempsAjusteRecrutement: false,
+  volumeEffetsSonores:     0.3,
+  volumeMusique:           0.5,
   autoBuildWoodHouses:       false,
 
   // Processing blocked flags

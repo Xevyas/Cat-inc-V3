@@ -54,12 +54,15 @@ function validerStructureSauvegarde(d) {
     "cardboardPlanks", "basicWoodPlanks", "bricks", "pebbleBricks", "rockBricks", "salads", "anchovy",
     "anchovyTotalRecolte", "grilledAnchovy", "humanLeftovers", "humanWorkersFood", "cannedCatFood",
     "workBoostFinTs", "sequenceDebutTs", "sequenceDuree", "clicCount", "reductionAuMomentDuClic",
-    "reductionCumulee", "cathouseCount", "stoneCathouseCount"
+    "reductionCumulee", "cathouseCount", "stoneCathouseCount", "volumeEffetsSonores", "volumeMusique"
   ];
   for (const cle of champsNumeriques) {
     if (d[cle] !== undefined && (typeof d[cle] !== "number" || !Number.isFinite(d[cle]) || d[cle] < 0)) {
       return "Invalid numeric field: " + cle + ".";
     }
+  }
+  for (const cle of ["volumeEffetsSonores", "volumeMusique"]) {
+    if (d[cle] !== undefined && d[cle] > 1) return "Invalid audio volume: " + cle + ".";
   }
 
   const champsBooleens = [
@@ -95,7 +98,7 @@ function validerStructureSauvegarde(d) {
         return k[cle] === undefined || (typeof k[cle] === "number" && Number.isFinite(k[cle]) && k[cle] >= 0);
       });
     });
-    if (!kittiesValides) return "Invalid kitty data.";
+    if (!kittiesValides) return "Invalid cat data.";
   }
 
   const nombreKitties = Math.max(
@@ -223,6 +226,8 @@ function analyserSauvegardeBrute(raw) {
     clicCount:               etat.clicCount,
     reductionAuMomentDuClic: etat.reductionAuMomentDuClic,
     afficherTempsAjusteRecrutement: etat.afficherTempsAjusteRecrutement,
+    volumeEffetsSonores:     etat.volumeEffetsSonores,
+    volumeMusique:           etat.volumeMusique,
     autoBuildWoodHouses:       etat.autoBuildWoodHouses,
     scieriBloquee:              etat.scieriBloquee,
     basicSawmillBloquee:        etat.basicSawmillBloquee,
@@ -309,6 +314,8 @@ function analyserSauvegardeBrute(raw) {
   etat.clicCount               = d.clicCount               || 0;
   etat.reductionAuMomentDuClic = d.reductionAuMomentDuClic || 0;
   etat.afficherTempsAjusteRecrutement = d.afficherTempsAjusteRecrutement || false;
+  etat.volumeEffetsSonores = d.volumeEffetsSonores !== undefined ? Math.min(1, d.volumeEffetsSonores) : 0.3;
+  etat.volumeMusique       = d.volumeMusique       !== undefined ? Math.min(1, d.volumeMusique)       : 0.5;
   etat.autoBuildWoodHouses       = d.autoBuildWoodHouses || false;
 
   etat.scieriBloquee        = d.scieriBloquee        || false;
@@ -396,7 +403,7 @@ function analyserSauvegardeBrute(raw) {
 
   // Migration: backfill kittiesData if save predates the feature
   while (etat.kittiesData.length < etat.chatons) {
-    const nom = NOMS_KITTIES[etat.kittiesData.length] || ("Kitty #" + (etat.kittiesData.length + 1));
+    const nom = NOMS_KITTIES[etat.kittiesData.length] || ("Cat #" + (etat.kittiesData.length + 1));
     etat.kittiesData.push({ nom: nom, metier: null, niveau: 0, xp: 0, tier: 0, managerMult: 2, catchTs: null, visage: assignerVisageChaton(nom), jobNiveau: 0 });
   }
   // Migration: add xp field and reset niveau to 0-based for existing kitties

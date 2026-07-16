@@ -13,99 +13,99 @@ const RESOURCE_INFO = {
     nom:     "Cardboard Pieces",
     tier:    "Tier 1 · Wood family",
     desc:    "Small patches of cardboard found lying on the ground. Might be useful.",
-    produce: "Assign a kitty to Gather Cardboard Pieces in the Work tab.",
+    produce: "Assign a cat to Gather Cardboard Pieces in the Work tab.",
     usage:   "Crafted into Cardboard Planks (10 pieces per plank)."
   },
   "inv-res-cardboard-plank": {
     nom:     "Cardboard Planks",
     tier:    "Tier 1 · Wood family (processed)",
     desc:    "Sturdy planks pressed from cardboard. The backbone of early construction.",
-    produce: "Assign a kitty to the Cardboard Sawmill in the Work tab (consumes 10 Cardboard Pieces per plank).",
+    produce: "Assign a cat to the Cardboard Sawmill in the Work tab (consumes 10 Cardboard Pieces per plank).",
     usage:   "Used to construct buildings like Houses."
   },
   "inv-res-basic-wood": {
     nom:     "Basic Wood",
     tier:    "Tier 2 · Wood family",
     desc:    "Rough wooden planks salvaged from human furniture. Heavier to carry, but sturdier.",
-    produce: "Assign a kitty to Gather Basic Wood in the Work tab (unlocked after crafting 10 Cardboard Planks).",
+    produce: "Assign a cat to Gather Basic Wood in the Work tab (unlocked after crafting 10 Cardboard Planks).",
     usage:   "Crafted into Basic Wood Planks (10 logs per plank)."
   },
   "inv-res-wood-plank": {
     nom:     "Basic Wood Planks",
     tier:    "Tier 2 · Wood family (processed)",
     desc:    "Refined wooden planks, sanded and shaped. A real upgrade from cardboard.",
-    produce: "Assign a kitty to the Basic Sawmill in the Work tab (consumes 10 Basic Wood per plank).",
+    produce: "Assign a cat to the Basic Sawmill in the Work tab (consumes 10 Basic Wood per plank).",
     usage:   "Used to construct buildings like Houses."
   },
   "inv-res-catnip": {
     nom:     "Catnip",
     tier:    "Tier 1 · Food family",
     desc:    "Fresh catnip from the garden. Nutritious, if you're a cat.",
-    produce: "Assign a kitty to Gather Catnip in the Work tab.",
+    produce: "Assign a cat to Gather Catnip in the Work tab.",
     usage:   "Crafted into Salads (10 catnip per salad)."
   },
   "inv-res-salads": {
     nom:     "Salads",
     tier:    "Tier 1 · Food family (processed)",
     desc:    "A balanced catnip salad. Even Bernardo eats his greens.",
-    produce: "Assign a kitty to The Catchen in the Work tab (consumes 10 Catnip per salad).",
-    usage:   "Feed to a kitty in the Gang tab to give them +1 XP."
+    produce: "Assign a cat to The Catchen in the Work tab (consumes 10 Catnip per salad).",
+    usage:   "Feed to a cat in the Gang tab to give them +1 XP."
   },
   "inv-res-anchovy": {
     nom:     "Anchovy",
     tier:    "Tier 2 · Food family",
     desc:    "Fresh anchovies fished from the nearby stream. A cat's favourite.",
-    produce: "Assign a kitty to Fish Anchovies in the Work tab (unlocked via the Fishing Guide).",
+    produce: "Assign a cat to Fish Anchovies in the Work tab (unlocked via the Fishing Guide).",
     usage:   "Crafted into Grilled Anchovy (10 anchovies per serving)."
   },
   "inv-res-grilled-anchovy": {
     nom:     "Grilled Anchovy",
     tier:    "Tier 2 · Food family (processed)",
     desc:    "Golden, crispy, perfectly grilled. Worth every second of cooking.",
-    produce: "Assign a kitty to the Anchovy Grill in the Work tab (consumes 10 Anchovies per serving).",
+    produce: "Assign a cat to the Anchovy Grill in the Work tab (consumes 10 Anchovies per serving).",
     usage:   "Not yet used — future recipes coming."
   },
   "inv-res-pebbles": {
     nom:     "Pebbles",
     tier:    "Tier 1 · Rock family",
     desc:    "Small smooth pebbles gathered from the yard. Heavy pockets, light heart.",
-    produce: "Assign a kitty to Gather Pebbles in the Work tab.",
+    produce: "Assign a cat to Gather Pebbles in the Work tab.",
     usage:   "Crafted into Pebble Bricks (10 pebbles per brick)."
   },
   "inv-res-pebble-brick": {
     nom:     "Pebble Bricks",
     tier:    "Tier 1 · Rock family (processed)",
     desc:    "Compact bricks made from compressed pebbles. Surprisingly solid.",
-    produce: "Assign a kitty to the Pawsonry in the Work tab (consumes 10 Pebbles per brick).",
+    produce: "Assign a cat to the Pawsonry in the Work tab (consumes 10 Pebbles per brick).",
     usage:   "Used to construct buildings like Facilities."
   },
   "inv-res-rocks": {
     nom:     "Rocks",
     tier:    "Tier 2 · Rock family",
     desc:    "Dense stones hauled from deeper in the yard. Much heavier than pebbles.",
-    produce: "Assign a kitty to Gather Rocks in the Work tab.",
+    produce: "Assign a cat to Gather Rocks in the Work tab.",
     usage:   "Crafted into Rock Bricks (10 rocks per brick)."
   },
   "inv-res-rock-brick": {
     nom:     "Rock Bricks",
     tier:    "Tier 2 · Rock family (processed)",
     desc:    "Solid bricks forged from dense rock. Built to last.",
-    produce: "Assign a kitty to the Rock Forge in the Work tab (consumes 10 Rocks per brick).",
+    produce: "Assign a cat to the Rock Forge in the Work tab (consumes 10 Rocks per brick).",
     usage:   "Used in advanced construction."
   },
   "inv-res-human-leftovers": {
     nom:     "Human Leftovers",
     tier:    null,
     desc:    "Bits and pieces left behind by humans. One human's trash is another cat's treasure.",
-    produce: "Found by sending kitties on Exploration campaigns.",
-    usage:   "Feed to a kitty in the Gang tab to give them +1 XP."
+    produce: "Found by sending cats on Exploration campaigns.",
+    usage:   "Feed to a cat in the Gang tab to give them +1 XP."
   },
   "inv-res-human-workers-food": {
     nom:     "Workers Food",
     tier:    null,
     desc:    "Packed lunches left behind by the construction workers. Still good.",
     produce: "Found by scouting the basement in A1 (unlocks after both A1 campaigns).",
-    usage:   "Feed to a kitty in the Gang tab to give them +15 XP."
+    usage:   "Feed to a cat in the Gang tab to give them +15 XP."
   },
   "inv-res-canned-cat-food": {
     nom:     "Canned Cat Food",
@@ -282,19 +282,19 @@ const SPHERE_GRIDS = {
         etat: 'learned' },
       // ── Mid nodes ───────────────────────────────────────────────────────────
       { id: 'gl-qol',   x: 290, y: 155, r: 30, couleur: '#3aaecf',
-        nom: 'QoL EXP',
+        nom: 'QOL EXP',
         desc: "Bernardo can now manage the Food for the gang. Unlocks QoL for the food management. Also unlocks the Blue perks section.",
         etat: 'unlocked', cout: { cannedCatFood: 1 } },
       { id: 'gl-rec',   x: 155, y: 290, r: 30, couleur: '#d4a820',
-        nom: 'Recruit Speed',
+        nom: 'RECRUIT SPEED',
         desc: "Applies Bernardo's bonus to the Houses section. Also unlocks the Orange perks section.",
         etat: 'unlocked', cout: { cannedCatFood: 1 } },
       { id: 'gl-mini',  x: 425, y: 290, r: 30, couleur: '#4db84d',
-        nom: 'Mini Game',
+        nom: 'MINI GAME',
         desc: "Reduces Mini game speed and size by 2. Also unlocks the Green perks section.",
         etat: 'unlocked', cout: { cannedCatFood: 1 } },
       { id: 'gl-explo', x: 290, y: 425, r: 30, couleur: '#b85dd4',
-        nom: 'Exploration',
+        nom: 'EXPLO',
         desc: "Bernardo gets the same bonus as the exploration basic bonus. Also unlocks the Violet perks section.",
         etat: 'unlocked', cout: { cannedCatFood: 1 } },
       // ── Blue branch (top) ───────────────────────────────────────────────────
@@ -332,19 +332,19 @@ const SPHERE_GRIDS = {
         etat: 'learned' },
       // ── Mid nodes ───────────────────────────────────────────────────────────
       { id: 'ex-qol',   x: 290, y: 155, r: 30, couleur: '#3aaecf',
-        nom: 'QoL EXP',
+        nom: 'QOL EXP',
         desc: 'Unlocks "Auto Assign" function. Will automatically select the units to send on missions. Units need to be available, and will try to match the difficulty of the mission. Always includes an explorator if available (or Bernardo if he has the Exploration perk).',
         etat: 'unlocked', cout: { cannedCatFood: 1 } },
       { id: 'ex-food',  x: 155, y: 290, r: 30, couleur: '#d4a820',
-        nom: 'Cat Food',
+        nom: 'CAT FOOD',
         desc: 'Doubles the chance to get Canned Cat Food as reward of scouting missions.',
         etat: 'unlocked', cout: { cannedCatFood: 1 } },
       { id: 'ex-luck',  x: 425, y: 290, r: 30, couleur: '#4db84d',
-        nom: 'Chance Double',
+        nom: 'CHANCE DOUBLE',
         desc: '25% chance to double the reward received in scouting missions only.',
         etat: 'unlocked', cout: { cannedCatFood: 1 } },
       { id: 'ex-power', x: 290, y: 425, r: 30, couleur: '#b85dd4',
-        nom: 'Exploration Power',
+        nom: 'EXPLO POWER',
         desc: 'Increases Exploration Power by 50%.',
         etat: 'unlocked', cout: { cannedCatFood: 1 } },
       // ── Blue branch (top) ───────────────────────────────────────────────────
@@ -446,7 +446,7 @@ const NOMS_KITTIES = [
   "Violet", "Dune", "Cobble", "Toffee", "Pretzel"
 ];
 
-const KITTY_ICON = '<img src="img/interface/Gang_Final.png?v=0.0025" class="kitty-icon" alt="kitty">';
+const KITTY_ICON = '<img src="img/interface/Gang_Final.png?v=0.0025" class="kitty-icon" alt="cat">';
 const CHECK_ICON = '<img src="img/interface/✅_Final.png?v=0.0025" class="check-icon" alt="done">';
 
 // ── Per-kitty face icons ────────────────────────────────────

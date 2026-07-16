@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0052" />
+  <link rel="stylesheet" href="style.css?v=0.0067" />
 </head>
 <body>
 
@@ -112,6 +112,7 @@
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> This page — CEO, Chief Executive Officer. That's the one that speaks to me. I'll be keeping it.</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> The guide talks about giving everyone a proper role — a job that plays to their strengths. If we do that, we could be twice as efficient. Maybe more.</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> I have an idea. We build a Job Center — a place where everyone trains and gets assigned properly. What do you say?</p>
+        <p class="intro-ligne intro-miaou">— Bernardo has just become the Gang Leader. Find more details about his role in the Gang tab. —</p>
       </div>
       <button class="bouton-intro" onclick="fermerModal('ecran-story-6b')">Let's build it!</button>
     </div>
@@ -189,19 +190,18 @@
       <div class="stats-attrapage-wrapper" id="stats-attrapage-wrapper">
         <button id="bouton-stats-attrapage" class="bouton-stats" onclick="toggleStatsAttrapage()" title="Catching stats" aria-label="Show catching stats" aria-expanded="false" aria-controls="popover-stats-attrapage">?</button>
         <div id="popover-stats-attrapage" class="popover-stats" role="region" aria-label="Catching stats" aria-hidden="true" style="display:none">
-          <div class="popover-ligne"><span>Raw catching time for this kitty</span><span id="stat-raw"></span></div>
+          <div class="popover-ligne"><span>Raw catching time for this cat</span><span id="stat-raw"></span></div>
           <div class="popover-ligne"><span>Catching time per second from Houses</span><span id="stat-taux"></span></div>
           <div class="popover-ligne" id="stat-gl-row" style="display:none"><span>Bernardo Recruit speed bonus</span><span id="stat-gl-bonus"></span></div>
           <div class="popover-ligne"><span>Catching time per second TOTAL</span><span id="stat-taux-total"></span></div>
-          <div class="popover-ligne"><span>Adjusted catching time for this kitty</span><span id="stat-adjusted"></span></div>
+          <div class="popover-ligne"><span>Adjusted catching time for this cat</span><span id="stat-adjusted"></span></div>
         </div>
       </div>
-      <button id="bouton-sequence">Catch a kitty 🐾</button>
+      <button id="bouton-sequence">Catch a cat 🐾</button>
       <div class="conteneur-barre" id="conteneur-barre-sequence" style="display:none">
         <div id="barre-sequence" class="barre barre-verte"></div>
       </div>
       <p id="info-sequence" class="info-subtile"></p>
-      <div id="work-boost-indicator" style="display:none"></div>
     </div>
   </header>
 
@@ -233,8 +233,8 @@
   <section class="ressources" aria-label="Resources">
     <button id="bird-btn" onclick="ouvrirBirdMiniJeu()" title="Bernardo spotted a bird!" aria-label="Open the bird mini-game" style="display:none"><img class="bird-btn-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0028" alt=""></button>
     <button id="bird-debug-btn" onclick="montrerOiseau()" title="[DEV] Force bird spawn" aria-label="Force a bird spawn for testing" class="bird-debug-btn"><img class="bird-btn-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0028" alt=""></button>
-    <div class="ressource" data-tooltip="Kitties">
-      <img class="ressource-icone" src="img/interface/Gang_Final.png?v=0.0028" alt="Kitties">
+    <div class="ressource" data-tooltip="Cats">
+      <img class="ressource-icone" src="img/interface/Gang_Final.png?v=0.0028" alt="Cats">
       <div class="ressource-chiffres">
         <span class="ressource-valeur" id="val-chatons">0</span>
       </div>
@@ -313,6 +313,8 @@
     <button id="onglet-logs"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-logs" tabindex="-1" onclick="changerOnglet('logs')"><img class="onglet-icone" src="img/interface/Logs_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Logs">Logs</span></button>
   </div>
 
+  <div id="work-boost-indicator" role="status" aria-live="polite" style="display:none"></div>
+
   <!-- SCROLLABLE CONTENT AREA -->
   <main id="contenu-principal">
 
@@ -329,8 +331,11 @@
       <button class="btn-unaffect-all" onclick="deallouerTous()">↩ Unassign all workers</button>
     </div>
     <div id="work-discovery-hint" class="work-discovery-hint" role="note">
-      <strong>How Work works</strong>
-      <span>Use + to assign kitties. Select a resource icon to see its timing, production rate and recipe.</span>
+      <div class="work-discovery-hint-copy">
+        <strong>How Work works</strong>
+        <span>Use + to assign cats. Select a resource icon to see its timing, production rate and recipe.</span>
+      </div>
+      <button class="work-discovery-hint-close" type="button" onclick="fermerWorkDiscoveryHint()" aria-label="Dismiss Work help" title="Dismiss">×</button>
     </div>
     <section class="panneau panneau-large" id="section-work-pairs">
 
@@ -602,10 +607,10 @@
 
   <!-- CONTENU FACILITIES -->
   <div id="contenu-facilities" role="tabpanel" aria-labelledby="onglet-facilities" aria-hidden="true" style="display:none">
-    <div class="grille grille-2col">
-      <section class="panneau panneau-buildings">
+    <div class="grille grille-2col" id="facilities-grid">
+      <section class="panneau panneau-buildings" id="section-job-center">
         <h2 class="panneau-titre">Job Center</h2>
-        <p class="panneau-desc">Train unassigned kitties for jobs that match the gang's needs.</p>
+        <p class="panneau-desc">Train unassigned cats for jobs that match the gang's needs.</p>
         <div class="bloc-action bloc-action-building">
           <img class="work-sprite" src="img/Buildings/Job Center_Final.png" alt="">
           <div class="bloc-entete-textes">
@@ -620,16 +625,21 @@
       <section class="panneau panneau-buildings" id="section-training-center" style="display:none">
         <h2 class="panneau-titre">Training Center</h2>
         <p class="panneau-desc">Develop experienced workers through permanent specializations.</p>
-        <div class="bloc-action bloc-action-building">
-          <img class="work-sprite" src="img/Buildings/Training Center_Final.png" alt="">
-          <div class="bloc-entete-textes">
-            <span class="bloc-desc">A place where kitties sharpen their skills. Unlock specializations to make every job more powerful.</span>
+        <div id="tc-overview">
+          <div class="bloc-action bloc-action-building">
+            <img class="work-sprite" src="img/Buildings/Training Center_Final.png" alt="">
+            <div class="bloc-entete-textes">
+              <span class="bloc-desc">A place where cats sharpen their skills. Unlock specializations to make every job more powerful.</span>
+            </div>
+            <button onclick="acheterTrainingCenter()" id="bouton-training-center" class="btn-achat">
+              10 <img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"> + 20 <img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
+            </button>
           </div>
-          <button onclick="acheterTrainingCenter()" id="bouton-training-center" class="btn-achat">
-            10 <img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"> + 20 <img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
-          </button>
+          <div id="tc-entry" class="tc-entry" style="display:none">
+            <button id="btn-enter-training-center" class="tc-enter-btn" onclick="ouvrirTrainingCenter()">Enter Training Center</button>
+          </div>
         </div>
-        <div id="tc-interface" style="display:none"></div>
+        <div id="tc-interface" class="tc-interface" style="display:none"></div>
       </section>
     </div>
   </div> <!-- /contenu-facilities -->
@@ -637,6 +647,7 @@
 
   <!-- CONTENU INVENTAIRE -->
   <div id="contenu-inventaire" role="tabpanel" aria-labelledby="onglet-inventaire" aria-hidden="true" style="display:none">
+    <div id="inv-res-tabs"></div>
     <div class="grille grille-2col">
 
       <section class="panneau" id="section-items">
@@ -650,7 +661,6 @@
       <section class="panneau" id="section-inv-resources">
         <h2 class="panneau-titre">Resources</h2>
         <p class="panneau-desc">Everything gathered and crafted by your gang.</p>
-        <div id="inv-res-tabs"></div>
         <div id="inv-resources"></div>
       </section>
 
@@ -698,7 +708,7 @@
     <div class="management-layout" id="management-layout">
       <div id="liste-kitties" class="liste-kitties"></div>
       <div class="management-detail" id="detail-kitty">
-        <div class="etat-vide"><strong>Your gang is waiting</strong><span>Catch your first kitty to unlock its profile.</span></div>
+        <div class="etat-vide"><strong>Your gang is waiting</strong><span>Catch your first cat to unlock its profile.</span></div>
       </div>
     </div>
   </div>
@@ -762,6 +772,18 @@
         <button class="settings-btn" onclick="document.getElementById('import-fichier').click()">Import save (.txt)</button>
         <input type="file" id="import-fichier" accept=".txt" style="display:none" onchange="importerSauvegarde(event)">
         <div class="settings-separateur"></div>
+        <div class="settings-audio-title">Audio</div>
+        <label class="settings-volume-row">
+          <span>Sound effects</span>
+          <input type="range" id="settings-sfx-volume" min="0" max="100" step="1" value="30" aria-label="Sound effects volume" oninput="gererVolumeAudio('sfx', this.value)">
+          <output id="settings-sfx-volume-value" for="settings-sfx-volume">30%</output>
+        </label>
+        <label class="settings-volume-row">
+          <span>Music</span>
+          <input type="range" id="settings-music-volume" min="0" max="100" step="1" value="50" aria-label="Music volume" oninput="gererVolumeAudio('music', this.value)">
+          <output id="settings-music-volume-value" for="settings-music-volume">50%</output>
+        </label>
+        <div class="settings-separateur"></div>
         <label class="settings-toggle-row">
           <span>Show adjusted time on recruit button</span>
           <input type="checkbox" id="toggle-adjusted-time" onchange="basculerAffichageTempsAjuste(this.checked)">
@@ -778,8 +800,8 @@
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalJC()"></div>
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
-        <span class="explo-modal-titre" id="jc-modal-titre">🐱 Choose a kitty</span>
-        <button class="explo-modal-close" aria-label="Close kitty selection" onclick="fermerModalJC()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>
+        <span class="explo-modal-titre" id="jc-modal-titre">🐱 Choose a cat</span>
+        <button class="explo-modal-close" aria-label="Close cat selection" onclick="fermerModalJC()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>
       </div>
       <div id="jc-modal-contenu"></div>
     </div>
@@ -790,7 +812,7 @@
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalWorker()"></div>
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
-        <span class="explo-modal-titre" id="worker-modal-titre">🐱 Assign a kitty</span>
+        <span class="explo-modal-titre" id="worker-modal-titre">🐱 Assign a cat</span>
         <button class="explo-modal-close" aria-label="Close worker selection" onclick="fermerModalWorker()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>
       </div>
       <div id="worker-modal-kitties"></div>
@@ -802,7 +824,7 @@
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalExplo()"></div>
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
-        <span class="explo-modal-titre" id="explo-modal-titre">🐱 Choose a kitty</span>
+        <span class="explo-modal-titre" id="explo-modal-titre">🐱 Choose a cat</span>
         <button class="explo-modal-close" aria-label="Close exploration selection" onclick="fermerModalExplo()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>
       </div>
       <div id="explo-modal-kitties"></div>
@@ -813,12 +835,13 @@
 
   <script src="js/cat-inc.js?v=0.0031"></script>
   <script src="js/data/config.js?v=0.0036"></script>
-  <script src="js/data/content.js?v=0.0040"></script>
+  <script src="js/data/content.js?v=0.0044"></script>
   <script src="js/core/state.js?v=0.0032"></script>
   <script src="js/core/save.js?v=0.0032"></script>
   <script src="js/core/production.js?v=0.0031"></script>
   <script src="js/ui/dom.js?v=0.0031"></script>
-  <script src="jeu.js?v=0.0058"></script>
+  <script src="js/ui/audio.js?v=0.0001"></script>
+  <script src="jeu.js?v=0.0067"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>
