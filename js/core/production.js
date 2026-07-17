@@ -8,61 +8,105 @@
     return kitty ? Math.pow(1.05, kitty.niveau) : 1;
   }
 
-  // Advances every active slot of one raw → processed resource pair.
-  // Scarce input is distributed fairly and consumption never exceeds stock.
-  function avancerTransformation(state, pair, dt, multiplicateur, multiplicateurCout) {
-    const slots = state.workers[pair.procAction] || [];
-    const slotsActifs = slots.filter(function(slot) { return slot.kittyIndex !== null; });
-    const resultat = {
-      actif: slotsActifs.length > 0,
-      bloque: false,
-      consomme: 0,
-      produit: 0,
-      premierProducteurIndex: null
+  // Advances one self-contained recipe slot through its private Gathering and
+  // Processing phases. Simple inputs never enter the shared inventory.
+  function avancerRecetteSlot(state, pair, slot, dt, modifiers) {
+    modifiers = modifiers || {};
+    const result = {
+      active: false,
+      gathered: 0,
+      produced: 0,
+      completedCycles: 0,
+      firstProducerIndex: null
     };
-    if (!resultat.actif) return resultat;
+    if (!state || !pair || !slot || slot.kittyIndex === null || !slot.recipeId || !(dt > 0)) return result;
 
-    const secondesParSortie = pair.procCfg[pair.procSecUnite];
-    const secondesParEntree = pair.procCfg[pair.procSecRaw];
-    const progressionSouhaitee = multiplicateur * dt / secondesParSortie;
-    const coutMult = multiplicateurCout === undefined ? 1 : multiplicateurCout;
-    const entreeParProgression = secondesParSortie / secondesParEntree * coutMult;
-    const besoinTotal = Math.max(0, progressionSouhaitee * entreeParProgression * slotsActifs.length);
-    const stockDisponible = Math.max(0, Number(state[pair.rawRes]) || 0);
-    const EPSILON_STOCK = 1e-12;
+    const rawSeconds = Number(pair.rawSeconds);
+    const processingSeconds = Number(pair.processingSeconds);
+    const baseRawQuantity = Number(pair.rawQuantity);
+    if (!(rawSeconds > 0) || !(processingSeconds > 0) || !(baseRawQuantity > 0)) return result;
 
-    resultat.consomme = Math.min(stockDisponible, besoinTotal);
-    resultat.bloque = besoinTotal > stockDisponible + EPSILON_STOCK;
+    const positive = function(value, fallback) {
+      value = Number(value);
+      return Number.isFinite(value) && value > 0 ? value : fallback;
+    };
+    const costMultiplier = positive(modifiers.costMultiplier, 1);
+    const targetRaw = baseRawQuantity * costMultiplier;
+    const gatheringRate = positive(modifiers.gatheringSpeed, 1)
+      * positive(modifiers.gatheringProduction, 1)
+      * positive(modifiers.basicProduction, 1)
+      * positive(modifiers.globalSpeed, 1)
+      / rawSeconds;
+    const processingRate = positive(modifiers.processingSpeed, 1)
+      * positive(modifiers.globalSpeed, 1)
+      / processingSeconds;
+    const complexProduction = positive(modifiers.complexProduction, 1);
+    const EPSILON = 1e-9;
 
-    const facteurDisponible = besoinTotal > 0 ? resultat.consomme / besoinTotal : 0;
-    const progressionReelle = progressionSouhaitee * facteurDisponible;
-    const stockRestant = stockDisponible - resultat.consomme;
-    state[pair.rawRes] = stockRestant < EPSILON_STOCK ? 0 : stockRestant;
+    slot.gatheredInputs = slot.gatheredInputs && typeof slot.gatheredInputs === "object" ? slot.gatheredInputs : {};
+    slot.reservedInputs = slot.reservedInputs && typeof slot.reservedInputs === "object" ? slot.reservedInputs : {};
+    slot.outputCarry = Math.max(0, Number(slot.outputCarry) || 0);
+    if (slot.phase !== "gathering" && slot.phase !== "processing") slot.phase = "gathering";
+    result.active = true;
 
-    slotsActifs.forEach(function(slot) {
-      slot.progress = (Number(slot.progress) || 0) + progressionReelle;
-      if (slot.progress < 1) return;
+    let remaining = Number(dt);
+    let guard = 0;
+    while (remaining > EPSILON && guard++ < 100000) {
+      if (slot.phase === "gathering") {
+        let gathered = Math.max(0, Number(slot.gatheredInputs[pair.rawRes]) || 0);
+        if (gathered > targetRaw) gathered = targetRaw;
+        const missing = Math.max(0, targetRaw - gathered);
+        if (missing <= EPSILON) {
+          slot.gatheredInputs[pair.rawRes] = targetRaw;
+          slot.phase = "processing";
+          slot.phaseProgress = 0;
+          continue;
+        }
+        const secondsNeeded = missing / gatheringRate;
+        const secondsUsed = Math.min(remaining, secondsNeeded);
+        const amount = Math.min(missing, gatheringRate * secondsUsed);
+        gathered += amount;
+        slot.gatheredInputs[pair.rawRes] = gathered;
+        slot.phaseProgress = targetRaw > 0 ? Math.min(1, gathered / targetRaw) : 1;
+        result.gathered += amount;
+        if (pair.rawTotalKey) state[pair.rawTotalKey] = (Number(state[pair.rawTotalKey]) || 0) + amount;
+        remaining -= secondsUsed;
+        if (missing - amount <= EPSILON) {
+          slot.gatheredInputs[pair.rawRes] = targetRaw;
+          slot.phase = "processing";
+          slot.phaseProgress = 0;
+        }
+        continue;
+      }
 
-      const cycles = Math.floor(slot.progress);
-      slot.progress -= cycles;
-      const kitty = state.kittiesData[slot.kittyIndex];
-      const niveau = kitty && Number.isFinite(kitty.niveau) ? kitty.niveau : 0;
-      const procBonus = Math.pow(1.05, niveau);
-      slot.prodFrac = (Number(slot.prodFrac) || 0) + cycles * procBonus;
-      const produitSlot = Math.floor(slot.prodFrac);
-      slot.prodFrac -= produitSlot;
-      if (produitSlot <= 0) return;
+      const progress = Math.max(0, Math.min(1, Number(slot.phaseProgress) || 0));
+      const missingProgress = 1 - progress;
+      const secondsNeeded = missingProgress / processingRate;
+      const secondsUsed = Math.min(remaining, secondsNeeded);
+      const nextProgress = Math.min(1, progress + processingRate * secondsUsed);
+      slot.phaseProgress = nextProgress;
+      remaining -= secondsUsed;
+      if (1 - nextProgress > EPSILON) continue;
 
-      resultat.produit += produitSlot;
-      if (resultat.premierProducteurIndex === null) resultat.premierProducteurIndex = slot.kittyIndex;
-    });
-
-    state[pair.procRes] = (Number(state[pair.procRes]) || 0) + resultat.produit;
-    return resultat;
+      slot.outputCarry += complexProduction;
+      const wholeOutput = Math.floor(slot.outputCarry + EPSILON);
+      slot.outputCarry = Math.max(0, slot.outputCarry - wholeOutput);
+      if (wholeOutput > 0) {
+        state[pair.outputRes] = (Number(state[pair.outputRes]) || 0) + wholeOutput;
+        result.produced += wholeOutput;
+        if (result.firstProducerIndex === null) result.firstProducerIndex = slot.kittyIndex;
+      }
+      result.completedCycles += 1;
+      slot.gatheredInputs = {};
+      slot.reservedInputs = {};
+      slot.phase = "gathering";
+      slot.phaseProgress = 0;
+    }
+    return result;
   }
 
   CatInc.production = Object.freeze({
     productionProcBonus: productionProcBonus,
-    avancerTransformation: avancerTransformation
+    avancerRecetteSlot: avancerRecetteSlot
   });
 })(typeof window !== "undefined" ? window : globalThis);

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0067" />
+  <link rel="stylesheet" href="style.css?v=0.0090" />
 </head>
 <body>
 
@@ -22,14 +22,27 @@
     </div>
   </div>
 
+  <!-- MANDATORY SAVE RESTART: recipe-based Work update -->
+  <div id="save-upgrade-modal" class="ecran-intro save-upgrade-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="save-upgrade-title" aria-describedby="save-upgrade-copy" style="display:none">
+    <div class="intro-boite save-upgrade-box" role="document" tabindex="-1">
+      <img class="save-upgrade-logo" src="img/interface/Cat Inc. Logo_Final.png?v=0.0028" alt="Cat Inc">
+      <div class="intro-dialogue">
+        <h2 id="save-upgrade-title" class="save-upgrade-title">A new way to work</h2>
+        <p id="save-upgrade-copy" class="save-upgrade-copy">Work has been completely rebuilt around recipes. Your previous save uses the old production system and cannot continue with this update.</p>
+        <p class="save-upgrade-note">A new game is required. Your sound settings will be kept.</p>
+      </div>
+      <button id="save-upgrade-restart" class="bouton-intro" type="button" onclick="confirmerRedemarrageMajeur()">Start a new game</button>
+    </div>
+  </div>
+
   <!-- STORY 1 : first kitty -->
   <div id="ecran-story-1" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
     <div class="intro-boite">
       <div class="intro-dialogue">
-        <p class="intro-ligne"><span class="intro-perso enfant">Kid</span> Got you! Welcome home, buddy. The garden's all yours — you're gonna love it here!</p>
-        <p class="intro-ligne intro-miaou"><span class="intro-perso bernard">Bernardo</span> <em>Miaou miaou.</em> <span class="intro-traduit">(Yes yes, lovely garden, very nice. Now look across the street, kid. Keep looking.)</span></p>
-        <p class="intro-ligne"><span class="intro-perso enfant">Kid</span> Hey... there's another kitty at the end of the street! She looks lost. I should go get her!</p>
-        <p class="intro-ligne intro-miaou"><span class="intro-perso bernard">Bernardo</span> <em>Miaou.</em> <span class="intro-traduit">(That's Mochi. She's been waiting there since noon. Right on schedule.)</span></p>
+        <p class="intro-ligne"><span class="intro-perso enfant">Kid</span> Got you! Welcome home, buddy. The garden's all yours. You're gonna love it here!</p>
+        <p class="intro-ligne intro-miaou"><span class="intro-perso bernard">Bernardo</span> <em>Miaou miaou.</em> <span class="intro-traduit">(At last. A warm garden and a human who thinks this was his idea. A promising start.)</span></p>
+        <p class="intro-ligne"><span class="intro-perso enfant">Kid</span> Hey... there's another cat at the end of the street! She looks lost. I should go get her!</p>
+        <p class="intro-ligne intro-miaou"><span class="intro-perso bernard">Bernardo</span> <em>Miaou.</em> <span class="intro-traduit">(There she is. Mochi knows her cue. Let's see if our new human can be useful twice in one day.)</span></p>
       </div>
       <button class="bouton-intro" onclick="fermerModal('ecran-story-1')">Let's go get her!</button>
     </div>
@@ -39,24 +52,26 @@
   <div id="ecran-story-2" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
     <div class="intro-boite">
       <div class="intro-dialogue">
-        <p class="intro-ligne"><span class="intro-perso enfant">Kid</span> Phew, she was fast! But I got her. Two kitties — this is the best day ever.</p>
-        <p class="intro-ligne intro-miaou"><span class="intro-perso bernard">Bernardo</span> <em>Miaou miaou.</em> <span class="intro-traduit">(Don't mention the claw marks. Act natural, Mochi.)</span></p>
-        <p class="intro-ligne intro-miaou"><span class="intro-perso mochi">Mochi</span> <em>Miaou.</em> <span class="intro-traduit">(He said act natural, not look smug. Work on that.)</span></p>
+        <p class="intro-ligne"><span class="intro-perso enfant">Kid</span> Phew, she was fast! But I got her. Two kitties. This is the best day ever.</p>
+        <p class="intro-ligne intro-miaou"><span class="intro-perso bernard">Bernardo</span> <em>Miaou miaou.</em> <span class="intro-traduit">(Welcome, Mochi. You made that chase look very convincing.)</span></p>
+        <p class="intro-ligne intro-miaou"><span class="intro-perso mochi">Mochi</span> <em>Miaou.</em> <span class="intro-traduit">(Of course. The human thinks he rescued me.)</span></p>
+        <p class="intro-ligne intro-miaou"><span class="intro-perso bernard">Bernardo</span> <em>Miaou.</em> <span class="intro-traduit">(Good. Humans are much easier to manage when they feel heroic.)</span></p>
         <p class="intro-ligne"><span class="intro-perso enfant">Kid</span> Wait... I'm pretty sure I saw another one near the park earlier. I'll go check!</p>
-        <p class="intro-ligne intro-miaou"><span class="intro-perso bernard">Bernardo</span> <em>Miaou miaou miaou.</em> <span class="intro-traduit">(That's Luna. She's ahead of schedule. The plan is coming together faster than expected.)</span></p>
+        <p class="intro-ligne intro-miaou"><span class="intro-perso mochi">Mochi</span> <em>Miaou?</em> <span class="intro-traduit">(Luna is here already?)</span></p>
+        <p class="intro-ligne intro-miaou"><span class="intro-perso bernard">Bernardo</span> <em>Miaou miaou miaou.</em> <span class="intro-traduit">(Right on time. Soon the whole gang will be together.)</span></p>
       </div>
       <button class="bouton-intro" onclick="fermerModal('ecran-story-2')">One more can't hurt!</button>
     </div>
   </div>
 
-  <!-- STORY 3 : third kitty — Cathering unlocked -->
+  <!-- STORY 3 : third kitty, Cathering unlocked -->
   <div id="ecran-story-3" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
     <div class="intro-boite">
       <div class="intro-dialogue">
         <p class="intro-ligne"><span class="intro-perso enfant">Kid</span> Three kitties in one day... I'm completely wiped out. I'll go watch some TV. They'll be fine!</p>
-        <p class="intro-ligne intro-miaou">— Kid disappears inside —</p>
+        <p class="intro-ligne intro-miaou">Kid disappears inside</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Finally. That kid has no idea what he's just done.</p>
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Mochi! Luna! On your paws, both of you. No more napping, no more meowing at nothing. We have a neighborhood to take over — and it starts RIGHT NOW.</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Mochi! Luna! On your paws, both of you. No more napping, no more meowing at nothing. We have a neighborhood to take over, and it starts RIGHT NOW.</p>
       </div>
       <button class="bouton-intro" onclick="fermerModal('ecran-story-3')">Time to work!</button>
     </div>
@@ -66,24 +81,41 @@
   <div id="ecran-story-4" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
     <div class="intro-boite">
       <div class="intro-dialogue">
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Our first structure. Remember this moment — this is where it all starts.</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Our first structure. Remember this moment. This is where it all starts.</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Now listen carefully. Every box we build brings another recruit closer. More recruits means more power. We don't stop until this entire neighborhood answers to us.</p>
       </div>
       <button class="bouton-intro" onclick="fermerModal('ecran-story-4')">Onwards!</button>
     </div>
   </div>
 
-  <!-- STORY 5 : 6 kitties — Explorations unlocked -->
+  <!-- STORY BASIC WOOD : Basic Wood resource tier unlocked -->
+  <div id="ecran-story-basic-wood" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
+    <div class="intro-boite">
+      <div class="intro-dialogue">
+        <p class="intro-ligne intro-miaou">While exploring the garden, Mochi notices several logs stacked beneath an old shelter.</p>
+        <p class="intro-ligne"><span class="intro-perso mochi">Mochi</span> Bernardo, look under there. The humans left a whole pile of logs.</p>
+        <p class="intro-ligne"><span class="intro-perso luna">Luna</span> They look much stronger than our cardboard pieces.</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> They are. Cardboard gave us a start, but real wood will let us build stronger and more ambitious structures.</p>
+        <p class="intro-ligne"><span class="intro-perso mochi">Mochi</span> So we're taking it?</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Obviously. Gather every usable piece. From now on, cardboard is only the beginning.</p>
+        <p class="intro-ligne intro-miaou">Basic Wood is now available.</p>
+        <p class="intro-ligne intro-miaou">Resources have multiple tiers. New tiers of Wood, Food and Rock will become available as rewards for different actions, discoveries and missions.</p>
+      </div>
+      <button class="bouton-intro" onclick="fermerModal('ecran-story-basic-wood')">Put that wood to work!</button>
+    </div>
+  </div>
+
+  <!-- STORY 5 : 6 kitties, Explorations unlocked -->
   <div id="ecran-story-5" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
     <div class="intro-boite">
       <div class="intro-dialogue">
-        <p class="intro-ligne intro-miaou">— Six kitties gathered in the garden —</p>
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Look at us. Six strong. We're not just a handful anymore — we're a crew.</p>
+        <p class="intro-ligne intro-miaou">Six kitties gathered in the garden</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Look at us. Six strong. We're not just a handful anymore. We're a crew.</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> I've been thinking. We've been working this garden long enough. It's time we start looking further out.</p>
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Let's start with what's right here. Our own trash bins — we walk past them every day without a second look. Could be something useful sitting right there.</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Let's start with what's right here. We walk past our own trash bins every day without a second look. Could be something useful sitting right there.</p>
         <p class="intro-ligne intro-miaou"><img class="titre-icone" src="img/interface/Exploration_Final.png" alt="" style="image-rendering:pixelated;mix-blend-mode:multiply;"> Explorations unlocked!</p>
       </div>
-      <button class="bouton-intro" onclick="fermerModal('ecran-story-5')">Let's explore!</button>
+      <button class="bouton-intro" onclick="ouvrirCarteDepuisStoryGangRise()">Let's explore!</button>
     </div>
   </div>
 
@@ -92,13 +124,13 @@
 
     <div class="intro-boite">
       <div class="intro-dialogue">
-        <p class="intro-ligne intro-miaou">— The squad returns from the trash run —</p>
+        <p class="intro-ligne intro-miaou">The squad returns from the trash run</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Hold on. What's this doing here?</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> A school guide. Mostly human stuff... but look at these diagrams. Work structures, job assignments, efficiency charts. This is interesting.</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Give me some time with this. I want to go through it properly.</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> If there's anything useful in here, I'll find it. Count on me.</p>
       </div>
-      <button class="bouton-intro" onclick="fermerModal('ecran-story-6a')">Take your time, Bernardo</button>
+      <button class="bouton-intro" onclick="allerEtudierSchoolGuideDepuisStory()">Have a read, Bernardo</button>
     </div>
   </div>
 
@@ -108,13 +140,39 @@
     <div class="intro-boite">
       <div class="intro-dialogue">
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Alright, I've been through it all. Fascinating stuff, honestly.</p>
-        <p class="intro-ligne intro-miaou">— Bernardo sets aside one page with a thoughtful look —</p>
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> This page — CEO, Chief Executive Officer. That's the one that speaks to me. I'll be keeping it.</p>
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> The guide talks about giving everyone a proper role — a job that plays to their strengths. If we do that, we could be twice as efficient. Maybe more.</p>
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> I have an idea. We build a Job Center — a place where everyone trains and gets assigned properly. What do you say?</p>
-        <p class="intro-ligne intro-miaou">— Bernardo has just become the Gang Leader. Find more details about his role in the Gang tab. —</p>
+        <p class="intro-ligne intro-miaou">Bernardo sets aside one page with a thoughtful look</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> This page is about the CEO, the Chief Executive Officer. That's the one that speaks to me. I'll be keeping it.</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> The guide talks about giving everyone a proper role, a job that plays to their strengths. If we do that, we could be twice as efficient. Maybe more.</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> I have an idea. We build a Job Center, a place where everyone trains and gets assigned properly. What do you say?</p>
       </div>
-      <button class="bouton-intro" onclick="fermerModal('ecran-story-6b')">Let's build it!</button>
+      <button class="bouton-intro" onclick="validerStoryJob()">Let's build it!</button>
+    </div>
+  </div>
+
+  <!-- JOB DISCOVERY : shown immediately after A job for everyone -->
+  <div id="gang-leader-unlock-modal" class="explo-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="gang-leader-unlock-title" style="display:none">
+    <div class="explo-modal-overlay" aria-hidden="true"></div>
+    <div class="explo-modal-panneau" role="document" tabindex="-1">
+      <div class="explo-modal-header">
+        <span class="explo-modal-titre" id="gang-leader-unlock-title">Gang Leader unlocked</span>
+      </div>
+      <p class="gang-leader-unlock-copy">Bernardo has just become the Gang Leader. Find more details about his role in the Gang tab.</p>
+      <button class="btn-inv-action gang-leader-unlock-action" onclick="allerVoirJobBernardo()">Go check Bernardo's job</button>
+    </div>
+  </div>
+
+  <!-- STORY EXPLORATOR : first Explorator trained -->
+  <div id="ecran-story-explorator" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
+    <div class="intro-boite">
+      <div class="intro-dialogue">
+        <p class="intro-ligne intro-miaou">After a long training session, the new Explorator steps out of the Job Center with a map tucked carefully under one paw.</p>
+        <p class="intro-ligne"><span class="intro-perso explorator story-explorator-speaker">Explorator</span> I can read tracks, mark safe routes, and, most importantly, find my way back.</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Look at you! Our gang's very first Explorator. Well done.</p>
+        <p class="intro-ligne"><span class="intro-perso explorator story-explorator-speaker">Explorator</span> So... where do we go first?</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> We'll start close to home. With you leading the way, the whole neighborhood is finally within our reach.</p>
+        <p id="story-explorator-unlock-copy" class="intro-ligne intro-miaou">This cat is now an Explorator. You can explore the neighborhood using the map in the Explorations tab.</p>
+      </div>
+      <button class="bouton-intro" onclick="ouvrirCarteDepuisStoryExplorator()">Open the map</button>
     </div>
   </div>
 
@@ -122,10 +180,10 @@
   <div id="ecran-story-seminar" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
     <div class="intro-boite">
       <div class="intro-dialogue">
-        <p class="intro-ligne intro-miaou">— Bernardo closes the booklet and stares at the ceiling for a long moment —</p>
+        <p class="intro-ligne intro-miaou">Bernardo closes the booklet and stares at the ceiling for a long moment</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> This is it. This is the missing piece.</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> These seminars... they don't just teach skills. They sharpen instincts. They turn a good worker into an exceptional one.</p>
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> We need a place for that. A Training Center — right here in our building. A place where the gang doesn't just work... they grow.</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> We need a place for that. A Training Center, right here in our building. A place where the gang doesn't just work... they grow.</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Build it. And everything else we do becomes twice as powerful.</p>
       </div>
       <button class="bouton-intro" onclick="fermerModal('ecran-story-seminar')">Let's build it!</button>
@@ -136,7 +194,7 @@
   <div id="ecran-story-bird" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
     <div class="intro-boite">
       <div class="intro-dialogue">
-        <p class="intro-ligne intro-miaou">— A noise is heard in the tree at the back of the garden —</p>
+        <p class="intro-ligne intro-miaou">A noise is heard in the tree at the back of the garden</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> ...Everyone hold still.</p>
         <p class="intro-ligne"><span class="intro-perso mochi">Mochi</span> What is it?</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> There. At the back of the garden, bottom of the tree.</p>
@@ -146,7 +204,7 @@
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Right Luna, watch me and learn.</p>
         <p class="intro-ligne"><span class="intro-perso mochi">Mochi</span> I've got your back!</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Let's approach it silently... Now, nobody move, nobody breathe, nobody make a single sound...</p>
-        <p class="intro-ligne intro-miaou">— A leaf falls —</p>
+        <p class="intro-ligne intro-miaou">A leaf falls</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> I'M GOING IN.</p>
       </div>
       <button class="bouton-intro" onclick="fermerStoryBird()">GO, BERNARDO!</button>
@@ -157,7 +215,7 @@
   <div id="ecran-story-salad" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
     <div class="intro-boite">
       <div class="intro-dialogue">
-        <p class="intro-ligne intro-miaou">— The Catchen fills with the good scent of fresh catnip salad —</p>
+        <p class="intro-ligne intro-miaou">The Catchen fills with the good scent of fresh catnip salad</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> That smell. Is that actual food? Prepared food?</p>
         <p class="intro-ligne"><span id="story-salad-cook-tag" class="intro-perso cuisiner"></span> Yes, boss! I made it myself!</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Great work. EVERYONE, gather round! We just cooked our first real meal. From now on, we don't just work, we eat well. And when we eat well, we grow strong. Remember this moment!</p>
@@ -170,14 +228,14 @@
   <div id="ecran-absence" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
     <div class="intro-boite">
       <div class="intro-dialogue">
-        <p class="intro-ligne intro-miaou">— While you were away —</p>
+        <p class="intro-ligne intro-miaou">While you were away</p>
         <div id="absence-contenu" class="absence-contenu"></div>
       </div>
       <button class="bouton-intro" onclick="fermerModal('ecran-absence')">Welcome back!</button>
     </div>
   </div>
 
-  <!-- TOP BAR (header + resources — sticky wrapper for mobile) -->
+  <!-- TOP BAR (header + resources, sticky wrapper for mobile) -->
   <div id="top-bar">
   <!-- HEADER -->
   <header class="header">
@@ -199,23 +257,33 @@
       </div>
       <button id="bouton-sequence">Catch a cat 🐾</button>
       <div class="conteneur-barre" id="conteneur-barre-sequence" style="display:none">
-        <div id="barre-sequence" class="barre barre-verte"></div>
+        <div id="barre-sequence" class="barre barre-verte">
+          <img id="sequence-chat-marker" class="sequence-chat-marker" src="img/Cat faces/Bernardo.png?v=0.0025" alt="Bernardo">
+        </div>
       </div>
-      <p id="info-sequence" class="info-subtile"></p>
+      <div id="info-sequence" class="info-subtile" aria-live="polite">
+        <span class="info-sequence-label">Next Cat</span>
+        <span id="info-sequence-timer" class="info-sequence-timer">Ready</span>
+      </div>
     </div>
   </header>
 
   <!-- BIRD MINI-GAME MODAL -->
   <div id="bird-minijeu" class="bird-minijeu-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="bird-minijeu-titre" aria-describedby="bird-minijeu-desc" style="display:none">
-    <div class="bird-minijeu-carte" role="document" tabindex="-1">
-      <h3 class="bird-minijeu-titre" id="bird-minijeu-titre">Bernardo spotted a bird!</h3>
+    <div class="bird-minijeu-carte reflex-minijeu-carte" role="document" tabindex="-1">
+      <div class="reflex-title-row">
+        <h3 class="bird-minijeu-titre" id="bird-minijeu-titre">Bernardo spotted a bird!</h3>
+        <span class="reflex-game-tag">TIMING CHALLENGE</span>
+      </div>
       <p class="bird-minijeu-desc" id="bird-minijeu-desc">Click <strong>CATCH!</strong> when the cursor reaches the bird.</p>
+      <div class="reflex-status-row" aria-hidden="true"><span>TIMING</span><span>ONE ATTEMPT</span></div>
       <div class="bird-track">
         <div class="bird-target">
           <img class="bird-target-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0028" alt="Bird target">
         </div>
         <div id="bird-cursor" class="bird-cursor"></div>
       </div>
+      <div class="reflex-zone-labels" aria-hidden="true"><span>TOO EARLY</span><span>CATCH!</span><span>TOO LATE</span></div>
       <button class="bird-catch-btn" onclick="clickerBird()">CATCH! 🐾</button>
       <button class="bird-skip-btn" onclick="skipBird()">Let it fly away</button>
     </div>
@@ -302,15 +370,15 @@
   </section>
   </div> <!-- /top-bar -->
 
-  <!-- ONGLETS — moved to bottom via flex order on mobile; stays here on desktop -->
+  <!-- ONGLETS: moved to bottom via flex order on mobile; stays here on desktop -->
   <div class="barre-onglets" role="tablist" aria-label="Main sections" aria-orientation="horizontal">
     <button id="onglet-gang"         class="onglet onglet-actif" role="tab" aria-selected="true" aria-controls="contenu-gang" tabindex="0" onclick="changerOnglet('gang')"><img class="onglet-icone" src="img/interface/Gang_Final.png?v=0.0028" alt=""> <span class="onglet-label" data-mobile-label="Gang">Gang</span></button>
     <button id="onglet-work"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-work" tabindex="-1" style="display:none" onclick="changerOnglet('work')"><img class="onglet-icone" src="img/interface/Work_Final.png?v=2" alt=""> <span class="onglet-label" data-mobile-label="Work">Work</span></button>
     <button id="onglet-buildings"    class="onglet" role="tab" aria-selected="false" aria-controls="contenu-buildings" tabindex="-1" style="display:none" onclick="changerOnglet('buildings')"><img class="onglet-icone" src="img/interface/Building_Tier1_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Build">Buildings</span></button>
     <button id="onglet-facilities"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-facilities" tabindex="-1" style="display:none" onclick="changerOnglet('facilities')"><img class="onglet-icone" src="img/Buildings/Job Center_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Jobs">Facilities</span></button>
-    <button id="onglet-explorations" class="onglet" role="tab" aria-selected="false" aria-controls="contenu-explorations" tabindex="-1" style="display:none" onclick="changerOnglet('explorations')"><img class="onglet-icone" src="img/interface/Exploration_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Explore">Explorations</span></button>
+    <button id="onglet-explorations" class="onglet" role="tab" aria-selected="false" aria-controls="contenu-explorations" tabindex="-1" style="display:none" onclick="changerOnglet('explorations')"><img class="onglet-icone" src="img/interface/Exploration_Final.png" alt=""><span id="exploration-tab-alerts" class="exploration-tab-alerts" role="status" style="display:none"></span> <span class="onglet-label" data-mobile-label="Explore">Explorations</span></button>
     <button id="onglet-inventaire"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-inventaire" tabindex="-1" onclick="changerOnglet('inventaire')"><img class="onglet-icone" src="img/interface/Inventory_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Bag">Inventory</span></button>
-    <button id="onglet-logs"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-logs" tabindex="-1" onclick="changerOnglet('logs')"><img class="onglet-icone" src="img/interface/Logs_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Logs">Logs</span></button>
+    <button id="onglet-logs"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-logs" tabindex="-1" style="display:none" onclick="changerOnglet('logs')"><img class="onglet-icone" src="img/interface/Logs_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Logs">Logs</span></button>
   </div>
 
   <div id="work-boost-indicator" role="status" aria-live="polite" style="display:none"></div>
@@ -318,232 +386,30 @@
   <!-- SCROLLABLE CONTENT AREA -->
   <main id="contenu-principal">
 
-  <!-- CONTENU WORK (Cathering + Paw-cessing) -->
+  <!-- CONTENU WORK: family recipe slots -->
   <div id="contenu-work" role="tabpanel" aria-labelledby="onglet-work" aria-hidden="true" style="display:none">
     <div id="gang-leader-banner" style="display:none"></div>
     <div class="work-filtres">
-      <div class="work-filtres-btns">
-        <button class="btn-filtre-work btn-filtre-work-actif" id="filtre-work-all" aria-pressed="true" onclick="filtrerWork(null)">All</button>
-        <button class="btn-filtre-work" id="filtre-work-wood" aria-pressed="false" onclick="filtrerWork('wood')">Wood &amp; Planks</button>
-        <button class="btn-filtre-work" id="filtre-work-food" aria-pressed="false" onclick="filtrerWork('food')">Food &amp; Catchen</button>
-        <button class="btn-filtre-work" id="filtre-work-rock" aria-pressed="false" onclick="filtrerWork('rock')">Rocks &amp; Pawsonry</button>
+      <div class="work-subnav">
+        <div class="work-filtres-btns" role="group" aria-label="Resource family">
+          <button class="btn-filtre-work btn-filtre-work-actif" id="filtre-work-wood" aria-pressed="true" onclick="filtrerWork('wood')"><span>Wood</span><span class="work-family-warning" id="work-warning-wood" hidden></span></button>
+          <button class="btn-filtre-work" id="filtre-work-food" aria-pressed="false" onclick="filtrerWork('food')"><span>Food</span><span class="work-family-warning" id="work-warning-food" hidden></span></button>
+          <button class="btn-filtre-work" id="filtre-work-rock" aria-pressed="false" onclick="filtrerWork('rock')"><span>Rocks</span><span class="work-family-warning" id="work-warning-rock" hidden></span></button>
+        </div>
       </div>
-      <button class="btn-unaffect-all" onclick="deallouerTous()">↩ Unassign all workers</button>
+      <button class="btn-unaffect-all" onclick="deallouerTous()">↩ Unassign all Cats</button>
     </div>
     <div id="work-discovery-hint" class="work-discovery-hint" role="note">
       <div class="work-discovery-hint-copy">
         <strong>How Work works</strong>
-        <span>Use + to assign cats. Select a resource icon to see its timing, production rate and recipe.</span>
+        <span>Choose a family, select a recipe, then assign a Cat. The Cat gathers the private ingredients first and processes the finished resource afterwards.</span>
       </div>
       <button class="work-discovery-hint-close" type="button" onclick="fermerWorkDiscoveryHint()" aria-label="Dismiss Work help" title="Dismiss">×</button>
     </div>
     <section class="panneau panneau-large" id="section-work-pairs">
-
-      <!-- WOOD group: Wood column (raw) linked to Sawmill column (processed) -->
-      <div id="famille-wood" class="famille-pair-group">
-        <div class="pair-card">
-          <div class="pair-col-header">
-            <div class="pair-col-title-row"><span class="pair-col-titre">Wood</span></div>
-            <div id="manager-slot-wood" class="manager-slot-conteneur" style="display:none"></div>
-          </div>
-          <div class="pair-col-header">
-            <div class="pair-col-title-row"><span class="pair-col-titre">Sawmill</span><span class="pair-col-sous-titre">Processed Wood</span></div>
-            <div id="manager-slot-sawmill" class="manager-slot-conteneur" style="display:none"></div>
-          </div>
-          <div class="pair-row">
-            <div class="pair-icon-col"><img class="pair-icon" src="img/resources/Cardboard Pieces_Final.png" alt="Cardboard Pieces"><span class="pair-time-adj" id="ptadj-cardboardPieces"></span></div>
-            <span class="pair-qty" id="pqty-cardboardPieces">0</span>
-            <div class="pair-info">
-              <span class="pair-nom">Cardboard Pieces <span class="pair-temps" id="ptime-cardboardPieces">60s</span></span>
-              <span class="pair-rate" id="prate-cardboardPieces"></span>
-              <div class="pinfo-detail" id="pdetail-cardboardPieces"></div>
-            </div>
-            <div class="worker-slots-row pair-workers">
-              <div class="worker-slot" id="worker-slot-woodcatting-0"></div>
-              <div class="worker-slot" id="worker-slot-woodcatting-1"></div>
-            </div>
-          </div>
-          <div class="pair-row" id="pairside-sawmill">
-            <div class="pair-icon-col"><img class="pair-icon" src="img/resources/Cardboard Plank_Final.png" alt="Cardboard Plank"><span class="pair-time-adj" id="ptadj-cardboardPlanks"></span></div>
-            <span class="pair-qty" id="pqty-cardboardPlanks">0</span>
-            <div class="pair-info">
-              <span class="pair-nom">Cardboard Planks <span class="pair-nom-from">(Cardboard Pieces)</span> <span class="pair-temps" id="ptime-cardboardPlanks">120s</span> <span class="pair-feed" id="pfeed-sawmill"></span></span>
-              <span class="pair-recipe"><img class="pair-recipe-icon" src="img/resources/Cardboard Pieces_Final.png" alt=""><span>×10</span></span>
-              <span class="pair-rate" id="prate-cardboardPlanks"></span>
-              <div class="pinfo-detail" id="pdetail-cardboardPlanks"></div>
-            </div>
-            <div class="worker-slots-row pair-workers">
-              <div class="worker-slot" id="worker-slot-sawmill-0"></div>
-              <div class="worker-slot" id="worker-slot-sawmill-1"></div>
-            </div>
-          </div>
-          <div class="pair-row" id="sep-basicWoodcatting" style="display:none">
-            <div class="pair-icon-col"><img class="pair-icon" src="img/resources/Basic Wood_Final.png" alt="Basic Wood"><span class="pair-time-adj" id="ptadj-basicWood"></span></div>
-            <span class="pair-qty" id="pqty-basicWood">0</span>
-            <div class="pair-info">
-              <span class="pair-nom">Basic Wood <span class="pair-temps" id="ptime-basicWood">600s</span></span>
-              <span class="pair-rate" id="prate-basicWood"></span>
-              <div class="pinfo-detail" id="pdetail-basicWood"></div>
-            </div>
-            <div class="worker-slots-row pair-workers">
-              <div class="worker-slot" id="worker-slot-basicWoodcatting-0"></div>
-              <div class="worker-slot" id="worker-slot-basicWoodcatting-1"></div>
-            </div>
-          </div>
-          <div class="pair-row" id="pairside-basicSawmill" style="display:none">
-            <div class="pair-icon-col"><img class="pair-icon" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank"><span class="pair-time-adj" id="ptadj-basicWoodPlanks"></span></div>
-            <span class="pair-qty" id="pqty-basicWoodPlanks">0</span>
-            <div class="pair-info">
-              <span class="pair-nom">Basic Wood Planks <span class="pair-nom-from">(Basic Wood)</span> <span class="pair-temps" id="ptime-basicWoodPlanks">1200s</span> <span class="pair-feed" id="pfeed-basicSawmill"></span></span>
-              <span class="pair-recipe"><img class="pair-recipe-icon" src="img/resources/Basic Wood_Final.png" alt=""><span>×10</span></span>
-              <span class="pair-rate" id="prate-basicWoodPlanks"></span>
-              <div class="pinfo-detail" id="pdetail-basicWoodPlanks"></div>
-            </div>
-            <div class="worker-slots-row pair-workers">
-              <div class="worker-slot" id="worker-slot-basicSawmill-0"></div>
-              <div class="worker-slot" id="worker-slot-basicSawmill-1"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- FOOD group: Food column (raw) linked to Catchen column (processed) -->
-      <div id="famille-food" class="famille-pair-group" style="display:none">
-        <div class="pair-card">
-          <div class="pair-col-header">
-            <div class="pair-col-title-row"><span class="pair-col-titre">Food</span></div>
-            <div id="manager-slot-food" class="manager-slot-conteneur" style="display:none"></div>
-          </div>
-          <div class="pair-col-header">
-            <div class="pair-col-title-row"><span class="pair-col-titre">Catchen</span><span class="pair-col-sous-titre">Cooked Food</span></div>
-            <div id="manager-slot-catchen" class="manager-slot-conteneur" style="display:none"></div>
-          </div>
-          <div class="pair-row">
-            <div class="pair-icon-col"><img class="pair-icon" src="img/resources/Catnip_Final.png" alt="Catnip"><span class="pair-time-adj" id="ptadj-catnip"></span></div>
-            <span class="pair-qty" id="pqty-catnip">0</span>
-            <div class="pair-info">
-              <span class="pair-nom">Catnip <span class="pair-temps" id="ptime-catnip">60s</span></span>
-              <span class="pair-rate" id="prate-catnip"></span>
-              <div class="pinfo-detail" id="pdetail-catnip"></div>
-            </div>
-            <div class="worker-slots-row pair-workers">
-              <div class="worker-slot" id="worker-slot-grasscatting-0"></div>
-              <div class="worker-slot" id="worker-slot-grasscatting-1"></div>
-            </div>
-          </div>
-          <div class="pair-row" id="pairside-catchen">
-            <div class="pair-icon-col"><img class="pair-icon" src="img/resources/Catnip Salad_Final.png" alt="Catnip Salad"><span class="pair-time-adj" id="ptadj-salads"></span></div>
-            <span class="pair-qty" id="pqty-salads">0</span>
-            <div class="pair-info">
-              <span class="pair-nom">Salads <span class="pair-nom-from">(Catnip)</span> <span class="pair-temps" id="ptime-salads">120s</span> <span class="pair-feed" id="pfeed-catchen"></span></span>
-              <span class="pair-recipe"><img class="pair-recipe-icon" src="img/resources/Catnip_Final.png" alt=""><span>×10</span></span>
-              <span class="pair-rate" id="prate-salads"></span>
-              <div class="pinfo-detail" id="pdetail-salads"></div>
-            </div>
-            <div class="worker-slots-row pair-workers">
-              <div class="worker-slot" id="worker-slot-catchen-0"></div>
-              <div class="worker-slot" id="worker-slot-catchen-1"></div>
-            </div>
-          </div>
-          <div class="pair-row" id="sep-fishcatting" style="display:none">
-            <div class="pair-icon-col"><img class="pair-icon" src="img/resources/Anchovy_Final.png?v=0.0028" alt="Anchovy"><span class="pair-time-adj" id="ptadj-anchovy"></span></div>
-            <span class="pair-qty" id="pqty-anchovy">0</span>
-            <div class="pair-info">
-              <span class="pair-nom">Anchovy <span class="pair-temps" id="ptime-anchovy">600s</span></span>
-              <span class="pair-rate" id="prate-anchovy"></span>
-              <div class="pinfo-detail" id="pdetail-anchovy"></div>
-            </div>
-            <div class="worker-slots-row pair-workers">
-              <div class="worker-slot" id="worker-slot-fishcatting-0"></div>
-              <div class="worker-slot" id="worker-slot-fishcatting-1"></div>
-            </div>
-          </div>
-          <div class="pair-row" id="pairside-grilledAnchovy" style="display:none">
-            <div class="pair-icon-col"><img class="pair-icon" src="img/resources/Grilled Anchovy_Final.png?v=0.0028" alt="Grilled Anchovy"><span class="pair-time-adj" id="ptadj-grilledAnchovy"></span></div>
-            <span class="pair-qty" id="pqty-grilledAnchovy">0</span>
-            <div class="pair-info">
-              <span class="pair-nom">Grilled Anchovy <span class="pair-nom-from">(Anchovy)</span> <span class="pair-temps" id="ptime-grilledAnchovy">1200s</span> <span class="pair-feed" id="pfeed-grilledAnchovy"></span></span>
-              <span class="pair-recipe"><img class="pair-recipe-icon" src="img/resources/Anchovy_Final.png?v=0.0028" alt=""><span>×10</span></span>
-              <span class="pair-rate" id="prate-grilledAnchovy"></span>
-              <div class="pinfo-detail" id="pdetail-grilledAnchovy"></div>
-            </div>
-            <div class="worker-slots-row pair-workers">
-              <div class="worker-slot" id="worker-slot-grilledAnchovy-0"></div>
-              <div class="worker-slot" id="worker-slot-grilledAnchovy-1"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ROCK group: Rock column (raw) linked to Pawsonry column (processed) -->
-      <div id="famille-rock" class="famille-pair-group" style="display:none">
-        <div class="pair-card">
-          <div class="pair-col-header">
-            <div class="pair-col-title-row"><span class="pair-col-titre">Rock</span></div>
-            <div id="manager-slot-rock" class="manager-slot-conteneur" style="display:none"></div>
-          </div>
-          <div class="pair-col-header">
-            <div class="pair-col-title-row"><span class="pair-col-titre">Pawsonry</span><span class="pair-col-sous-titre">Carved Stone</span></div>
-            <div id="manager-slot-pawsonry" class="manager-slot-conteneur" style="display:none"></div>
-          </div>
-          <div class="pair-row">
-            <div class="pair-icon-col"><img class="pair-icon" src="img/resources/Pebbles_Final.png" alt="Pebbles"><span class="pair-time-adj" id="ptadj-pebbles"></span></div>
-            <span class="pair-qty" id="pqty-pebbles">0</span>
-            <div class="pair-info">
-              <span class="pair-nom">Pebbles <span class="pair-temps" id="ptime-pebbles">60s</span></span>
-              <span class="pair-rate" id="prate-pebbles"></span>
-              <div class="pinfo-detail" id="pdetail-pebbles"></div>
-            </div>
-            <div class="worker-slots-row pair-workers">
-              <div class="worker-slot" id="worker-slot-pebblegathering-0"></div>
-              <div class="worker-slot" id="worker-slot-pebblegathering-1"></div>
-            </div>
-          </div>
-          <div class="pair-row" id="pairside-brickfactory">
-            <div class="pair-icon-col"><img class="pair-icon" src="img/resources/Pebble Brick_Final.png" alt="Pebble Brick"><span class="pair-time-adj" id="ptadj-pebbleBricks"></span></div>
-            <span class="pair-qty" id="pqty-pebbleBricks">0</span>
-            <div class="pair-info">
-              <span class="pair-nom">Pebble Bricks <span class="pair-nom-from">(Pebbles)</span> <span class="pair-temps" id="ptime-pebbleBricks">120s</span> <span class="pair-feed" id="pfeed-brickfactory"></span></span>
-              <span class="pair-recipe"><img class="pair-recipe-icon" src="img/resources/Pebbles_Final.png" alt=""><span>×10</span></span>
-              <span class="pair-rate" id="prate-pebbleBricks"></span>
-              <div class="pinfo-detail" id="pdetail-pebbleBricks"></div>
-            </div>
-            <div class="worker-slots-row pair-workers">
-              <div class="worker-slot" id="worker-slot-brickfactory-0"></div>
-              <div class="worker-slot" id="worker-slot-brickfactory-1"></div>
-            </div>
-          </div>
-          <div class="pair-row" id="sep-rockgathering" style="display:none">
-            <div class="pair-icon-col"><img class="pair-icon" src="img/resources/Rock_Final.png" alt="Rock"><span class="pair-time-adj" id="ptadj-rocks"></span></div>
-            <span class="pair-qty" id="pqty-rocks">0</span>
-            <div class="pair-info">
-              <span class="pair-nom">Rocks <span class="pair-temps" id="ptime-rocks">2400s</span></span>
-              <span class="pair-rate" id="prate-rocks"></span>
-              <div class="pinfo-detail" id="pdetail-rocks"></div>
-            </div>
-            <div class="worker-slots-row pair-workers">
-              <div class="worker-slot" id="worker-slot-rockgathering-0"></div>
-              <div class="worker-slot" id="worker-slot-rockgathering-1"></div>
-            </div>
-          </div>
-          <div class="pair-row" id="pairside-rockFactory" style="display:none">
-            <div class="pair-icon-col"><img class="pair-icon" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"><span class="pair-time-adj" id="ptadj-rockBricks"></span></div>
-            <span class="pair-qty" id="pqty-rockBricks">0</span>
-            <div class="pair-info">
-              <span class="pair-nom">Rock Bricks <span class="pair-nom-from">(Rocks)</span> <span class="pair-temps" id="ptime-rockBricks">12000s</span> <span class="pair-feed" id="pfeed-rockFactory"></span></span>
-              <span class="pair-recipe"><img class="pair-recipe-icon" src="img/resources/Rock_Final.png" alt=""><span>×10</span></span>
-              <span class="pair-rate" id="prate-rockBricks"></span>
-              <div class="pinfo-detail" id="pdetail-rockBricks"></div>
-            </div>
-            <div class="worker-slots-row pair-workers">
-              <div class="worker-slot" id="worker-slot-rockFactory-0"></div>
-              <div class="worker-slot" id="worker-slot-rockFactory-1"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      <!-- Family recipe slots are generated by initialiserWorkStructure(). -->
     </section>
+
   </div> <!-- /contenu-work -->
 
   <!-- CONTENU BUILDINGS -->
@@ -819,6 +685,18 @@
     </div>
   </div>
 
+  <!-- MODAL RECIPE SELECTION -->
+  <div id="recipe-modal" class="explo-modal recipe-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="recipe-modal-title" style="display:none">
+    <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalRecette()"></div>
+    <div class="explo-modal-panneau" role="document" tabindex="-1">
+      <div class="explo-modal-header">
+        <span class="explo-modal-titre" id="recipe-modal-title">Choose a recipe</span>
+        <button class="explo-modal-close" aria-label="Close recipe selection" onclick="fermerModalRecette()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>
+      </div>
+      <div id="recipe-modal-list" class="recipe-modal-list"></div>
+    </div>
+  </div>
+
   <!-- MODAL EXPLORATION KITTY SELECTION -->
   <div id="explo-modal" class="explo-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="explo-modal-titre" style="display:none">
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalExplo()"></div>
@@ -831,17 +709,108 @@
     </div>
   </div>
 
+  <!-- FIRST THREE CATS CATCH MINI-GAME -->
+  <div id="cat-catch-minijeu" class="bird-minijeu-overlay cat-catch-minijeu" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="cat-catch-minijeu-titre" aria-describedby="cat-catch-minijeu-desc" style="display:none">
+    <div class="bird-minijeu-overlay-dismiss" aria-hidden="true" onclick="echouerMiniJeuCatch()"></div>
+    <div class="bird-minijeu-carte reflex-minijeu-carte cat-catch-minijeu-carte" role="document" tabindex="-1">
+      <div class="reflex-title-row">
+        <h3 class="bird-minijeu-titre" id="cat-catch-minijeu-titre">Catch Bernardo!</h3>
+        <span class="reflex-game-tag">ONE ATTEMPT</span>
+      </div>
+      <p class="bird-minijeu-desc" id="cat-catch-minijeu-desc">Click <strong>CATCH!</strong> when the cursor reaches the cat.</p>
+      <div class="reflex-status-row" aria-hidden="true"><span>TIMING</span><span>DON'T MISS!</span></div>
+      <div class="bird-track">
+        <div class="bird-target cat-catch-target">
+          <img id="cat-catch-target-icone" class="bird-target-icone cat-catch-target-icone" src="img/Cat faces/Bernardo.png?v=0.0025" alt="Bernardo target">
+        </div>
+        <div id="cat-catch-cursor" class="bird-cursor"></div>
+      </div>
+      <div class="reflex-zone-labels reflex-zone-labels-cat" aria-hidden="true"><span>TOO EARLY</span><span>CATCH!</span><span>TOO LATE</span></div>
+      <button class="bird-catch-btn cat-catch-action" onclick="clickerCatCatch()">CATCH! 🐾</button>
+      <button class="bird-skip-btn" onclick="echouerMiniJeuCatch()">Give up</button>
+    </div>
+  </div>
+
+  <!-- RECRUITMENT MINI-GAME: PURRSUASION -->
+  <div id="recruit-minijeu" class="bird-minijeu-overlay recruit-minijeu" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="recruit-minijeu-titre" aria-describedby="recruit-minijeu-desc" style="display:none">
+    <div class="bird-minijeu-overlay-dismiss" aria-hidden="true" onclick="echouerMiniJeuRecruit('closed')"></div>
+    <div class="recruit-minijeu-carte" role="document" tabindex="-1">
+      <div class="recruit-title-row">
+        <h3 id="recruit-minijeu-titre">Purrsuasion</h3>
+        <span id="recruit-difficulty" class="recruit-difficulty">Difficulty 1 · Cursor speed ×1.00</span>
+      </div>
+      <p id="recruit-minijeu-desc">Build enough trust without overwhelming the visitor.</p>
+      <div class="recruit-scene">
+        <div id="recruit-visitor-speech" class="recruit-speech recruit-speech-visitor" aria-label="Visitor says: I'm alone and I haven't eaten in days.">I'm alone... and I haven't eaten in days.</div>
+        <div class="recruit-portrait-wrap recruit-portrait-visitor">
+          <img id="recruit-target-portrait" class="recruit-portrait" src="img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0025" alt="">
+          <span id="recruit-target-name">Visitor</span>
+        </div>
+        <div class="recruit-portrait-wrap recruit-portrait-bernardo">
+          <img class="recruit-portrait" src="img/Cat faces/Bernardo.png?v=0.0025" alt="">
+          <span>Bernardo</span>
+        </div>
+        <div id="recruit-bernardo-speech" class="recruit-speech recruit-speech-bernardo" aria-label="Bernardo says: We have plenty of food. Join us, and you'll never go hungry again.">We have plenty of food. Join us, and you'll never go hungry again.</div>
+      </div>
+      <div class="recruit-status-row">
+        <span>TRUST</span>
+        <span id="recruit-time-left">10.0s</span>
+      </div>
+      <div id="recruit-trust-track" class="recruit-trust-track" role="progressbar" aria-label="Visitor trust" aria-valuemin="0" aria-valuemax="100" aria-valuenow="18">
+        <div class="recruit-zone recruit-zone-low"></div>
+        <div class="recruit-zone recruit-zone-good"></div>
+        <div class="recruit-zone recruit-zone-high"></div>
+        <div id="recruit-trust-fill" class="recruit-trust-fill" style="width:18%"></div>
+        <div id="recruit-trust-marker" class="recruit-trust-marker" style="left:18%"></div>
+      </div>
+      <div class="recruit-zone-labels" aria-hidden="true"><span>NOT CONVINCED</span><span>INTERESTED</span><span>TOO PUSHY</span></div>
+      <div id="recruit-hold-progress" class="recruit-hold-progress" role="status" aria-live="polite">Keep their interest: 0.0 / 2.0s</div>
+      <button id="recruit-pitch-btn" class="recruit-pitch-btn" type="button" onpointerdown="commencerPitchRecruit(event)" onpointerup="arreterPitchRecruit(event)" onpointercancel="arreterPitchRecruit(event)" onkeydown="gererClavierPitchRecruit(event,true)" onkeyup="gererClavierPitchRecruit(event,false)">HOLD TO START YOUR PITCH</button>
+      <button class="bird-skip-btn" type="button" onclick="echouerMiniJeuRecruit('gave-up')">Give up</button>
+    </div>
+  </div>
+
+  <!-- PURRSUASION RESULT -->
+  <div id="recruit-result-popup" class="bird-success-overlay recruit-result-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="recruit-result-title" aria-describedby="recruit-result-message" style="display:none">
+    <div id="recruit-result-card" class="recruit-result-card" role="document" tabindex="-1">
+      <h3 id="recruit-result-title">Recruitment successful!</h3>
+      <div class="recruit-result-portrait-wrap">
+        <img id="recruit-result-portrait" class="recruit-result-portrait" src="img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0025" alt="">
+        <img id="recruit-result-badge" class="recruit-result-badge" src="img/interface/✅_Final.png?v=0.0025" alt="Success">
+      </div>
+      <p id="recruit-result-message">The cat is convinced and agrees to join the Gang!</p>
+      <button id="recruit-result-action" class="bird-success-btn" type="button" onclick="fermerPopupRecruitResult()">Continue</button>
+    </div>
+  </div>
+
+  <!-- MODAL BOOK LEARNING MINI-GAME -->
+  <div id="book-learning-modal" class="explo-modal book-learning-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="book-learning-title" aria-describedby="book-learning-instructions" style="display:none">
+    <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerMiniJeuLivre()"></div>
+    <div class="book-learning-panel" role="document" tabindex="-1">
+      <button class="explo-modal-close book-learning-close" aria-label="Close book lesson" onclick="fermerMiniJeuLivre()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>
+      <div class="book-learning-content">
+        <h2 id="book-learning-title">Learn from the School Guide</h2>
+        <p id="book-learning-instructions">Complete the sentence with the correct words.</p>
+        <div id="book-learning-phrase" class="book-learning-phrase"></div>
+        <div class="book-learning-bank-label">WORDS</div>
+        <div id="book-learning-words" class="book-learning-words" aria-label="Words to place"></div>
+        <div id="book-learning-feedback" class="book-learning-feedback" role="status" aria-live="polite"></div>
+        <button id="book-learning-check" class="btn-inv-action book-learning-check" onclick="verifierMiniJeuLivre()" disabled>Check answer</button>
+      </div>
+    </div>
+  </div>
+
   <div id="inv-res-popup" role="tooltip" aria-hidden="true" style="display:none"></div>
 
   <script src="js/cat-inc.js?v=0.0031"></script>
   <script src="js/data/config.js?v=0.0036"></script>
-  <script src="js/data/content.js?v=0.0044"></script>
-  <script src="js/core/state.js?v=0.0032"></script>
-  <script src="js/core/save.js?v=0.0032"></script>
-  <script src="js/core/production.js?v=0.0031"></script>
+  <script src="js/data/content.js?v=0.0046"></script>
+  <script src="js/core/state.js?v=0.0036"></script>
+  <script src="js/core/save.js?v=0.0038"></script>
+  <script src="js/core/production.js?v=0.0035"></script>
   <script src="js/ui/dom.js?v=0.0031"></script>
   <script src="js/ui/audio.js?v=0.0001"></script>
-  <script src="jeu.js?v=0.0067"></script>
+  <script src="jeu.js?v=0.0104"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

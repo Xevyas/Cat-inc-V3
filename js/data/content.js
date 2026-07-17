@@ -13,84 +13,84 @@ const RESOURCE_INFO = {
     nom:     "Cardboard Pieces",
     tier:    "Tier 1 · Wood family",
     desc:    "Small patches of cardboard found lying on the ground. Might be useful.",
-    produce: "Assign a cat to Gather Cardboard Pieces in the Work tab.",
-    usage:   "Crafted into Cardboard Planks (10 pieces per plank)."
+    produce: "Gathered privately by a Cat assigned to a Cardboard Planks recipe.",
+    usage:   "Used inside that recipe slot (10 pieces per plank). It is never stored globally."
   },
   "inv-res-cardboard-plank": {
     nom:     "Cardboard Planks",
     tier:    "Tier 1 · Wood family (processed)",
     desc:    "Sturdy planks pressed from cardboard. The backbone of early construction.",
-    produce: "Assign a cat to the Cardboard Sawmill in the Work tab (consumes 10 Cardboard Pieces per plank).",
+    produce: "Assign a Cat to a Cardboard Planks recipe in Work. The slot privately gathers 10 Cardboard Pieces first.",
     usage:   "Used to construct buildings like Houses."
   },
   "inv-res-basic-wood": {
     nom:     "Basic Wood",
     tier:    "Tier 2 · Wood family",
     desc:    "Rough wooden planks salvaged from human furniture. Heavier to carry, but sturdier.",
-    produce: "Assign a cat to Gather Basic Wood in the Work tab (unlocked after crafting 10 Cardboard Planks).",
-    usage:   "Crafted into Basic Wood Planks (10 logs per plank)."
+    produce: "Gathered privately by a Cat assigned to a Basic Wood Planks recipe.",
+    usage:   "Used inside that recipe slot (10 logs per plank). It is never stored globally."
   },
   "inv-res-wood-plank": {
     nom:     "Basic Wood Planks",
     tier:    "Tier 2 · Wood family (processed)",
     desc:    "Refined wooden planks, sanded and shaped. A real upgrade from cardboard.",
-    produce: "Assign a cat to the Basic Sawmill in the Work tab (consumes 10 Basic Wood per plank).",
+    produce: "Assign a Cat to a Basic Wood Planks recipe in Work. The slot privately gathers 10 Basic Wood first.",
     usage:   "Used to construct buildings like Houses."
   },
   "inv-res-catnip": {
     nom:     "Catnip",
     tier:    "Tier 1 · Food family",
     desc:    "Fresh catnip from the garden. Nutritious, if you're a cat.",
-    produce: "Assign a cat to Gather Catnip in the Work tab.",
-    usage:   "Crafted into Salads (10 catnip per salad)."
+    produce: "Gathered privately by a Cat assigned to a Catnip Salads recipe.",
+    usage:   "Used inside that recipe slot (10 catnip per salad). It is never stored globally."
   },
   "inv-res-salads": {
     nom:     "Salads",
     tier:    "Tier 1 · Food family (processed)",
     desc:    "A balanced catnip salad. Even Bernardo eats his greens.",
-    produce: "Assign a cat to The Catchen in the Work tab (consumes 10 Catnip per salad).",
+    produce: "Assign a Cat to a Catnip Salads recipe in Work. The slot privately gathers 10 Catnip first.",
     usage:   "Feed to a cat in the Gang tab to give them +1 XP."
   },
   "inv-res-anchovy": {
     nom:     "Anchovy",
     tier:    "Tier 2 · Food family",
     desc:    "Fresh anchovies fished from the nearby stream. A cat's favourite.",
-    produce: "Assign a cat to Fish Anchovies in the Work tab (unlocked via the Fishing Guide).",
-    usage:   "Crafted into Grilled Anchovy (10 anchovies per serving)."
+    produce: "Gathered privately by a Cat assigned to a Grilled Anchovy recipe.",
+    usage:   "Used inside that recipe slot (10 anchovies per serving). It is never stored globally."
   },
   "inv-res-grilled-anchovy": {
     nom:     "Grilled Anchovy",
     tier:    "Tier 2 · Food family (processed)",
     desc:    "Golden, crispy, perfectly grilled. Worth every second of cooking.",
-    produce: "Assign a cat to the Anchovy Grill in the Work tab (consumes 10 Anchovies per serving).",
+    produce: "Assign a Cat to a Grilled Anchovy recipe in Work. The slot privately gathers 10 Anchovies first.",
     usage:   "Not yet used — future recipes coming."
   },
   "inv-res-pebbles": {
     nom:     "Pebbles",
     tier:    "Tier 1 · Rock family",
     desc:    "Small smooth pebbles gathered from the yard. Heavy pockets, light heart.",
-    produce: "Assign a cat to Gather Pebbles in the Work tab.",
-    usage:   "Crafted into Pebble Bricks (10 pebbles per brick)."
+    produce: "Gathered privately by a Cat assigned to a Pebble Bricks recipe.",
+    usage:   "Used inside that recipe slot (10 pebbles per brick). It is never stored globally."
   },
   "inv-res-pebble-brick": {
     nom:     "Pebble Bricks",
     tier:    "Tier 1 · Rock family (processed)",
     desc:    "Compact bricks made from compressed pebbles. Surprisingly solid.",
-    produce: "Assign a cat to the Pawsonry in the Work tab (consumes 10 Pebbles per brick).",
+    produce: "Assign a Cat to a Pebble Bricks recipe in Work. The slot privately gathers 10 Pebbles first.",
     usage:   "Used to construct buildings like Facilities."
   },
   "inv-res-rocks": {
     nom:     "Rocks",
     tier:    "Tier 2 · Rock family",
     desc:    "Dense stones hauled from deeper in the yard. Much heavier than pebbles.",
-    produce: "Assign a cat to Gather Rocks in the Work tab.",
-    usage:   "Crafted into Rock Bricks (10 rocks per brick)."
+    produce: "Gathered privately by a Cat assigned to a Rock Bricks recipe.",
+    usage:   "Used inside that recipe slot (10 rocks per brick). It is never stored globally."
   },
   "inv-res-rock-brick": {
     nom:     "Rock Bricks",
     tier:    "Tier 2 · Rock family (processed)",
     desc:    "Solid bricks forged from dense rock. Built to last.",
-    produce: "Assign a cat to the Rock Forge in the Work tab (consumes 10 Rocks per brick).",
+    produce: "Assign a Cat to a Rock Bricks recipe in Work. The slot privately gathers 10 Rocks first.",
     usage:   "Used in advanced construction."
   },
   "inv-res-human-leftovers": {
@@ -133,8 +133,19 @@ const ITEMS = {
     emoji:        LIVRE_ICONE,
     description:  "A human guide to a few job orientations for kids. We may learn something from it.",
     unlocksLabel: "Explorator, Lumberjack, Carpenter, Farmer and Chef jobs",
+    studyDuration: 60000,
+    learningGame: {
+      phraseParts: [
+        "You can ",
+        " to be anything: a brave ",
+        ", a skilled ",
+        ", or even a great ",
+        "!"
+      ],
+      answers: ["learn", "explorer", "builder", "chef"]
+    },
     actions: [
-      { id: "learn", label: "Learn" }
+      { id: "study", label: "Study" }
     ]
   },
   fishingGuide: {
@@ -143,8 +154,19 @@ const ITEMS = {
     emoji:        LIVRE_ICONE,
     description:  "A complete beginner's guide to feline fishing. Spoiler: you don't need a rod.",
     unlocksLabel: "Anchovy fishing and Grilled Anchovy",
+    studyDuration: 3600000,
+    learningGame: {
+      phraseParts: [
+        "A patient ",
+        " watches the ",
+        ", catches an ",
+        ", then grills it in the ",
+        "!"
+      ],
+      answers: ["fisher", "water", "anchovy", "Catchen"]
+    },
     actions: [
-      { id: "learn", label: "Learn (1h)" }
+      { id: "study", label: "Study (1h)" }
     ]
   },
   constructionPlan: {
@@ -153,8 +175,19 @@ const ITEMS = {
     emoji:        LIVRE_ICONE,
     description:  "Blueprints for renovating the house. Someone's been busy.",
     unlocksLabel: "Wood Builder job",
+    studyDuration: 3600000,
+    learningGame: {
+      phraseParts: [
+        "Every sturdy ",
+        " begins with a careful ",
+        ": measure the ",
+        ", then let the ",
+        " start working!"
+      ],
+      answers: ["house", "plan", "planks", "builder"]
+    },
     actions: [
-      { id: "learn", label: "Learn (1h)" }
+      { id: "study", label: "Study (1h)" }
     ]
   },
   seminarGuide: {
@@ -163,8 +196,21 @@ const ITEMS = {
     emoji:        LIVRE_ICONE,
     description:  "A booklet about professional training seminars. Participants walk out with new skills and sharper instincts for their trade.",
     unlocksLabel: "Training Center",
+    studyDuration: 7200000,
+    learningGame: {
+      phraseParts: [
+        "An effective seminar aligns our ",
+        ", unlocks collective ",
+        ", fosters meaningful ",
+        ", strengthens team ",
+        ", accelerates sustainable ",
+        ", and transforms every challenge into an ",
+        "!"
+      ],
+      answers: ["values", "potential", "collaboration", "synergy", "growth", "opportunity"]
+    },
     actions: [
-      { id: "learn", label: "Study (2h)" }
+      { id: "study", label: "Study (2h)" }
     ]
   },
   stoneGuide: {
@@ -173,8 +219,19 @@ const ITEMS = {
     emoji:        LIVRE_ICONE,
     description:  "A human guide to mining and stone masonry. Heavy reading, heavy lifting.",
     unlocksLabel: "Miner and Stonemason jobs",
+    studyDuration: 3600000,
+    learningGame: {
+      phraseParts: [
+        "A skilled ",
+        " breaks through ",
+        " like butter, while a careful ",
+        " shapes them into solid ",
+        "!"
+      ],
+      answers: ["miner", "rocks", "stonemason", "bricks"]
+    },
     actions: [
-      { id: "learn", label: "Learn (1h)" }
+      { id: "study", label: "Study (1h)" }
     ]
   }
 };

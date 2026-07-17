@@ -48,6 +48,12 @@ function kittyIconHtml(kitty) {
   return '<img src="' + kitty.visage + '" class="kitty-icon" alt="' + kitty.nom + '">';
 }
 
+function recetteChoisieCount(recipeId) {
+  return Object.values(etat.workRecipeSlots || {}).reduce(function(total, slots) {
+    return total + slots.filter(function(slot) { return slot.recipeId === recipeId; }).length;
+  }, 0);
+}
+
 const OBJECTIFS = [
   // ── Kitties
   {
@@ -83,14 +89,9 @@ const OBJECTIFS = [
 
   // ── Cardboard & Buildings
   {
-    id: "firstWoodcatter", label: "Put your first cat to work",
+    id: "firstWoodcatter", label: "Choose the Cardboard Planks recipe",
     visible:  function(e) { return e.chatons >= 3; },
-    accompli: function(e) { return allocationCount("woodcatting") >= 1; }
-  },
-  {
-    id: "unlockBuildings", label: "Craft 1 Cardboard Plank to unlock Buildings",
-    visible:  function(e) { return e.cardboardPiecesTotalRecolte >= CONFIG.sawmill.deblocageA; },
-    accompli: function(e) { return e.cardboardPlanks >= 1; }
+    accompli: function() { return recetteChoisieCount("cardboardPlanks") >= 1; }
   },
   {
     id: "firstCathouse", label: "Build your first Cardboard Box",
@@ -98,47 +99,37 @@ const OBJECTIFS = [
     accompli: function(e) { return e.cathouses.length >= 1; }
   },
 
-  // ── Sawmill & Cardboard Planks
+  // ── Cardboard Planks recipe
   {
-    id: "unlockSawmill", label: "Gather 5 Cardboard Pieces to unlock Cardboard Planks",
-    visible:  function(e) { return allocationCount("woodcatting") >= 1; },
-    accompli: function(e) { return e.cardboardPiecesTotalRecolte >= CONFIG.sawmill.deblocageA; }
+    id: "firstSawmillWorker", label: "Assign a cat to the Cardboard Planks recipe",
+    visible:  function() { return recetteChoisieCount("cardboardPlanks") >= 1; },
+    accompli: function() { return allocationCount("cardboardPlanks") >= 1; }
   },
   {
-    id: "firstSawmillWorker", label: "Assign a cat to the Sawmill",
-    visible:  function(e) { return e.cardboardPiecesTotalRecolte >= CONFIG.sawmill.deblocageA; },
-    accompli: function(e) { return allocationCount("sawmill") >= 1; }
-  },
-  {
-    id: "firstPlank", label: "Craft your first Cardboard Plank",
-    visible:  function(e) { return allocationCount("sawmill") >= 1; },
+    id: "firstPlank", label: "Produce your first Cardboard Plank",
+    visible:  function() { return allocationCount("cardboardPlanks") >= 1; },
     accompli: function(e) { return e.cardboardPlanks >= 1; }
   },
   {
-    id: "tenPlanks", label: "Craft 10 Cardboard Planks to unlock Basic Wood",
-    visible:  function(e) { return e.cardboardPlanks >= 1; },
-    accompli: function(e) { return e.cardboardPlanks >= 10; }
+    id: "tenPlanks", label: "Produce 10 Cardboard Planks to unlock Basic Wood",
+    visible:  function(e) { return e.cardboardPlanks >= 1 || e.objectifsComplis.includes("firstPlank"); },
+    accompli: function(e) { return e.cardboardPlanks >= 10 || storyEstVue("storyBasicWoodVue"); }
   },
 
   // ── Catnip & Catchen
   {
-    id: "firstGrasscatter", label: "Put a cat to gather catnip",
+    id: "firstGrasscatter", label: "Choose the Catnip Salads recipe",
     visible:  function(e) { return e.chatons >= 5; },
-    accompli: function(e) { return allocationCount("grasscatting") >= 1; }
+    accompli: function() { return recetteChoisieCount("salads") >= 1; }
   },
   {
-    id: "unlockCatchen", label: "Gather 5 Catnip to unlock Catnip Salad",
-    visible:  function(e) { return allocationCount("grasscatting") >= 1; },
-    accompli: function(e) { return e.catnipTotalRecolte >= CONFIG.catchen.deblocageA; }
+    id: "firstCatchenWorker", label: "Assign a cat to the Catnip Salads recipe",
+    visible:  function() { return recetteChoisieCount("salads") >= 1; },
+    accompli: function() { return allocationCount("salads") >= 1; }
   },
   {
-    id: "firstCatchenWorker", label: "Assign a cat to The Catchen",
-    visible:  function(e) { return e.catnipTotalRecolte >= CONFIG.catchen.deblocageA; },
-    accompli: function(e) { return allocationCount("catchen") >= 1; }
-  },
-  {
-    id: "firstSalad", label: "Cook your first Salad",
-    visible:  function(e) { return allocationCount("catchen") >= 1; },
+    id: "firstSalad", label: "Produce your first Catnip Salad",
+    visible:  function() { return allocationCount("salads") >= 1; },
     accompli: function(e) { return e.salads >= 1; }
   },
   {
@@ -151,23 +142,18 @@ const OBJECTIFS = [
 
   // ── Pebbles & Pawsonry
   {
-    id: "firstPebbleGatherer", label: "Assign a cat to gather pebbles",
+    id: "firstPebbleGatherer", label: "Choose the Pebble Bricks recipe",
     visible:  function(e) { return e.chatons >= 7; },
-    accompli: function(e) { return allocationCount("pebblegathering") >= 1; }
+    accompli: function() { return recetteChoisieCount("pebbleBricks") >= 1; }
   },
   {
-    id: "unlockPawsonry", label: "Gather 5 Pebbles to unlock Pebble Bricks",
-    visible:  function(e) { return allocationCount("pebblegathering") >= 1; },
-    accompli: function(e) { return e.pebblesTotalRecolte >= CONFIG.brickfactory.deblocageA; }
+    id: "firstPawsonryWorker", label: "Assign a cat to the Pebble Bricks recipe",
+    visible:  function() { return recetteChoisieCount("pebbleBricks") >= 1; },
+    accompli: function() { return allocationCount("pebbleBricks") >= 1; }
   },
   {
-    id: "firstPawsonryWorker", label: "Assign a cat to Pawsonry",
-    visible:  function(e) { return e.pebblesTotalRecolte >= CONFIG.brickfactory.deblocageA; },
-    accompli: function(e) { return allocationCount("brickfactory") >= 1; }
-  },
-  {
-    id: "firstBrick", label: "Craft your first Pebble Brick",
-    visible:  function(e) { return allocationCount("brickfactory") >= 1; },
+    id: "firstBrick", label: "Produce your first Pebble Brick",
+    visible:  function() { return allocationCount("pebbleBricks") >= 1; },
     accompli: function(e) { return e.pebbleBricks >= 1; }
   },
 
@@ -178,7 +164,7 @@ const OBJECTIFS = [
     accompli: function(e) { return e.itemsAcquis.indexOf("schoolGuide") !== -1 || e.campaignsCompletees.indexOf("checkTheTrash") !== -1; }
   },
   {
-    id: "learnFromSchoolGuide", label: "Read the School Guide in Inventory",
+    id: "learnFromSchoolGuide", label: "Study and learn from the School Guide in Inventory",
     visible:  function(e) { return e.itemsAcquis.indexOf("schoolGuide") !== -1; },
     accompli: function(e) { return e.itemsAppris.indexOf("schoolGuide") !== -1; }
   },
@@ -189,32 +175,33 @@ const OBJECTIFS = [
     accompli: function(e) { return e.jobCenterConstruit; }
   },
   {
-    id: "firstJobTraining", label: "Train a cat for their first job",
+    id: "firstJobTraining", label: "Train a cat as an Explorator",
     visible:  function(e) { return e.jobCenterConstruit; },
-    accompli: function(e) { return e.kittiesData.some(function(k) { return k.metier !== null; }); }
+    accompli: function(e) { return e.kittiesData.some(function(k) { return k.metier === "explorator"; }); }
   },
 
   // ── Basic Wood
   {
-    id: "firstBasicWoodGatherer", label: "Assign a cat to gather Basic Wood",
-    visible:  function(e) { return e.cardboardPlanks >= 10; },
-    accompli: function(e) { return allocationCount("basicWoodcatting") >= 1; }
+    id: "firstBasicWoodGatherer", label: "Choose the Basic Wood Planks recipe",
+    visible:  function() { return basicWoodDebloquee(); },
+    accompli: function() { return recetteChoisieCount("basicWoodPlanks") >= 1; }
   },
   {
-    id: "firstBasicSawmill", label: "Assign a cat to the Basic Wood Sawmill",
-    visible:  function(e) { return e.basicWoodTotalRecolte >= 1; },
-    accompli: function(e) { return allocationCount("basicSawmill") >= 1; }
+    id: "firstBasicSawmill", label: "Assign a cat to the Basic Wood Planks recipe",
+    visible:  function() { return recetteChoisieCount("basicWoodPlanks") >= 1; },
+    accompli: function() { return allocationCount("basicWoodPlanks") >= 1; }
   },
   {
-    id: "firstBasicWoodPlank", label: "Craft your first Basic Wood Plank",
-    visible:  function(e) { return allocationCount("basicSawmill") >= 1; },
+    id: "firstBasicWoodPlank", label: "Produce your first Basic Wood Plank",
+    visible:  function() { return allocationCount("basicWoodPlanks") >= 1; },
     accompli: function(e) { return e.basicWoodPlanks >= 1; }
   },
 
   // ── Cathouse (real)
   {
     id: "buildRealCathouse", label: "Build a Wood Cathouse to boost recruit speed",
-    visible:  function(e) { return e.basicWood >= 1 || e.cathouseCount > 0; },
+    // Use lifetime gathering, not the fluctuating current stock consumed by the Sawmill.
+    visible:  function(e) { return e.basicWoodTotalRecolte >= 1 || e.cathouseCount > 0; },
     accompli: function(e) { return e.cathouseCount >= 1; }
   }
 ];
@@ -225,17 +212,14 @@ const OBJECTIF_GUIDE = Object.freeze({
   firstKitty:               { ordre: 10,  onglet: "gang",         cible: "#bouton-sequence",       action: "Recruit ↑",        progression: function(e) { return { actuel: e.chatons, cible: 1 }; } },
   secondKitty:              { ordre: 20,  onglet: "gang",         cible: "#bouton-sequence",       action: "Recruit ↑",        progression: function(e) { return { actuel: e.chatons, cible: 2 }; } },
   thirdKitty:               { ordre: 30,  onglet: "gang",         cible: "#bouton-sequence",       action: "Recruit ↑",        progression: function(e) { return { actuel: e.chatons, cible: 3 }; } },
-  firstWoodcatter:          { ordre: 40,  onglet: "work",         cible: "#famille-wood",          filtre: "wood", progression: function() { return { actuel: allocationCount("woodcatting"), cible: 1 }; } },
-  unlockBuildings:          { ordre: 95,  onglet: "work",         cible: "#pairside-sawmill",      filtre: "wood", progression: function(e) { return { actuel: e.cardboardPlanks, cible: 1 }; } },
+  firstWoodcatter:          { ordre: 40,  onglet: "work",         cible: "#recipe-slot-wood-0",    filtre: "wood", progression: function() { return { actuel: recetteChoisieCount("cardboardPlanks"), cible: 1 }; } },
   fiveKitties:              { ordre: 60,  onglet: "gang",         cible: "#bouton-sequence",       action: "Recruit ↑",        progression: function(e) { return { actuel: e.chatons, cible: 5 }; } },
-  unlockSawmill:            { ordre: 70,  onglet: "work",         cible: "#famille-wood",          filtre: "wood", progression: function(e) { return { actuel: e.cardboardPiecesTotalRecolte, cible: 5 }; } },
-  firstSawmillWorker:       { ordre: 80,  onglet: "work",         cible: "#pairside-sawmill",      filtre: "wood", progression: function() { return { actuel: allocationCount("sawmill"), cible: 1 }; } },
-  firstPlank:               { ordre: 90,  onglet: "work",         cible: "#pairside-sawmill",      filtre: "wood", progression: function(e) { return { actuel: e.cardboardPlanks, cible: 1 }; } },
+  firstSawmillWorker:       { ordre: 80,  onglet: "work",         cible: "#recipe-slot-wood-0",    filtre: "wood", progression: function() { return { actuel: allocationCount("cardboardPlanks"), cible: 1 }; } },
+  firstPlank:               { ordre: 90,  onglet: "work",         cible: "#work-recipe-slots-wood", filtre: "wood", progression: function(e) { return { actuel: e.cardboardPlanks, cible: 1 }; } },
   firstCathouse:            { ordre: 100, onglet: "buildings",    cible: "#bouton-cathouse",       progression: function(e) { return { actuel: e.cathouses.length, cible: 1 }; } },
-  firstGrasscatter:         { ordre: 110, onglet: "work",         cible: "#famille-food",          filtre: "food", progression: function() { return { actuel: allocationCount("grasscatting"), cible: 1 }; } },
-  unlockCatchen:            { ordre: 120, onglet: "work",         cible: "#famille-food",          filtre: "food", progression: function(e) { return { actuel: e.catnipTotalRecolte, cible: 5 }; } },
-  firstCatchenWorker:       { ordre: 130, onglet: "work",         cible: "#pairside-catchen",      filtre: "food", progression: function() { return { actuel: allocationCount("catchen"), cible: 1 }; } },
-  firstSalad:               { ordre: 140, onglet: "work",         cible: "#pairside-catchen",      filtre: "food", progression: function(e) { return { actuel: e.salads, cible: 1 }; } },
+  firstGrasscatter:         { ordre: 110, onglet: "work",         cible: "#recipe-slot-food-0",    filtre: "food", progression: function() { return { actuel: recetteChoisieCount("salads"), cible: 1 }; } },
+  firstCatchenWorker:       { ordre: 130, onglet: "work",         cible: "#recipe-slot-food-0",    filtre: "food", progression: function() { return { actuel: allocationCount("salads"), cible: 1 }; } },
+  firstSalad:               { ordre: 140, onglet: "work",         cible: "#work-recipe-slots-food", filtre: "food", progression: function(e) { return { actuel: e.salads, cible: 1 }; } },
   feedBernardo:             { ordre: 145, onglet: "gang",         cible: "#detail-experience",       action: "Open Bernardo's experience", progression: function(e) {
     const bernardo = e.kittiesData.find(function(k) { return k.nom === "Bernardo"; });
     return { actuel: bernardo ? bernardo.niveau : 0, cible: 1 };
@@ -249,19 +233,19 @@ const OBJECTIF_GUIDE = Object.freeze({
   } },
   learnFromSchoolGuide:     { ordre: 170, onglet: "inventaire",   cible: "#section-items",         progression: function(e) {
     const lecture = e.learningEnCours && e.learningEnCours.itemId === "schoolGuide" ? e.learningEnCours : null;
-    if (!lecture) return { actuel: 0, cible: 1, texte: "Ready to read" };
+    if (e.itemsEtudies && e.itemsEtudies.includes("schoolGuide")) return { actuel: 0.75, cible: 1, texte: "Study complete · solve the lesson" };
+    if (!lecture) return { actuel: 0, cible: 1, texte: "Ready to study" };
     const ecoule = Math.min(lecture.duree / 1000, Math.max(0, (Date.now() - lecture.startTs) / 1000));
     return { actuel: ecoule, cible: lecture.duree / 1000, texte: formaterTemps(Math.ceil(ecoule)) + " / " + formaterTemps(lecture.duree / 1000) };
   } },
-  tenPlanks:                { ordre: 180, onglet: "work",         cible: "#pairside-sawmill",      filtre: "wood", progression: function(e) { return { actuel: e.cardboardPlanks, cible: 10 }; } },
-  firstBasicWoodGatherer:   { ordre: 190, onglet: "work",         cible: "#famille-wood",          filtre: "wood", progression: function() { return { actuel: allocationCount("basicWoodcatting"), cible: 1 }; } },
+  tenPlanks:                { ordre: 180, onglet: "work",         cible: "#work-recipe-slots-wood", filtre: "wood", progression: function(e) { return { actuel: e.cardboardPlanks, cible: 10 }; } },
+  firstBasicWoodGatherer:   { ordre: 190, onglet: "work",         cible: "#work-recipe-slots-wood", filtre: "wood", progression: function() { return { actuel: recetteChoisieCount("basicWoodPlanks"), cible: 1 }; } },
   sevenKitties:             { ordre: 200, onglet: "gang",         cible: "#bouton-sequence",       action: "Recruit ↑",        progression: function(e) { return { actuel: e.chatons, cible: 7 }; } },
-  firstPebbleGatherer:      { ordre: 210, onglet: "work",         cible: "#famille-rock",          filtre: "rock", progression: function() { return { actuel: allocationCount("pebblegathering"), cible: 1 }; } },
-  unlockPawsonry:           { ordre: 220, onglet: "work",         cible: "#famille-rock",          filtre: "rock", progression: function(e) { return { actuel: e.pebblesTotalRecolte, cible: 5 }; } },
-  firstPawsonryWorker:      { ordre: 230, onglet: "work",         cible: "#pairside-brickfactory", filtre: "rock", progression: function() { return { actuel: allocationCount("brickfactory"), cible: 1 }; } },
-  firstBrick:               { ordre: 240, onglet: "work",         cible: "#pairside-brickfactory", filtre: "rock", progression: function(e) { return { actuel: e.pebbleBricks, cible: 1 }; } },
-  firstBasicSawmill:        { ordre: 250, onglet: "work",         cible: "#pairside-basicSawmill", filtre: "wood", progression: function() { return { actuel: allocationCount("basicSawmill"), cible: 1 }; } },
-  firstBasicWoodPlank:      { ordre: 260, onglet: "work",         cible: "#pairside-basicSawmill", filtre: "wood", progression: function(e) { return { actuel: e.basicWoodPlanks, cible: 1 }; } },
+  firstPebbleGatherer:      { ordre: 210, onglet: "work",         cible: "#recipe-slot-rock-0",    filtre: "rock", progression: function() { return { actuel: recetteChoisieCount("pebbleBricks"), cible: 1 }; } },
+  firstPawsonryWorker:      { ordre: 230, onglet: "work",         cible: "#recipe-slot-rock-0",    filtre: "rock", progression: function() { return { actuel: allocationCount("pebbleBricks"), cible: 1 }; } },
+  firstBrick:               { ordre: 240, onglet: "work",         cible: "#work-recipe-slots-rock", filtre: "rock", progression: function(e) { return { actuel: e.pebbleBricks, cible: 1 }; } },
+  firstBasicSawmill:        { ordre: 250, onglet: "work",         cible: "#work-recipe-slots-wood", filtre: "wood", progression: function() { return { actuel: allocationCount("basicWoodPlanks"), cible: 1 }; } },
+  firstBasicWoodPlank:      { ordre: 260, onglet: "work",         cible: "#work-recipe-slots-wood", filtre: "wood", progression: function(e) { return { actuel: e.basicWoodPlanks, cible: 1 }; } },
   buildRealCathouse:        { ordre: 270, onglet: "buildings",    cible: "#bouton-cathouse2",      progression: function(e) { return { actuel: e.cathouseCount, cible: 1 }; } },
   buildJobCenter:           { ordre: 280, onglet: "facilities",   cible: "#bouton-jobcenter",      progression: function(e) {
     const briques = Math.min(10, e.pebbleBricks);
@@ -282,7 +266,6 @@ const OBJECTIF_GUIDE = Object.freeze({
 
 // State factory lives in js/core/state.js.
 const stateCore = globalThis.CatInc.state;
-const makeWorkerSlots = stateCore.makeWorkerSlots;
 const creerEtatInitial = stateCore.creerEtatInitial;
 const remplacerEtat = stateCore.remplacerEtat;
 const etat = creerEtatInitial();
@@ -299,15 +282,37 @@ function reinitialiserEtat() {
 
 
 function allocationCount(action) {
-  var slots = etat.workers[action];
-  if (!slots) return 0;
-  return slots.filter(function(s) { return s.kittyIndex !== null; }).length;
+  const pair = RESOURCE_PAIRS.find(function(candidate) {
+    return candidate.rawAction === action || candidate.procAction === action || candidate.recipeId === action;
+  });
+  if (pair) {
+    return (etat.workRecipeSlots[pair.family] || []).filter(function(slot) {
+      return slot.recipeId === pair.recipeId && slot.kittyIndex !== null;
+    }).length;
+  }
+  return 0;
 }
 
 function kittyIsInWorkerSlot(kittyIdx) {
-  return Object.values(etat.workers).some(function(slots) {
+  return Object.values(etat.workRecipeSlots || {}).some(function(slots) {
     return slots.some(function(s) { return s.kittyIndex === kittyIdx; });
   });
+}
+
+function reinitialiserProgressionRecette(slot, retirerRecette) {
+  if (!slot) return;
+  viderProgressionRecette(slot);
+  slot.kittyIndex = null;
+  if (retirerRecette) slot.recipeId = null;
+}
+
+function viderProgressionRecette(slot) {
+  if (!slot) return;
+  slot.phase = "idle";
+  slot.phaseProgress = 0;
+  slot.outputCarry = 0;
+  slot.gatheredInputs = {};
+  slot.reservedInputs = {};
 }
 
 function kittyIsInTraining(kittyIdx) {
@@ -433,7 +438,7 @@ function autoAssignExplo(type, id) {
 
 function totalAlloue() {
   var total = 0;
-  Object.values(etat.workers).forEach(function(slots) {
+  Object.values(etat.workRecipeSlots || {}).forEach(function(slots) {
     slots.forEach(function(s) { if (s.kittyIndex !== null) total++; });
   });
   if (etat.formationEnCours) total++;
@@ -459,14 +464,14 @@ function kittyIsInScoutingStaging(kittyIdx) {
 var ACTION_DISPLAY = { fishcatting: "Anchovy", grilledAnchovy: "Grilled Anchovy", woodcatting: "Cardboard Pieces", basicWoodcatting: "Basic Wood", grasscatting: "Catnip", pebblegathering: "Pebbles", rockgathering: "Rocks", sawmill: "Cardboard Planks", basicSawmill: "Basic Wood Planks", brickfactory: "Pebble Bricks", rockFactory: "Rock Bricks", catchen: "Salads" };
 
 function kittyAllocationLabel(kittyIdx) {
-  // Worker slot
-  var workerFamily = null;
-  Object.keys(etat.workers).forEach(function(action) {
-    if (etat.workers[action].some(function(s) { return s.kittyIndex === kittyIdx; })) workerFamily = action;
+  // Recipe slot
+  var assignedRecipe = null;
+  Object.keys(etat.workRecipeSlots || {}).forEach(function(family) {
+    const slot = etat.workRecipeSlots[family].find(function(candidate) { return candidate.kittyIndex === kittyIdx; });
+    if (slot) assignedRecipe = RESOURCE_PAIRS.find(function(pair) { return pair.recipeId === slot.recipeId; });
   });
-  if (workerFamily) {
-    var label = ACTION_DISPLAY[workerFamily] || workerFamily.replace(/([A-Z])/g, " $1").replace(/^./, function(c) { return c.toUpperCase(); });
-    return { text: "Generating: " + label, cls: "kitty-statut-work" };
+  if (assignedRecipe) {
+    return { text: "Producing: " + assignedRecipe.procLabel, cls: "kitty-statut-work" };
   }
   // Manager
   var managerFamille = Object.keys(etat.managers).find(function(f) { return etat.managers[f] === kittyIdx; });
@@ -540,55 +545,75 @@ function tirerRecompenseScouting(range) {
   return range[range.length - 1].qty;
 }
 
+function butinScoutingVide() {
+  return { successful: 0, failed: 0, regular: 0, lucky: 0, superLucky: 0, doubled: 0, rewards: {} };
+}
+
+function obtenirButinScouting(scoutingId) {
+  if (!etat.butinsScouting) etat.butinsScouting = {};
+  if (!etat.butinsScouting[scoutingId]) etat.butinsScouting[scoutingId] = butinScoutingVide();
+  return etat.butinsScouting[scoutingId];
+}
+
+function categorieRecompenseScouting(entries, selected) {
+  if (!entries || entries.length <= 1) return "regular";
+  const triees = entries.slice().sort(function(a, b) { return b.weight - a.weight; });
+  const rang = triees.findIndex(function(entry) {
+    return entry === selected || (entry.recompense === selected.recompense && entry.qty === selected.qty);
+  });
+  if (rang <= 0) return "regular";
+  if (rang === triees.length - 1) return "superLucky";
+  return "lucky";
+}
+
+function ajouterAuButinScouting(butin, recompenseId, qty, categorie, doubled) {
+  if (!recompenseId || qty <= 0) return;
+  butin[categorie] += 1;
+  if (doubled) butin.doubled += 1;
+  butin.rewards[recompenseId] = (butin.rewards[recompenseId] || 0) + qty;
+}
+
 function terminerScouting(scoutingId) {
+  var runs = arguments[1];
   var def = CONFIG.scoutings[scoutingId];
   var sc  = etat.scoutingsEnCours[scoutingId];
   if (!def || !sc) return;
-  var kitty = etat.kittiesData[sc.kittyIndex];
-  var kNom  = kitty ? kitty.nom : "Someone";
-  // Success power is frozen when each scouting run starts. The fallback keeps
-  // older saves (created before this field existed) compatible.
-  var power = Number.isFinite(sc.power) ? sc.power : kittyEP(sc.kittyIndex);
-  var successChance = def.difficulte > 0 ? Math.min(1, power / def.difficulte) : 1;
-  var success = Math.random() < successChance;
-  if (success) {
-    if (def.recompenseTable) {
-      var entry = resoudreRecompenseTable(applyPerkCatFood(def.recompenseTable, sc.kittyIndex));
-      var tqty = tryDoubleReward(entry.qty, sc.kittyIndex);
-      if (entry.recompense === "cannedCatFood") {
-        etat.cannedCatFood += tqty;
-        ajouterLog("event", kNom + " found " + tqty + " canned cat food in the supermarket.");
-      } else if (entry.recompense === "humanWorkersFood") {
-        etat.humanWorkersFood += tqty;
-        ajouterLog("event", kNom + " found " + tqty + " human workers food in the supermarket.");
-      } else if (entry.recompense === "humanLeftovers") {
-        etat.humanLeftovers += tqty;
-        ajouterLog("event", kNom + " found " + tqty + " human leftover" + (tqty > 1 ? "s" : "") + ".");
-      }
-    } else if (def.dropChance && Math.random() >= def.dropChance) {
-      ajouterLog("event", kNom + " searched the area but came back empty.");
-    } else {
-      var baseQty = tirerRecompenseScouting(def.recompenseRange);
-      var qty = tryDoubleReward(baseQty, sc.kittyIndex);
-      if (def.recompense === "humanLeftovers") {
-        etat.humanLeftovers += qty;
-        ajouterLog("event", kNom + " found " + qty + " human leftover" + (qty > 1 ? "s" : "") + " in the trash.");
-      } else if (def.recompense === "humanWorkersFood") {
-        etat.humanWorkersFood += qty;
-        ajouterLog("event", kNom + " found " + qty + " human workers food in the basement.");
-      } else if (def.recompense === "cannedCatFood") {
-        etat.cannedCatFood += qty;
-        ajouterLog("event", kNom + " found " + qty + " canned cat food in the supermarket.");
-      }
+  var runCount = Math.max(1, Math.floor(runs || 1));
+  var butin = obtenirButinScouting(scoutingId);
+  for (var run = 0; run < runCount; run++) {
+    // Success power is frozen for the active run. Later auto-repeats use the
+    // cat's current power, matching the former restart behavior.
+    var power = run === 0 && Number.isFinite(sc.power) ? sc.power : kittyEP(sc.kittyIndex);
+    var successChance = def.difficulte > 0 ? Math.min(1, power / def.difficulte) : 1;
+    var success = Math.random() < successChance;
+    if (!success) {
+      butin.failed += 1;
+      continue;
     }
-  } else {
-    ajouterLog("event", kNom + " found nothing on this scouting run.");
+    butin.successful += 1;
+    if (def.recompenseTable) {
+      var table = applyPerkCatFood(def.recompenseTable, sc.kittyIndex);
+      var entry = resoudreRecompenseTable(table);
+      var tableQty = tryDoubleReward(entry.qty, sc.kittyIndex);
+      ajouterAuButinScouting(butin, entry.recompense, tableQty, categorieRecompenseScouting(def.recompenseTable, entry), tableQty > entry.qty);
+    } else if (!def.dropChance || Math.random() < def.dropChance) {
+      var range = def.recompenseRange || [{ qty: 1, weight: 100 }];
+      var selectedRange = resoudreRecompenseTable(range);
+      var rangeQty = tryDoubleReward(selectedRange.qty, sc.kittyIndex);
+      ajouterAuButinScouting(butin, def.recompense, rangeQty, categorieRecompenseScouting(range, selectedRange), rangeQty > selectedRange.qty);
+    }
   }
-  // Auto-restart with same kitty, preserving the same effective duration
+  ajouterLog("event", runCount + " scouting run" + (runCount === 1 ? "" : "s") + " completed for " + def.nom + ". Rewards are waiting on the map.");
+  // Auto-restart with the same kitty while preserving any elapsed remainder.
   var restartDuree = scoutingHalveTime(sc.kittyIndex) ? def.duree / 2 : def.duree;
-  etat.scoutingsEnCours[scoutingId] = { kittyIndex: sc.kittyIndex, power: kittyEP(sc.kittyIndex), startTs: Date.now(), duree: restartDuree };
-  // No exploTabDirty here: the card structure is unchanged (same kitty, same scouting).
-  // Timer bar and countdown are updated each tick via direct DOM in renduExplorations().
+  etat.scoutingsEnCours[scoutingId] = {
+    kittyIndex: sc.kittyIndex,
+    power: kittyEP(sc.kittyIndex),
+    startTs: sc.startTs + runCount * ((sc.duree !== undefined) ? sc.duree : def.duree) * 1000,
+    duree: restartDuree
+  };
+  carteDirty = true;
+  exploTabDirty = true;
 }
 
 function scoutingHalveTime(kittyIndex) {
@@ -669,7 +694,7 @@ function productionParChaton(action) {
 
 // Production engine lives in js/core/production.js.
 const productionProcBonus = globalThis.CatInc.production.productionProcBonus;
-const avancerTransformation = globalThis.CatInc.production.avancerTransformation;
+const avancerRecetteSlot = globalThis.CatInc.production.avancerRecetteSlot;
 
 // 5% bonus per level, multiplicative — amplifies every job effect
 function jobLevelMultiplier(kitty) {
@@ -719,7 +744,9 @@ function managerCostMultiplier(famille) {
 function managerSphereStateKey(famille) {
   const perks = MANAGER_SPHERE_PERKS[famille];
   if (!perks) return "";
-  return (spherePerkLearned(perks.production) ? "prod" : "") + (spherePerkLearned(perks.speed) ? "speed" : "");
+  return (spherePerkLearned(perks.production) ? "prod" : "")
+    + (spherePerkLearned(perks.speed) ? "speed" : "")
+    + (spherePerkLearned(perks.cost) ? "cost" : "");
 }
 
 function managerPerksHtml(famille, className, hideHouseBuildPerks) {
@@ -785,9 +812,53 @@ function tempsRestantSequence() {
 }
 
 function progressionSequence() {
-  if (!etat.sequenceEnCours) return 0;
+  if (!etat.sequenceEnCours) return 1;
   const ecouleBrut = (Date.now() - etat.sequenceDebutTs) / 1000;
   return Math.min(1, (ecouleBrut * vitesseAttrapage()) / etat.sequenceDuree);
+}
+
+function recupererButinScouting(scoutingId) {
+  const butin = etat.butinsScouting[scoutingId];
+  if (!butin) return;
+  Object.keys(butin.rewards).forEach(function(recompenseId) {
+    appliquerRecompense(recompenseId, butin.rewards[recompenseId]);
+  });
+  const totalRuns = butin.successful + butin.failed;
+  ajouterLog("event", "Scouting rewards claimed after " + totalRuns + " run" + (totalRuns === 1 ? "" : "s") + ".");
+  delete etat.butinsScouting[scoutingId];
+  carteDirty = true;
+  exploTabDirty = true;
+  sauvegarder(); rendu();
+}
+
+function sequenceEstPrete() {
+  return !etat.sequenceEnCours || tempsRestantSequence() <= 0;
+}
+
+function nomProchainChat() {
+  return NOMS_KITTIES[etat.kittiesData.length] || ("Cat #" + (etat.kittiesData.length + 1));
+}
+
+function assurerVisageProchainChat() {
+  if (!etat.prochainVisageChaton) {
+    etat.prochainVisageChaton = assignerVisageChaton(nomProchainChat());
+    sauvegarder();
+  }
+  return etat.prochainVisageChaton;
+}
+
+function demarrerRechargeCatch() {
+  assurerVisageProchainChat();
+  etat.sequenceEnCours = true;
+  etat.sequenceDebutTs = Date.now();
+  etat.sequenceDuree = dureeBrute();
+}
+
+function marquerSequencePrete() {
+  if (!etat.sequenceEnCours || tempsRestantSequence() > 0) return false;
+  etat.sequenceEnCours = false;
+  sauvegarder();
+  return true;
 }
 
 function coutProchaineCathouse() {
@@ -847,15 +918,15 @@ function grasscattingDebloquee()    { return etat.chatons >= 5; }
 function pebblegatheringDebloquee() { return etat.chatons >= CONFIG.pebblegathering.deblocageA; }
 function rockgatheringDebloquee()   { return etat.itemsAppris.includes("stoneGuide"); }
 function rockfactoryDebloquee()     { return etat.itemsAppris.includes("stoneGuide"); }
-function basicWoodDebloquee()       { return etat.cardboardPlanks >= 10 || etat.basicWoodTotalRecolte >= 1; }
-function basicSawmillDebloquee()    { return etat.basicWoodTotalRecolte >= 1; }
+function basicWoodDebloquee()       { return etat.cardboardPlanks >= 10 || etat.objectifsComplis.includes("tenPlanks") || storyEstVue("storyBasicWoodVue") || etat.basicWoodTotalRecolte >= 1; }
+function basicSawmillDebloquee()    { return basicWoodDebloquee(); }
 function catHouseDebloquee()        { return etat.basicWoodTotalRecolte >= 1 || etat.cathouseCount > 0; }
 function stoneHousesDebloques()     { return etat.pebbleBricks >= 1 || etat.stoneCathouseCount > 0 || etat.objectifsComplis.includes("firstBrick"); }
-function buildingsDebloques()       { return etat.cardboardPlanks >= 1 || etat.objectifsComplis.includes("unlockBuildings"); }
-function scierieDebloquee()         { return etat.cardboardPiecesTotalRecolte >= CONFIG.sawmill.deblocageA; }
-function brickfactoryDebloquee()    { return etat.pebblesTotalRecolte >= CONFIG.brickfactory.deblocageA; }
+function buildingsDebloques()       { return etat.cardboardPlanks >= 1 || etat.objectifsComplis.includes("firstPlank") || etat.cathouses.length > 0; }
+function scierieDebloquee()         { return catheringDebloquee(); }
+function brickfactoryDebloquee()    { return pebblegatheringDebloquee(); }
 function pawcessingDebloquee()      { return scierieDebloquee(); }
-function catchenDebloquee()         { return etat.catnipTotalRecolte >= CONFIG.catchen.deblocageA; }
+function catchenDebloquee()         { return grasscattingDebloquee(); }
 function anchovyDebloquee()         { return etat.itemsAppris.includes("fishingGuide"); }
 function grilledAnchovyDebloquee()  { return anchovyDebloquee(); }
 function explorationDebloquee()     { return etat.chatons >= 6; }
@@ -889,6 +960,11 @@ function formaterTemps(sec) {
   if (h > 0) return h + "h " + m + "m " + s + "s";
   if (m > 0) return m + "m " + s + "s";
   return s + "s";
+}
+
+function formaterSecondesBrutes(sec) {
+  if (!Number.isFinite(sec) || sec <= 0) return "";
+  return Math.max(1, Math.ceil(sec)) + "s";
 }
 
 function formaterCatchTime(ts) {
@@ -1033,6 +1109,8 @@ const validerStructureSauvegarde = saveCore.validerStructureSauvegarde;
 const analyserSauvegardeBrute = saveCore.analyserSauvegardeBrute;
 
 let sauvegardeVerrouillee = false; // set right before a reload we must not let a stale autosave clobber
+let redemarrageMajeurRequis = false;
+let preferencesAncienneSauvegarde = null;
 
 function jouerSonAffectation() {
   const audio = globalThis.CatInc && globalThis.CatInc.audio;
@@ -1066,6 +1144,21 @@ function charger() {
   if (!raw) return false;
   const analyse = analyserSauvegardeBrute(raw);
   if (!analyse.ok) {
+    if (analyse.incompatible) {
+      const ancienneSauvegarde = analyse.data || {};
+      preferencesAncienneSauvegarde = {
+        volumeEffetsSonores: Number.isFinite(ancienneSauvegarde.volumeEffetsSonores)
+          ? Math.max(0, Math.min(1, ancienneSauvegarde.volumeEffetsSonores))
+          : 0.3,
+        volumeMusique: Number.isFinite(ancienneSauvegarde.volumeMusique)
+          ? Math.max(0, Math.min(1, ancienneSauvegarde.volumeMusique))
+          : 0.5,
+        afficherTempsAjusteRecrutement: ancienneSauvegarde.afficherTempsAjusteRecrutement === true
+      };
+      redemarrageMajeurRequis = true;
+      sauvegardeVerrouillee = true;
+      return false;
+    }
     const copieRecuperationCreee = conserverSauvegardeRecuperation(raw, analyse.erreur);
     sauvegardeVerrouillee = true;
     alert("Your save could not be loaded safely. It was left untouched"
@@ -1086,6 +1179,28 @@ function charger() {
   return true;
 }
 
+function confirmerRedemarrageMajeur() {
+  const preferences = preferencesAncienneSauvegarde || {};
+  localStorage.removeItem(SAVE_KEY);
+  STORIES.forEach(function(story) { localStorage.removeItem(story.flag); });
+  localStorage.removeItem("workDetailsHintSeen");
+  reinitialiserEtat();
+  etat.volumeEffetsSonores = Number.isFinite(preferences.volumeEffetsSonores) ? preferences.volumeEffetsSonores : 0.3;
+  etat.volumeMusique = Number.isFinite(preferences.volumeMusique) ? preferences.volumeMusique : 0.5;
+  etat.afficherTempsAjusteRecrutement = preferences.afficherTempsAjusteRecrutement === true;
+  preferencesAncienneSauvegarde = null;
+  redemarrageMajeurRequis = false;
+  sauvegardeVerrouillee = false;
+  sauvegarder();
+  fermerDialogueModal("save-upgrade-modal");
+  rendu();
+  renduLogs();
+  renduStories();
+  renduObjectifs();
+  renduManagement();
+  afficherModal("ecran-intro");
+}
+
 function reset() {
   if (!confirm("Start over from scratch?")) return;
   fermerModalSettings();
@@ -1095,6 +1210,7 @@ function reset() {
   sauvegardeVerrouillee = false;
   reinitialiserEtat();
   rendu(); renduLogs(); renduObjectifs(); renduManagement();
+  afficherModal("ecran-intro");
 }
 
 function ouvrirModalSettings() {
@@ -1167,6 +1283,11 @@ function importerSauvegarde(event) {
   reader.onload = function() {
     const analyse = analyserSauvegardeBrute(reader.result);
     if (!analyse.ok) {
+      if (analyse.incompatible) {
+        alert("This save uses the previous Work system and cannot be imported into this version. Start a new game to use recipe-based production.");
+        event.target.value = "";
+        return;
+      }
       alert("This file isn't a valid Cat Inc save.\n\nReason: " + analyse.erreur);
       event.target.value = "";
       return;
@@ -1177,8 +1298,6 @@ function importerSauvegarde(event) {
     }
     sauvegardeVerrouillee = true; // block the visibilitychange autosave from clobbering the import during reload
     localStorage.setItem(SAVE_KEY, reader.result);
-    // An imported save is never a fresh start — skip the intro overlay on reload.
-    localStorage.setItem("introVue", "1");
     location.reload();
   };
   reader.readAsText(file);
@@ -1460,6 +1579,10 @@ function allerObjectif(objectifId) {
     }
   }
   if (guide.onglet) changerOnglet(guide.onglet);
+  // changerOnglet() rerenders the selected tab's content, but Gang is kept
+  // outside the master dispatcher. Rebuild it after setting the tutorial's
+  // kitty selection so Bernardo's detail panel is actually opened.
+  if (guide.onglet === "gang") renduManagement();
   if (guide.filtre !== undefined) filtrerWork(guide.filtre);
 
   if (window.matchMedia("(max-width: 768px)").matches) definirObjectifsReduits(true);
@@ -1582,8 +1705,11 @@ function renduRessources(u) {
     ecrireStyle(domParId("onglet-" + entry[0]), "display", entry[1] ? "inline-flex" : "none");
     actualiserBadgeOnglet(entry[0], entry[1]);
   });
+  const logsVisible = etat.chatons >= 3;
+  ecrireStyle(domParId("onglet-logs"), "display", logsVisible ? "inline-flex" : "none");
   actualiserBadgeOnglet("gang", true);
-  actualiserBadgeOnglet("logs", true);
+  actualiserBadgeOnglet("logs", logsVisible);
+  actualiserIndicateursExploration();
 
   [
     ["row-cardboard-planks", u.scierie, "flex"],
@@ -1614,7 +1740,7 @@ function renduRessources(u) {
 
   RESOURCE_PAIRS.forEach(function(pair) {
     var resKey = pair.procRes.replace(/([A-Z])/g, '-$1').toLowerCase();
-    afficherTauxNet("taux-" + resKey, pair.procUnlocked(u) ? tauxProductionTransformee(pair) : 0);
+    afficherTauxNet("taux-" + resKey, pair.procUnlocked(u) ? tauxNetRessource(pair.procRes, u) : 0);
   });
 }
 
@@ -1635,21 +1761,26 @@ function afficherTauxNet(elementId, net) {
 
 // ── 9b. Catch sequence (header)
 function renduSequence() {
-  const enCours = etat.sequenceEnCours;
+  const enCours = etat.sequenceEnCours && tempsRestantSequence() > 0;
+  const pret = !enCours;
   const restant = etat.afficherTempsAjusteRecrutement
     ? tempsRestantSequence() / vitesseAttrapage()
     : tempsRestantSequence();
   const btnSeq   = domParId("bouton-sequence");
+  const marker   = domParId("sequence-chat-marker");
   const recruit  = etat.chatons >= 3;
-  ecrirePropriete(btnSeq, "disabled", enCours);
+  const tentativeOuverte = _catCatchActif || _recruitMiniJeuActif;
+  const prochainNom = nomProchainChat();
+  const prochainVisage = assurerVisageProchainChat();
+  ecrirePropriete(btnSeq, "disabled", false);
+  ecrireStyle(btnSeq, "display", pret && !tentativeOuverte ? "" : "none");
   basculerClasse(btnSeq, "recruit", recruit);
-  ecrireTexte(btnSeq, enCours
-    ? (recruit ? formaterTemps(restant) : "Catching... " + formaterTemps(restant))
-    : (recruit ? "Recruit a Cat" : "Catch a cat"));
-  ecrireStyle(domParId("conteneur-barre-sequence"), "display", enCours ? "block" : "none");
+  ecrireTexte(btnSeq, recruit ? "Recruit the Cat" : "Catch the Cat");
+  ecrireStyle(domParId("conteneur-barre-sequence"), "display", "block");
   setBarreProgress("barre-sequence", progressionSequence());
-  ecrireTexte(domParId("info-sequence"), enCours ? ""
-    : ("Next: " + formaterTemps(dureeEffective())));
+  if (marker && marker.getAttribute("src") !== prochainVisage) marker.setAttribute("src", prochainVisage);
+  if (marker && marker.getAttribute("alt") !== prochainNom) marker.setAttribute("alt", prochainNom);
+  ecrireTexte(domParId("info-sequence-timer"), enCours ? formaterTemps(restant) : "Ready");
 
   renduStatsAttrapage();
 }
@@ -1703,7 +1834,7 @@ function renduStatsAttrapage() {
   const taux        = vitesseAttrapage();
   const recruitPerk = etat.spherePerks && etat.spherePerks['gl-rec'] === 'learned';
   const tauxHouses  = recruitPerk ? taux / gangLeaderBonus() : taux;
-  const restant     = etat.sequenceEnCours ? tempsRestantSequence() / taux : raw / taux;
+  const restant     = sequenceEstPrete() ? 0 : tempsRestantSequence() / taux;
 
   document.getElementById("stat-raw").textContent     = formaterTempsStat(raw);
   document.getElementById("stat-taux").textContent    = tauxHouses.toFixed(2) + "s/s";
@@ -1733,284 +1864,365 @@ document.addEventListener("keydown", function(e) {
 window.addEventListener("resize", positionnerStatsAttrapagePopover);
 document.addEventListener("scroll", positionnerStatsAttrapagePopover, true);
 
-// ── 9c. Work pairs (raw resource ➜ its processed output, shown as one linked card)
+// ── 9c. Work resources (separate Gathering and Processing views)
 const RESOURCE_PAIRS = [
   {
+    recipeId: "cardboardPlanks", family: "wood", tier: 1, rawTotalKey: "cardboardPiecesTotalRecolte",
     rawAction: "woodcatting", rawRes: "cardboardPieces", rawCfg: CONFIG.woodcatting,
+    rawLabel: "Cardboard Pieces", rawIcon: "img/resources/Cardboard Pieces_Final.png",
     rawUnlocked: function(u) { return u.cathering; },
     procAction: "sawmill", procRes: "cardboardPlanks", procCfg: CONFIG.sawmill,
+    procLabel: "Cardboard Planks", procIcon: "img/resources/Cardboard Plank_Final.png",
     procSecUnite: "secondesParPlanche", procSecRaw: "secondesParCardboard",
     procMultAction: "sawmill", procUnlocked: function(u) { return u.scierie; },
-    bloqueeKey: "scieriBloquee"
+    bloqueeKey: "scieriBloquee",
+    inputs: [{ res: "cardboardPieces", label: "Cardboard Pieces", icon: "img/resources/Cardboard Pieces_Final.png", baseQuantity: 10, costAdjusted: true }]
   },
   {
+    recipeId: "basicWoodPlanks", family: "wood", tier: 2, rawTotalKey: "basicWoodTotalRecolte",
     rawAction: "basicWoodcatting", rawRes: "basicWood", rawCfg: CONFIG.basicWoodcatting,
+    rawLabel: "Basic Wood", rawIcon: "img/resources/Basic Wood_Final.png",
     rawUnlocked: function(u) { return u.basicWood; },
     procAction: "basicSawmill", procRes: "basicWoodPlanks", procCfg: CONFIG.basicSawmill,
+    procLabel: "Basic Wood Planks", procIcon: "img/resources/Basic Wood Plank_Final.png",
     procSecUnite: "secondesParPlanche", procSecRaw: "secondesParBasicWood",
     procMultAction: "sawmill", procUnlocked: function(u) { return u.basicSawmill; },
-    bloqueeKey: "basicSawmillBloquee"
+    bloqueeKey: "basicSawmillBloquee",
+    inputs: [{ res: "basicWood", label: "Basic Wood", icon: "img/resources/Basic Wood_Final.png", baseQuantity: 10, costAdjusted: true }]
   },
   {
+    recipeId: "salads", family: "food", tier: 1, rawTotalKey: "catnipTotalRecolte",
     rawAction: "grasscatting", rawRes: "catnip", rawCfg: CONFIG.grasscatting,
+    rawLabel: "Catnip", rawIcon: "img/resources/Catnip_Final.png",
     rawUnlocked: function(u) { return u.grasscat; },
     procAction: "catchen", procRes: "salads", procCfg: CONFIG.catchen,
+    procLabel: "Catnip Salads", procIcon: "img/resources/Catnip Salad_Final.png",
     procSecUnite: "secondesParSalad", procSecRaw: "secondesParCatnip",
     procMultAction: "catchen", procUnlocked: function(u) { return u.catchen; },
-    bloqueeKey: "catchenBloquee"
+    bloqueeKey: "catchenBloquee",
+    inputs: [{ res: "catnip", label: "Catnip", icon: "img/resources/Catnip_Final.png", baseQuantity: 10, costAdjusted: true }]
   },
   {
+    recipeId: "grilledAnchovy", family: "food", tier: 2, rawTotalKey: "anchovyTotalRecolte",
     rawAction: "fishcatting", rawRes: "anchovy", rawCfg: CONFIG.fishcatting,
+    rawLabel: "Anchovy", rawIcon: "img/resources/Anchovy_Final.png?v=0.0028",
     rawUnlocked: function(u) { return u.anchovy; },
     procAction: "grilledAnchovy", procRes: "grilledAnchovy", procCfg: CONFIG.grilledAnchovy,
+    procLabel: "Grilled Anchovy", procIcon: "img/resources/Grilled Anchovy_Final.png?v=0.0028",
     procSecUnite: "secondesParRecette", procSecRaw: "secondesParAnchovy",
     procMultAction: "grilledAnchovy", procUnlocked: function(u) { return u.grilledAnchovy; },
-    bloqueeKey: "catchenAnchovyBloquee"
+    bloqueeKey: "catchenAnchovyBloquee",
+    inputs: [{ res: "anchovy", label: "Anchovy", icon: "img/resources/Anchovy_Final.png?v=0.0028", baseQuantity: 10, costAdjusted: true }]
   },
   {
+    recipeId: "pebbleBricks", family: "rock", tier: 1, rawTotalKey: "pebblesTotalRecolte",
     rawAction: "pebblegathering", rawRes: "pebbles", rawCfg: CONFIG.pebblegathering,
+    rawLabel: "Pebbles", rawIcon: "img/resources/Pebbles_Final.png",
     rawUnlocked: function(u) { return u.pebblecat; },
     procAction: "brickfactory", procRes: "pebbleBricks", procCfg: CONFIG.brickfactory,
+    procLabel: "Pebble Bricks", procIcon: "img/resources/Pebble Brick_Final.png",
     procSecUnite: "secondesParBrique", procSecRaw: "secondesParPebble",
     procMultAction: "brickfactory", procUnlocked: function(u) { return u.brickfact; },
-    bloqueeKey: "brickBloquee"
+    bloqueeKey: "brickBloquee",
+    inputs: [{ res: "pebbles", label: "Pebbles", icon: "img/resources/Pebbles_Final.png", baseQuantity: 10, costAdjusted: true }]
   },
   {
+    recipeId: "rockBricks", family: "rock", tier: 2, rawTotalKey: "rocksTotalRecolte",
     rawAction: "rockgathering", rawRes: "rocks", rawCfg: CONFIG.rockgathering,
+    rawLabel: "Rocks", rawIcon: "img/resources/Rock_Final.png",
     rawUnlocked: function(u) { return u.rockcat; },
     procAction: "rockFactory", procRes: "rockBricks", procCfg: CONFIG.rockFactory,
+    procLabel: "Rock Bricks", procIcon: "img/resources/Rock Brick_Final.png",
     procSecUnite: "secondesParBrique", procSecRaw: "secondesParRock",
     procMultAction: "rockFactory", procUnlocked: function(u) { return u.rockfact; },
-    bloqueeKey: "rockFactoryBloquee"
+    bloqueeKey: "rockFactoryBloquee",
+    inputs: [{ res: "rocks", label: "Rocks", icon: "img/resources/Rock_Final.png", baseQuantity: 10, costAdjusted: true }]
   }
 ];
 
-// Units/second produced by every filled raw-gathering slot (matches tickWorkers exactly)
-function tauxProductionBrute(action, cfg) {
-  const slots = etat.workers[action];
-  if (!slots) return 0;
-  const mult = multiplicateurFamille(action);
-  const productionMult = multiplicateurProductionFamille(action);
-  const gl   = gangLeaderBonus();
-  let rate = 0;
-  slots.forEach(function(s) {
-    if (s.kittyIndex === null) return;
-    const k = etat.kittiesData[s.kittyIndex];
-    const levelBonus = k ? Math.pow(1.1, k.niveau) : 1;
-    rate += mult * gl * levelBonus * productionMult / cfg.secondesParUnite;
-  });
-  return rate;
+const WORK_FAMILIES = {
+  wood: { label: "Wood", gatheringScope: "Wood resources", gatheringManager: "wood", processingScope: "Sawmill and planks", processingManager: "sawmill" },
+  food: { label: "Food", gatheringScope: "Raw food", gatheringManager: "food", processingScope: "Catchen and prepared food", processingManager: "catchen" },
+  rock: { label: "Rocks", gatheringScope: "Raw stone", gatheringManager: "rock", processingScope: "Pawsonry and bricks", processingManager: "pawsonry" }
+};
+
+let workStructureInitialisee = false;
+
+function initialiserWorkStructure() {
+  if (workStructureInitialisee) return;
+  const section = domParId("section-work-pairs");
+  if (!section) return;
+  const html = Object.keys(WORK_FAMILIES).map(function(familyId) {
+    const family = WORK_FAMILIES[familyId];
+    return '<div id="famille-' + familyId + '" class="work-recipe-family">'
+      + '<header class="work-recipe-family-header">'
+      +   '<div><span class="pair-family-kicker">Production family</span><h2>' + family.label + '</h2><p>Select what each Cat should produce.</p></div>'
+      +   '<section id="work-managers-' + familyId + '" class="work-recipe-managers" aria-label="' + family.label + ' managers" style="display:none">'
+      +     '<div class="work-recipe-manager-card"><div class="pair-manager-copy"><span class="pair-manager-role">Gathering Manager</span><span class="pair-manager-scope">Private simple resources</span></div><div id="manager-slot-' + family.gatheringManager + '" class="manager-slot-conteneur"></div></div>'
+      +     '<div class="work-recipe-manager-card"><div class="pair-manager-copy"><span class="pair-manager-role">Processing Manager</span><span class="pair-manager-scope">Finished ' + family.label.toLowerCase() + ' resources</span></div><div id="manager-slot-' + family.processingManager + '" class="manager-slot-conteneur"></div></div>'
+      +   '</section>'
+      + '</header>'
+      + '<div class="work-recipe-slots" id="work-recipe-slots-' + familyId + '">'
+      +   '<article class="work-recipe-slot" id="recipe-slot-' + familyId + '-0"></article>'
+      +   '<article class="work-recipe-slot" id="recipe-slot-' + familyId + '-1"></article>'
+      + '</div>'
+      + '</div>';
+  }).join("");
+  section.innerHTML = html;
+  workStructureInitialisee = true;
 }
 
-// Units/second of processed output — sums per-kitty Processed Resources Production bonus
-function tauxProductionTransformee(pair) {
-  const slots = etat.workers[pair.procAction];
-  if (!slots) return 0;
-  const mult = multiplicateurFamille(pair.procMultAction);
-  const gl   = gangLeaderBonus();
-  let rate = 0;
-  slots.forEach(function(s) {
-    if (s.kittyIndex === null) return;
-    rate += mult * gl * productionProcBonus(etat.kittiesData[s.kittyIndex]) / pair.procCfg[pair.procSecUnite];
-  });
-  return rate;
+function paireRecette(recipeId) {
+  return RESOURCE_PAIRS.find(function(pair) { return pair.recipeId === recipeId; }) || null;
 }
 
-function buildPairDetail(baseTime, managerAction, workerAction, isProc) {
-  // Manager info
-  const famille = MAP_FAMILLE[managerAction];
-  const managerIdx = famille ? etat.managers[famille] : undefined;
-  const managerKitty = (managerIdx !== null && managerIdx !== undefined) ? etat.kittiesData[managerIdx] : null;
-  const mgrValid = managerKitty && METIER_PAR_FAMILLE[famille] && METIER_PAR_FAMILLE[famille].includes(managerKitty.metier);
-  const mgrMult = mgrValid ? multiplicateurFamille(managerAction) : 1;
-
-  // Gang leader info
-  const glKitty = etat.kittiesData.find(function(k) { return k.metier === "gang-leader"; });
-  const glMult = gangLeaderBonus();
-
-  const totalMult = mgrMult * glMult;
-  const adjTime = Math.round(baseTime / totalMult);
-
-  // Active workers
-  const slots = etat.workers[workerAction] || [];
-  const activeSlots = slots.filter(function(s) { return s.kittyIndex !== null; });
-  const activeCount = activeSlots.length;
-
-  const productionMult = !isProc && mgrValid ? managerProductionMultiplier(famille) : 1;
-  var html = '<div class="pinfo-sep"></div><div class="pinfo-columns">';
-  html += '<section class="pinfo-section pinfo-time"><div class="pinfo-heading">TIME</div>';
-  html += '<div class="pinfo-row"><span class="pinfo-lbl">Base time</span><span class="pinfo-val">' + formaterTemps(baseTime) + '</span></div>';
-
-  if (mgrValid) {
-    html += '<div class="pinfo-row pinfo-bonus"><span class="pinfo-lbl">Manager · ' + managerKitty.nom + '</span><span class="pinfo-val">×' + mgrMult.toFixed(2) + '</span></div>';
-  } else if (etat.managersDebloques) {
-    html += '<div class="pinfo-row pinfo-bonus-none"><span class="pinfo-lbl">No manager</span></div>';
-  }
-  if (glKitty) {
-    html += '<div class="pinfo-row pinfo-bonus"><span class="pinfo-lbl">Gang Leader · ' + glKitty.nom + '</span><span class="pinfo-val">×' + glMult.toFixed(2) + '</span></div>';
-  }
-
-  if (totalMult > 1.005) {
-    html += '<div class="pinfo-row pinfo-row-adj"><span class="pinfo-lbl">Adjusted time</span><span class="pinfo-val">' + formaterTemps(adjTime) + '</span></div>';
-  }
-  html += '</section><section class="pinfo-section pinfo-production"><div class="pinfo-heading">PRODUCTION</div>';
-
-  if (productionMult > 1) {
-    html += '<div class="pinfo-row pinfo-production-manager"><span class="pinfo-lbl">Manager · ' + managerKitty.nom + '</span><span class="pinfo-val"><span class="bonus-var">×' + productionMult.toFixed(2) + '</span></span></div>';
-  }
-  if (activeCount > 0) {
-    activeSlots.forEach(function(s) {
-      const k = etat.kittiesData[s.kittyIndex];
-      const lvl        = k ? k.niveau : 0;
-      const workerMult = isProc ? Math.pow(1.05, lvl) : Math.pow(1.1, lvl);
-      const ratePerMin = mgrMult * glMult * workerMult * productionMult / baseTime * 60;
-      const baseRatePerMin = workerMult / baseTime * 60;
-      const name       = k ? k.nom : '?';
-      html += '<div class="pinfo-row pinfo-worker-rate"><span class="pinfo-lbl">' + name + '</span><span class="pinfo-val">' + ratePerMin.toFixed(2) + '/min <span class="pinfo-base-rate">(base ' + baseRatePerMin.toFixed(2) + ')</span></span></div>';
-    });
-  } else {
-    html += '<div class="pinfo-row pinfo-bonus-none"><span class="pinfo-lbl">No workers assigned</span></div>';
-  }
-  html += '</section></div>';
-
-  return html;
+function slotRecette(familyId, slotIdx) {
+  const slots = etat.workRecipeSlots && etat.workRecipeSlots[familyId];
+  return slots && slots[slotIdx] ? slots[slotIdx] : null;
 }
 
-const _pairDetailCache = new Map();
-
-function buildPairDetailCache(baseTime, managerAction, workerAction, isProc) {
-  const famille = MAP_FAMILLE[managerAction];
-  const managerIdx = famille ? etat.managers[famille] : null;
-  const managerKitty = managerIdx !== null && managerIdx !== undefined ? etat.kittiesData[managerIdx] : null;
-  const glIdx = etat.kittiesData.findIndex(function(k) { return k.metier === "gang-leader"; });
-  const glKitty = glIdx >= 0 ? etat.kittiesData[glIdx] : null;
-  const workerKey = (etat.workers[workerAction] || []).map(function(slot) {
-    if (slot.kittyIndex === null) return "-";
-    const kitty = etat.kittiesData[slot.kittyIndex];
-    return slot.kittyIndex + ":" + (kitty ? kitty.nom + ":" + kitty.niveau : "?");
-  }).join(",");
-  const cacheId = baseTime + "|" + managerAction + "|" + workerAction + "|" + (isProc ? 1 : 0);
-  const stateKey = [
-    etat.managersDebloques ? 1 : 0,
-    managerIdx,
-    managerKitty ? managerKitty.nom : "",
-    managerKitty ? managerKitty.metier : "",
-    managerKitty ? managerKitty.managerMult : "",
-    managerKitty ? managerKitty.niveau : "",
-    typeof managerSphereStateKey === "function" ? managerSphereStateKey(famille) : "",
-    glIdx,
-    glKitty ? glKitty.nom : "",
-    glKitty ? glKitty.niveau : "",
-    etat.kittiesData.length,
-    workerKey
-  ].join("|");
-  const precedent = _pairDetailCache.get(cacheId);
-  if (precedent && precedent.stateKey === stateKey) return precedent.html;
-  const html = buildPairDetail(baseTime, managerAction, workerAction, isProc);
-  _pairDetailCache.set(cacheId, { stateKey: stateKey, html: html });
-  return html;
+function recettesDisponiblesFamille(familyId, u) {
+  return RESOURCE_PAIRS.filter(function(pair) {
+    return pair.family === familyId && pair.rawUnlocked(u);
+  }).sort(function(a, b) { return b.tier - a.tier; });
 }
 
-function raisonVerrouillageTransformation(pair) {
-  const progressions = {
-    sawmill:      { label: "Cardboard Pieces", actuel: etat.cardboardPiecesTotalRecolte, cible: CONFIG.sawmill.deblocageA },
-    catchen:      { label: "Catnip", actuel: etat.catnipTotalRecolte, cible: CONFIG.catchen.deblocageA },
-    brickfactory: { label: "Pebbles", actuel: etat.pebblesTotalRecolte, cible: CONFIG.brickfactory.deblocageA }
+function libelleNombreDecimal(value, digits) {
+  const number = Math.max(0, Number(value) || 0);
+  if (Math.abs(number - Math.round(number)) < 0.005) return String(Math.round(number));
+  return number.toFixed(digits === undefined ? 1 : digits);
+}
+
+function progressionsSlotRecette(slot, pair) {
+  const empty = { gathering: 0, processing: 0, phase: 0, overall: 0 };
+  if (!slot || !pair || slot.kittyIndex === null) return empty;
+  const gathered = Math.max(0, Number(slot.gatheredInputs && slot.gatheredInputs[pair.rawRes]) || 0);
+  const target = quantiteInputEffective(pair, pair.inputs[0]);
+  const gathering = slot.phase === "processing"
+    ? 1
+    : (target > 0 ? Math.max(0, Math.min(1, gathered / target)) : 0);
+  const processing = slot.phase === "processing"
+    ? Math.max(0, Math.min(1, Number(slot.phaseProgress) || 0))
+    : 0;
+  return {
+    gathering: gathering,
+    processing: processing,
+    phase: slot.phase === "processing" ? processing : gathering,
+    overall: (gathering + processing) / 2
   };
-  const progression = progressions[pair.procAction];
-  if (!progression) return "Continue progressing to unlock this workshop";
-  return "Gather " + progression.cible + " " + progression.label + " (" + Math.min(Math.floor(progression.actuel), progression.cible) + "/" + progression.cible + ")";
 }
 
-function renduPaireRessource(pair, u) {
-  const qtyRawEl = domParId("pqty-" + pair.rawRes);
-  ecrireTexte(qtyRawEl, formaterNombre(etat[pair.rawRes]));
-  const qtyProcEl = domParId("pqty-" + pair.procRes);
-  ecrireTexte(qtyProcEl, formaterNombre(etat[pair.procRes]));
+function renduSlotRecette(familyId, slotIdx) {
+  const el = domParId("recipe-slot-" + familyId + "-" + slotIdx);
+  const slot = slotRecette(familyId, slotIdx);
+  if (!el || !slot) return;
+  const pair = paireRecette(slot.recipeId);
+  const kitty = slot.kittyIndex === null ? null : etat.kittiesData[slot.kittyIndex];
+  const progress = progressionsSlotRecette(slot, pair);
+  const stateKey = [slot.recipeId || "-", slot.kittyIndex, slot.phase,
+    Math.floor(progress.gathering * 100), Math.floor(progress.processing * 100), Math.floor(progress.overall * 100),
+    pair ? Math.floor((Number(slot.gatheredInputs[pair.rawRes]) || 0) * 10) : 0,
+    kitty ? kitty.niveau : -1, etat.jobCenterConstruit ? 1 : 0,
+    pair ? Math.floor((Number(etat[pair.procRes]) || 0) * 100) : 0,
+    pair ? multiplicateurCoutFamille(pair.procMultAction) : 1,
+    pair ? multiplicateurFamille(pair.rawAction) : 1,
+    pair ? multiplicateurFamille(pair.procMultAction) : 1,
+    workBoostMult(), gangLeaderBonus()].join("|");
+  if (el.dataset.recipeState === stateKey) return;
+  el.dataset.recipeState = stateKey;
 
-  // Adjusted production times + tooltip detail sections
-  const gl = gangLeaderBonus();
-  const rawAdj  = Math.round(pair.rawCfg.secondesParUnite / (multiplicateurFamille(pair.rawAction) * gl));
-  const procAdj = Math.round(pair.procCfg[pair.procSecUnite] / (multiplicateurFamille(pair.procMultAction) * gl));
-  const rawAdjStr  = formaterTemps(rawAdj);
-  const procAdjStr = formaterTemps(procAdj);
-  const procCostMult = multiplicateurCoutFamille(pair.procMultAction);
-  var el;
-  el = domParId("ptadj-" + pair.rawRes);  ecrireTexte(el, rawAdjStr);
-  el = domParId("ptime-" + pair.rawRes);  ecrireTexte(el, rawAdjStr);
-  el = domParId("ptadj-" + pair.procRes); ecrireTexte(el, procAdjStr);
-  el = domParId("ptime-" + pair.procRes); ecrireTexte(el, procAdjStr);
-  el = domParId("pdetail-" + pair.rawRes);
-  ecrireHTML(el, buildPairDetailCache(pair.rawCfg.secondesParUnite, pair.rawAction, pair.rawAction, false));
-  el = domParId("pdetail-" + pair.procRes);
-  ecrireHTML(el, buildPairDetailCache(pair.procCfg[pair.procSecUnite], pair.procMultAction, pair.procAction, true));
-
-  updateWorkerSlotUI(pair.rawAction, 0);
-  updateWorkerSlotUI(pair.rawAction, 1);
-
-  const rawRate  = tauxProductionBrute(pair.rawAction, pair.rawCfg);
-  const procUnlocked = pair.procUnlocked(u);
-
-  const sideProcEl = domParId("pairside-" + pair.procAction);
-  if (sideProcEl) {
-    const recipeQtyEl = sideProcEl.querySelector(".pair-recipe span");
-    if (recipeQtyEl) ecrireTexte(recipeQtyEl, "×" + Math.round((pair.procCfg[pair.procSecUnite] / pair.procCfg[pair.procSecRaw]) * procCostMult));
-  }
-  basculerClasse(sideProcEl, "pair-side-verrouille", !procUnlocked);
-  if (!procUnlocked) {
-    const raison = raisonVerrouillageTransformation(pair);
-    sideProcEl.dataset.lockReason = raison;
-    sideProcEl.setAttribute("aria-label", "Locked. " + raison);
-  } else {
-    delete sideProcEl.dataset.lockReason;
-    sideProcEl.removeAttribute("aria-label");
-  }
-
-  const feedEl = domParId("pfeed-" + pair.procAction);
-
-  if (!procUnlocked) {
-    afficherTauxNet("prate-" + pair.rawRes, rawRate);
-    const rateProcEl = domParId("prate-" + pair.procRes);
-    ecrireTexte(rateProcEl, "");
-    ecrireHTML(feedEl, "");
-    ecrirePropriete(feedEl, "title", "");
+  if (!pair) {
+    el.innerHTML = '<div class="work-recipe-slot-top work-recipe-slot-top-empty"><span class="work-recipe-slot-number">RECIPE SLOT ' + (slotIdx + 1) + '</span></div>'
+      + '<button class="work-recipe-choose-empty" onclick="ouvrirModalRecette(\'' + familyId + '\',' + slotIdx + ')">'
+      + '<span class="work-recipe-choose-plus">+</span><strong>Choose a recipe</strong><small>Then assign a Cat to produce it</small></button>';
     return;
   }
 
-  updateWorkerSlotUI(pair.procAction, 0);
-  updateWorkerSlotUI(pair.procAction, 1);
+  const input = pair.inputs[0];
+  const target = quantiteInputEffective(pair, input);
+  const gathered = Math.min(target, Math.max(0, Number(slot.gatheredInputs[pair.rawRes]) || 0));
+  const gatherRate = kitty ? tauxGatheringRecette(pair, kitty) : 0;
+  const gatherDuration = kitty ? dureeGatheringRecette(pair, kitty) : Infinity;
+  const gatherUnitDuration = kitty && gatherRate > 0 ? 1 / gatherRate : Infinity;
+  const outputPerCycle = kitty ? productionProcBonus(kitty) : 1;
+  const outputRate = kitty ? tauxProductionSlotRecette(pair, slot) : 0;
+  const processingDuration = kitty ? dureeProcessingRecette(pair, kitty) : Infinity;
+  const phaseLabel = !kitty ? "Waiting for a Cat" : (slot.phase === "processing" ? "Processing" : "Gathering");
+  const phaseDetail = !kitty ? "Assign a Cat to start" : (slot.phase === "processing"
+    ? Math.round(progress.processing * 100) + "% of processing complete"
+    : libelleNombreDecimal(gathered, 1) + " / " + libelleNombreDecimal(target, 1) + " " + input.label);
+  const catHtml = kitty
+    ? '<div class="work-recipe-cat-ring" style="--prog:' + progress.overall + '" role="progressbar" aria-label="Full recipe progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(progress.overall * 100) + '"><div class="work-recipe-cat-face">' + kittyIconHtml(kitty) + '</div>'
+      + '<button class="work-recipe-cat-remove" aria-label="Remove ' + echapperAttributHtml(kitty.nom) + ' from this recipe" onclick="retirerWorkerRecette(\'' + familyId + '\',' + slotIdx + ');event.stopPropagation()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button></div>'
+      + '<strong class="work-recipe-cat-name">' + echapperAttributHtml(kitty.nom) + '</strong>'
+      + '<span class="work-recipe-cat-rate">' + libelleNombreDecimal(outputRate * 60, 2) + '/min</span>'
+    : '<button class="work-recipe-cat-empty" onclick="ouvrirModalWorkerRecette(\'' + familyId + '\',' + slotIdx + ')" aria-label="Assign a Cat to ' + echapperAttributHtml(pair.procLabel) + '">+</button><strong class="work-recipe-cat-name">Assign a Cat</strong>';
 
-  const procOutRate  = tauxProductionTransformee(pair);
-  const procConsRate = procOutRate * (pair.procCfg[pair.procSecUnite] / pair.procCfg[pair.procSecRaw]) * procCostMult;
+  el.innerHTML = '<div class="work-recipe-slot-top">'
+    + '<span class="work-recipe-slot-number">RECIPE SLOT ' + (slotIdx + 1) + '</span>'
+    + '<button class="work-recipe-selected" onclick="ouvrirModalRecette(\'' + familyId + '\',' + slotIdx + ')"><img src="' + pair.procIcon + '" alt=""><span><small>RECIPE</small><strong>' + pair.procLabel + '</strong></span><span class="work-recipe-change">Change</span></button>'
+    + '</div>'
+    + '<div class="work-recipe-flow">'
+    + '<section class="work-recipe-resource work-recipe-resource-input" style="--fill:' + Math.round(progress.gathering * 100) + '%"><span class="work-recipe-node-kicker">GATHER</span><img src="' + pair.rawIcon + '" alt=""><strong>' + pair.rawLabel + '</strong><span>' + libelleNombreDecimal(gathered, 1) + ' / ' + libelleNombreDecimal(target, 1) + '</span><small>' + (kitty ? formaterSecondesBrutes(gatherDuration) + ' (1 every ' + formaterSecondesBrutes(gatherUnitDuration) + ')' : 'Input') + '</small></section>'
+    + '<section class="work-recipe-cat">' + catHtml + '</section>'
+    + '<section class="work-recipe-resource work-recipe-resource-output" style="--fill:' + Math.round(progress.processing * 100) + '%"><span class="work-recipe-node-kicker">PRODUCE</span><img src="' + pair.procIcon + '" alt=""><strong>' + pair.procLabel + '</strong><span class="work-recipe-output-progress">' + Math.round(progress.processing * 100) + '%</span>' + (kitty ? '<small>' + formaterSecondesBrutes(processingDuration) + ' for ' + libelleNombreDecimal(outputPerCycle, 2) + ' · Stock ' + formaterNombre(etat[pair.procRes]) + '</small>' : '<small>Output</small>') + '</section>'
+    + '</div>'
+    + '<div class="work-recipe-phase"><div class="work-recipe-phase-copy"><strong>' + phaseLabel + '</strong><span>' + phaseDetail + '</span></div><div class="work-recipe-phase-track"><span style="width:' + Math.round(progress.phase * 100) + '%"></span></div></div>';
+}
 
-  afficherTauxNet("prate-" + pair.rawRes,  rawRate - procConsRate);
-  afficherTauxNet("prate-" + pair.procRes, procOutRate);
+function actualiserIndicateursExploration() {
+  const indicateur = document.getElementById("exploration-tab-alerts");
+  if (!indicateur) return;
+  const campaignReady = Object.values(etat.resultatsCampaigns).some(function(resultat) { return resultat.success; });
+  const revealReady = Object.values(etat.resultatsExplorationZones).some(function(resultat) { return resultat.success; });
+  const emojis = (revealReady ? "🔍" : "") + (campaignReady ? "🎁" : "");
+  const labels = [];
+  if (revealReady) labels.push("zone ready to reveal");
+  if (campaignReady) labels.push("campaign reward ready");
+  ecrireTexte(indicateur, emojis);
+  ecrireStyle(indicateur, "display", emojis ? "inline-flex" : "none");
+  ecrirePropriete(indicateur, "aria-label", labels.join(", "));
+  basculerClasse(document.getElementById("onglet-explorations"), "onglet-alerte", !!emojis);
+}
 
-  if (feedEl) {
-    const consommateurActif = allocationCount(pair.procAction) > 0;
-    if (!consommateurActif) {
-      ecrireHTML(feedEl, "");
-      ecrirePropriete(feedEl, "title", "");
-    } else if (etat[pair.bloqueeKey]) {
-      ecrireHTML(feedEl, "⏸");
-      ecrirePropriete(feedEl, "title", "Out of stock");
-    } else if (rawRate - procConsRate < -0.0005) {
-      ecrireHTML(feedEl, "⚠️");
-      ecrirePropriete(feedEl, "title", "Running low — raw production can't keep up");
-    } else {
-      ecrireHTML(feedEl, CHECK_ICON);
-      ecrirePropriete(feedEl, "title", "Well fed");
+function quantiteInputEffective(pair, input) {
+  const baseQuantity = Number.isFinite(input.baseQuantity)
+    ? input.baseQuantity
+    : pair.procCfg[pair.procSecUnite] / pair.procCfg[pair.procSecRaw];
+  const costMultiplier = input.costAdjusted === false ? 1 : multiplicateurCoutFamille(pair.procMultAction);
+  return baseQuantity * costMultiplier;
+}
+
+function tauxGatheringRecette(pair, kitty) {
+  if (!pair || !kitty) return 0;
+  return multiplicateurFamille(pair.rawAction)
+    * multiplicateurProductionFamille(pair.rawAction)
+    * Math.pow(1.1, kitty.niveau)
+    * gangLeaderBonus()
+    * workBoostMult()
+    / pair.rawCfg.secondesParUnite;
+}
+
+function dureeGatheringRecette(pair, kitty) {
+  if (!pair || !kitty) return Infinity;
+  const rawRate = tauxGatheringRecette(pair, kitty);
+  const input = pair.inputs[0];
+  const target = quantiteInputEffective(pair, input);
+  return rawRate > 0 && target > 0 ? target / rawRate : Infinity;
+}
+
+function dureeProcessingRecette(pair, kitty) {
+  if (!pair || !kitty) return Infinity;
+  const processingSpeed = multiplicateurFamille(pair.procMultAction) * gangLeaderBonus() * workBoostMult();
+  const processingSeconds = Number(pair.procCfg[pair.procSecUnite]);
+  return processingSpeed > 0 && processingSeconds > 0 ? processingSeconds / processingSpeed : Infinity;
+}
+
+function dureeCycleRecette(pair, kitty) {
+  if (!pair || !kitty) return Infinity;
+  const gatheringDuration = dureeGatheringRecette(pair, kitty);
+  const processingDuration = dureeProcessingRecette(pair, kitty);
+  if (!Number.isFinite(gatheringDuration) || !Number.isFinite(processingDuration)) return Infinity;
+  return gatheringDuration + processingDuration;
+}
+
+function tauxProductionSlotRecette(pair, slot) {
+  if (!slot || slot.kittyIndex === null || slot.recipeId !== pair.recipeId) return 0;
+  const kitty = etat.kittiesData[slot.kittyIndex];
+  const cycleDuration = dureeCycleRecette(pair, kitty);
+  return Number.isFinite(cycleDuration) && cycleDuration > 0 ? productionProcBonus(kitty) / cycleDuration : 0;
+}
+
+function tauxProductionBrute(action) {
+  const pair = RESOURCE_PAIRS.find(function(candidate) { return candidate.rawAction === action; });
+  if (!pair) return 0;
+  return (etat.workRecipeSlots[pair.family] || []).reduce(function(total, slot) {
+    if (slot.recipeId !== pair.recipeId || slot.kittyIndex === null) return total;
+    return total + tauxGatheringRecette(pair, etat.kittiesData[slot.kittyIndex]);
+  }, 0);
+}
+
+function tauxProductionTransformee(pair) {
+  return (etat.workRecipeSlots[pair.family] || []).reduce(function(total, slot) {
+    return total + tauxProductionSlotRecette(pair, slot);
+  }, 0);
+}
+
+// Simple resources are private slot inputs, so only processed outputs expose a
+// shared production rate.
+function tauxProductionRessource(resourceKey, u) {
+  let rate = 0;
+  RESOURCE_PAIRS.forEach(function(pair) {
+    if (pair.procRes === resourceKey && pair.rawUnlocked(u)) rate += tauxProductionTransformee(pair);
+  });
+  return rate;
+}
+
+function tauxConsommationRessource() { return 0; }
+
+function tauxNetRessource(resourceKey, u) {
+  return tauxProductionRessource(resourceKey, u) - tauxConsommationRessource(resourceKey, u);
+}
+
+function libelleTauxNetCourt(net) {
+  const parMin = net * 60;
+  if (Math.abs(parMin) < 0.005) return "0.00/m";
+  return (parMin > 0 ? "+" : "") + parMin.toFixed(2) + "/m";
+}
+
+function sourceProductionRessource(resourceKey) {
+  for (let i = 0; i < RESOURCE_PAIRS.length; i++) {
+    const pair = RESOURCE_PAIRS[i];
+    if (pair.rawRes === resourceKey) {
+      return { family: pair.family, action: pair.rawAction, recipeId: pair.recipeId, targetId: "work-recipe-slots-" + pair.family, label: pair.rawLabel };
+    }
+    if (pair.procRes === resourceKey) {
+      return { family: pair.family, action: pair.procAction, recipeId: pair.recipeId, targetId: "work-recipe-slots-" + pair.family, label: pair.procLabel };
     }
   }
+  return null;
+}
+
+function mettreEnEvidenceRessourceWork(source) {
+  if (!source) return;
+  setTimeout(function() {
+    const cible = domParId(source.targetId);
+    if (!cible) return;
+    cible.scrollIntoView({ behavior: "smooth", block: "center" });
+    cible.classList.remove("objectif-cible-highlight");
+    void cible.offsetWidth;
+    cible.classList.add("objectif-cible-highlight");
+    setTimeout(function() { cible.classList.remove("objectif-cible-highlight"); }, 1700);
+  }, 80);
+}
+
+function allerRessourceWork(resourceKey) {
+  const source = sourceProductionRessource(resourceKey);
+  if (!source) return;
+  filtrerWork(source.family);
+  mettreEnEvidenceRessourceWork(source);
+}
+
+function ouvrirAllocationRessource(resourceKey) {
+  const source = sourceProductionRessource(resourceKey);
+  if (!source) return;
+  filtrerWork(source.family);
+  const slots = etat.workRecipeSlots[source.family] || [];
+  let slotIdx = slots.findIndex(function(slot) { return slot.recipeId === source.recipeId && slot.kittyIndex === null; });
+  if (slotIdx < 0) slotIdx = slots.findIndex(function(slot) { return !slot.recipeId; });
+  if (slotIdx < 0) { mettreEnEvidenceRessourceWork(source); return; }
+  if (!slots[slotIdx].recipeId) slots[slotIdx].recipeId = source.recipeId;
+  ouvrirModalWorkerRecette(source.family, slotIdx);
 }
 
 function renduWorkPairs(u) {
-  // Filter bar visibility — each button appears only when its family is unlocked
+  initialiserWorkStructure();
+
+  // Each family button appears only when at least one gathering tier is unlocked.
   const setDisplay = function(id, show) { ecrireStyle(domParId(id), "display", show ? "" : "none"); };
   setDisplay("filtre-work-wood", u.cathering);
   setDisplay("filtre-work-food", u.grasscat);
   setDisplay("filtre-work-rock", u.pebblecat || u.rockcat);
-  setDisplay("filtre-work-all",  u.grasscat || u.pebblecat || u.rockcat);
   const filtresBar = document.querySelector(".work-filtres");
   ecrireStyle(filtresBar, "display", u.cathering ? "" : "none");
 
@@ -2027,38 +2239,51 @@ function renduWorkPairs(u) {
     if (gl) {
       const mult = gangLeaderBonus();
       ecrireStyle(banner, "display", "");
-      ecrireHTML(banner, "👑 <strong>" + gl.nom + "</strong> is leading the gang — ×" + mult.toFixed(2) + " work speed (" + etat.kittiesData.length + " cats · " + gl.nom + " Lvl " + gl.niveau + ")");
+      ecrireHTML(banner, "👑 <strong>" + gl.nom + "</strong> is leading the gang: ×" + mult.toFixed(2) + " work speed (" + etat.kittiesData.length + " cats · " + gl.nom + " Lvl " + gl.niveau + ")");
     } else {
       ecrireStyle(banner, "display", "none");
     }
   }
 
-  const showWood = workFiltre === null || workFiltre === "wood";
-  const showFood = (workFiltre === null || workFiltre === "food") && u.grasscat;
-  const showRock = (workFiltre === null || workFiltre === "rock") && (u.pebblecat || u.rockcat);
+  const unlockedFamilies = ["wood"];
+  if (u.grasscat) unlockedFamilies.push("food");
+  if (u.pebblecat || u.rockcat) unlockedFamilies.push("rock");
+  if (!unlockedFamilies.includes(workFiltre)) workFiltre = unlockedFamilies[0];
+  ["wood", "food", "rock"].forEach(function(familyId) {
+    const button = domParId("filtre-work-" + familyId);
+    if (!button) return;
+    const active = familyId === workFiltre;
+    basculerClasse(button, "btn-filtre-work-actif", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
 
-  ecrireStyle(domParId("famille-wood"), "display", showWood ? "block" : "none");
-  ecrireStyle(domParId("famille-food"), "display", showFood ? "block" : "none");
-  ecrireStyle(domParId("famille-rock"), "display", showRock ? "block" : "none");
+  ["wood", "food", "rock"].forEach(function(familyId) {
+    const familyEl = domParId("famille-" + familyId);
+    const visible = familyId === workFiltre && unlockedFamilies.includes(familyId);
+    ecrireStyle(familyEl, "display", visible ? "grid" : "none");
+    ecrireStyle(domParId("work-managers-" + familyId), "display", visible && etat.jobCenterConstruit ? "grid" : "none");
+  });
 
-  if (showWood) { renderManagerSlot("wood"); renderManagerSlot("sawmill"); }
-  if (showFood) { renderManagerSlot("food"); renderManagerSlot("catchen"); }
-  if (showRock) { renderManagerSlot("rock"); renderManagerSlot("pawsonry"); }
+  const currentFamily = WORK_FAMILIES[workFiltre];
+  if (currentFamily && etat.jobCenterConstruit) {
+    renderManagerSlot(currentFamily.gatheringManager);
+    renderManagerSlot(currentFamily.processingManager);
+  }
+  const available = recettesDisponiblesFamille(workFiltre, u);
+  (etat.workRecipeSlots[workFiltre] || []).forEach(function(slot) {
+    if (slot.recipeId && !available.some(function(pair) { return pair.recipeId === slot.recipeId; })) {
+      reinitialiserProgressionRecette(slot, true);
+    }
+  });
+  renduSlotRecette(workFiltre, 0);
+  renduSlotRecette(workFiltre, 1);
 
-  const setRowDisplay = function(id, show) { ecrireStyle(domParId(id), "display", show ? "flex" : "none"); };
-  setRowDisplay("sep-basicWoodcatting", u.basicWood);
-  setRowDisplay("pairside-basicSawmill", u.basicWood);
-  setRowDisplay("sep-fishcatting", u.anchovy);
-  setRowDisplay("pairside-grilledAnchovy", u.anchovy);
-  setRowDisplay("sep-rockgathering", u.rockcat);
-  setRowDisplay("pairside-rockFactory", u.rockcat);
-
-  if (showWood)               renduPaireRessource(RESOURCE_PAIRS[0], u);
-  if (showWood && u.basicWood) renduPaireRessource(RESOURCE_PAIRS[1], u);
-  if (showFood)               renduPaireRessource(RESOURCE_PAIRS[2], u);
-  if (showFood && u.anchovy)  renduPaireRessource(RESOURCE_PAIRS[3], u);
-  if (showRock)               renduPaireRessource(RESOURCE_PAIRS[4], u);
-  if (showRock && u.rockcat)  renduPaireRessource(RESOURCE_PAIRS[5], u);
+  ["wood", "food", "rock"].forEach(function(familyId) {
+    const badge = domParId("work-warning-" + familyId);
+    if (badge) { ecrireTexte(badge, ""); badge.hidden = true; }
+    const button = domParId("filtre-work-" + familyId);
+    if (button) button.setAttribute("aria-label", WORK_FAMILIES[familyId].label + " recipes");
+  });
 }
 
 function fermerWorkDiscoveryHint() {
@@ -2067,8 +2292,7 @@ function fermerWorkDiscoveryHint() {
   if (indiceEl) ecrireStyle(indiceEl, "display", "none");
 }
 
-// Mobile: tapping a resource icon reveals its name/time/cost tooltip (.pair-info).
-// Desktop is unaffected — that info is already shown inline there.
+// Tapping or keyboard-activating a resource icon opens its detailed tooltip.
 (function() {
   const section = document.getElementById("section-work-pairs");
   if (!section) return;
@@ -2846,7 +3070,7 @@ function renduManagement() {
       ? "<div class='detail-level-row'><span class='detail-level-num'>Level " + _jlvl.cur + " / " + _jlvl.max + "</span></div>"
       : "";
     droite.innerHTML +=
-      "<div class='detail-section'>" +
+      "<div class='detail-section' id='detail-job'>" +
       "<div class='detail-job-header'>" +
       "<span class='detail-section-titre'>Job</span>" +
       "<span class='detail-job-nom" + (k.metier ? "" : " kitty-vagabond") + "'>" + jobName + "</span>" +
@@ -2881,24 +3105,23 @@ function rendu() {
 // 9b. EXPLORATIONS RENDER
 // ════════════════════════════════════════════════════════════
 
-let workFiltre = null;  // null | "wood" | "food" | "rock"
+let workFiltre = "wood";  // "wood" | "food" | "rock"
 
 function filtrerWork(filtre) {
-  workFiltre = filtre;
-  const cle = filtre || "all";
-  ["all", "wood", "food", "rock"].forEach(function(f) {
+  workFiltre = filtre || "wood";
+  ["wood", "food", "rock"].forEach(function(f) {
     const el = document.getElementById("filtre-work-" + f);
     if (el) {
-      el.classList.toggle("btn-filtre-work-actif", f === cle);
-      el.setAttribute("aria-pressed", f === cle ? "true" : "false");
+      el.classList.toggle("btn-filtre-work-actif", f === workFiltre);
+      el.setAttribute("aria-pressed", f === workFiltre ? "true" : "false");
     }
   });
   rendu();
 }
 
 function deallouerTous() {
-  Object.values(etat.workers).forEach(function(slots) {
-    slots.forEach(function(s) { s.kittyIndex = null; s.progress = 0; });
+  Object.values(etat.workRecipeSlots || {}).forEach(function(slots) {
+    slots.forEach(function(slot) { reinitialiserProgressionRecette(slot, false); });
   });
   sauvegarder(); rendu();
 }
@@ -2997,11 +3220,18 @@ function renderCampaignCards() {
     if (campScoutGrid)  campScoutGrid.style.display  = "none";
     if (missionSection) missionSection.style.display = "";
     const inProgress = !!(etat.exploZoneEnCours && etat.exploZoneEnCours.zoneId === zoneId);
+    const resultatZone = etat.resultatsExplorationZones[zoneId];
     html += '<div class="explo-card">';
     html += '<div class="explo-nom">&#x1F50D; Explore this zone</div>';
     if (zone.description) html += '<div class="explo-description zone-description">' + zone.description + '</div>';
     html += '<div class="explo-meta">&#x2694;&#xFE0F; Difficulty ' + zone.difficulte + ' &nbsp;&middot;&nbsp; &#x23F1; ' + formaterTempsStat(zone.duree) + ' &nbsp;&middot;&nbsp; &#x1F431; ' + zone.slots + ' slot(s)</div>';
-    if (inProgress) {
+    if (resultatZone) {
+      if (resultatZone.success) {
+        html += '<button class="explo-result-action explo-result-reveal" onclick="revelerZoneExploree(\'' + zoneId + '\')">🔍 Reveal the explored zone</button>';
+      } else {
+        html += '<button class="explo-result-action explo-result-failure" onclick="reessayerExploZone(\'' + zoneId + '\')"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt="">Try again</button>';
+      }
+    } else if (inProgress) {
       const ez        = etat.exploZoneEnCours;
       const elapsed   = (Date.now() - ez.startTs) / 1000;
       const remaining = Math.max(0, ez.duree - elapsed);
@@ -3073,6 +3303,7 @@ function renderCampaignCards() {
     campDefs.forEach(function(camp) {
       const completed  = etat.campaignsCompletees.includes(camp.id);
       const inProgress = etat.exploEnCours.find(function(e) { return e.id === camp.id; });
+      const resultatCampaign = etat.resultatsCampaigns[camp.id];
 
       if (!exploKittiesSelectionnees[camp.id]) {
         exploKittiesSelectionnees[camp.id] = new Array(camp.slots).fill(null);
@@ -3084,7 +3315,13 @@ function renderCampaignCards() {
       html += '<div class="explo-nom">' + camp.nom + '</div>';
       html += '<div class="explo-description">' + camp.description + '</div>';
 
-      if (completed) {
+      if (resultatCampaign) {
+        if (resultatCampaign.success) {
+          html += '<button class="explo-result-action explo-result-reward" onclick="recupererRecompenseCampaign(\'' + camp.id + '\')">🎁 Claim campaign reward</button>';
+        } else {
+          html += '<button class="explo-result-action explo-result-failure" onclick="reessayerCampaign(\'' + camp.id + '\')"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt="">Try again</button>';
+        }
+      } else if (completed) {
         html += '<div class="explo-complete">' + CHECK_ICON + ' Completed &#x2014; ' + recompenseLabel(camp) + '</div>';
       } else if (camp.lockedReason || requiredItemMissing) {
         html += '<div class="explo-locked-reason">' + (camp.lockedReason || ('Requires ' + (ITEMS[camp.requiredItem] ? ITEMS[camp.requiredItem].nom : camp.requiredItem) + '.')) + '</div>';
@@ -3241,6 +3478,23 @@ function renderCampaignCards() {
           }
           scoutHtml += '<button class="btn-lancer-explo"' + (stagedKi !== undefined ? '' : ' disabled') + ' onclick="lancerScouting(\'' + sc.id + '\')">Send to scout &#x27A4;</button>';
         }
+        var butin = etat.butinsScouting[sc.id];
+        if (butin && butin.successful + butin.failed > 0) {
+          var rewardsText = Object.keys(butin.rewards).map(function(recompenseId) {
+            return (RESOURCE_DISPLAY_NAMES[recompenseId] || recompenseId) + ' ×' + formaterNombre(butin.rewards[recompenseId]);
+          }).join(' · ');
+          var doubledVisible = false;
+          if (running && etat.spherePerks && etat.spherePerks['ex-luck'] === 'learned') {
+            var runningKitty = etat.kittiesData[running.kittyIndex];
+            doubledVisible = !!(runningKitty && runningKitty.metier === 'explorator');
+          }
+          scoutHtml += '<div class="scouting-accumulator">';
+          scoutHtml += '<div class="scouting-runs"><span class="scouting-metric-label">Scouting Runs:</span><strong class="scouting-successful">Successful ' + butin.successful + '</strong><span class="scouting-failed">Failed ' + butin.failed + '</span></div>';
+          scoutHtml += '<div class="scouting-luck"><span class="scouting-metric-label">Rewards Luck:</span><span>Regular ' + butin.regular + '</span><span class="scouting-lucky">Lucky ' + butin.lucky + '</span><strong class="scouting-super-lucky">Super Lucky ' + butin.superLucky + '</strong>' + (doubledVisible ? '<strong class="scouting-doubled">Doubled ' + butin.doubled + '</strong>' : '') + '</div>';
+          scoutHtml += '<div class="scouting-rewards">' + (rewardsText || 'No rewards collected yet') + '</div>';
+          scoutHtml += '<button class="explo-result-action explo-result-reward" onclick="recupererButinScouting(\'' + sc.id + '\')">🎁 Claim scouting rewards</button>';
+          scoutHtml += '</div>';
+        }
         scoutHtml += '</div>';
       });
       scoutEl.innerHTML = scoutHtml;
@@ -3363,6 +3617,23 @@ function renduCarteGrille() {
 
       const exploree   = etat.zonesExplorees.includes(zoneId);
       const inProgress = !!(etat.exploZoneEnCours && etat.exploZoneEnCours.zoneId === zoneId);
+      const revealReady = !!(etat.resultatsExplorationZones[zoneId] && etat.resultatsExplorationZones[zoneId].success);
+      const campaignRewardReady = Object.keys(etat.resultatsCampaigns).some(function(campaignId) {
+        const camp = CONFIG.campaigns[campaignId];
+        return camp && camp.zone === zoneId && etat.resultatsCampaigns[campaignId].success;
+      });
+      const failedResultReady = !!(etat.resultatsExplorationZones[zoneId] && !etat.resultatsExplorationZones[zoneId].success)
+        || Object.keys(etat.resultatsCampaigns).some(function(campaignId) {
+          const camp = CONFIG.campaigns[campaignId];
+          return camp && camp.zone === zoneId && !etat.resultatsCampaigns[campaignId].success;
+        });
+      const scoutingRewardReady = Object.keys(etat.butinsScouting).some(function(scoutingId) {
+        const scouting = CONFIG.scoutings[scoutingId];
+        const butin = etat.butinsScouting[scoutingId];
+        return scouting && scouting.zone === zoneId && butin && Object.keys(butin.rewards).some(function(rewardId) {
+          return butin.rewards[rewardId] > 0;
+        });
+      });
       const selected   = carteZoneSelectionnee === zoneId;
       const locked     = zone.type !== "home" && !explorateurOk;
       const zoneEtatLabel = locked ? "locked" : (inProgress ? "exploration in progress" : (exploree ? "explored" : "unexplored"));
@@ -3391,6 +3662,9 @@ function renduCarteGrille() {
               : '<span class="carte-badge-inconnu">?</span>';
           }
           if (inProgress) html += '<span class="carte-badge-encours">⏳</span>';
+          if (revealReady) html += '<span class="carte-badge-result carte-badge-reveal" title="Zone ready to reveal">🔍</span>';
+          if (campaignRewardReady || scoutingRewardReady) html += '<span class="carte-badge-result carte-badge-reward" title="Rewards ready to claim">🎁</span>';
+          if (failedResultReady) html += '<span class="carte-badge-result carte-badge-failure" title="Mission ready to retry">❌</span>';
           if (exploree) {
             var zoneScouts = Object.values(CONFIG.scoutings).filter(function(s) {
               return s.zone === zoneId && scoutingDebloquee(s);
@@ -3494,7 +3768,7 @@ function renduCarte(u) {
     _zoneInfoKey = null;
     el.innerHTML =
       '<div class="carte-grille-conteneur">' +
-        (!u || !u.explorateurPresent ? '<p class="explo-map-hint">Train an <strong>Explorator</strong> in the Job Center to unlock other zones.</p>' : '') +
+        (etat.jobCenterConstruit && (!u || !u.explorateurPresent) ? '<p class="explo-map-hint">Train an <strong>Explorator</strong> in the Job Center to unlock other zones.</p>' : '') +
         '<div class="carte-grille" id="carte-grille"></div>' +
         '<div class="carte-col-lbls" id="carte-col-lbls"></div>' +
       '</div>' +
@@ -3815,7 +4089,7 @@ function retirerKittyExploZone(zoneId, slotIdx) {
 
 function lancerExploZone() {
   const zoneId = carteZoneSelectionnee;
-  if (!zoneId || etat.exploZoneEnCours) return;
+  if (!zoneId || etat.exploZoneEnCours || etat.resultatsExplorationZones[zoneId]) return;
   const z = ZONES_CARTE[zoneId];
   if (!z || etat.zonesExplorees.includes(zoneId)) return;
   const slots = carteExploSlots[zoneId] || [];
@@ -3847,21 +4121,52 @@ function terminerExploZone() {
   if (carteExploSlots[zoneId]) carteExploSlots[zoneId] = carteExploSlots[zoneId].map(function() { return null; });
 
   const zoneName = z ? z.nom : zoneId;
-  if (success) {
-    if (!etat.zonesExplorees.includes(zoneId)) etat.zonesExplorees.push(zoneId);
-    afficherNotification("✅ " + zoneName + " explored!");
-    ajouterLog("unlock", "Zone explored: " + zoneName + ".");
-    verifierObjectifs();
-  } else {
-    afficherNotification(zoneName + " exploration failed — try again with more power!");
-    ajouterLog("event", "Zone exploration failed: " + zoneName + " — " + names + " returned safely.");
-  }
+  if (!etat.resultatsExplorationZones) etat.resultatsExplorationZones = {};
+  etat.resultatsExplorationZones[zoneId] = { success: success, kittyIndices: mission.kittyIndices.slice() };
+  afficherNotification(success ? "🔍 " + zoneName + " is ready to be revealed!" : "❌ " + zoneName + " exploration failed. Check the map to try again.");
+  ajouterLog("event", success
+    ? "Zone exploration completed: " + zoneName + " is ready to reveal."
+    : "Zone exploration failed: " + zoneName + ". " + names + " returned safely.");
+}
+
+function kittyDisponiblePourNouvelleMission(kittyIndex) {
+  return !!etat.kittiesData[kittyIndex] && !kittyIsBusy(kittyIndex) && !kittyEstManager(kittyIndex);
+}
+
+function revelerZoneExploree(zoneId) {
+  const resultat = etat.resultatsExplorationZones[zoneId];
+  const zone = ZONES_CARTE[zoneId];
+  if (!resultat || !resultat.success || !zone) return;
+  delete etat.resultatsExplorationZones[zoneId];
+  if (!etat.zonesExplorees.includes(zoneId)) etat.zonesExplorees.push(zoneId);
+  afficherNotification("✅ " + zone.nom + " explored!");
+  ajouterLog("unlock", "Zone explored: " + zone.nom + ".");
+  carteDirty = true;
+  exploTabDirty = true;
+  verifierObjectifs(); sauvegarder(); rendu();
+}
+
+function reessayerExploZone(zoneId) {
+  const resultat = etat.resultatsExplorationZones[zoneId];
+  const zone = ZONES_CARTE[zoneId];
+  if (!resultat || resultat.success || !zone) return;
+  delete etat.resultatsExplorationZones[zoneId];
+  carteExploSlots[zoneId] = new Array(zone.slots).fill(null);
+  resultat.kittyIndices.slice(0, zone.slots).forEach(function(kittyIndex, slotIndex) {
+    if (kittyDisponiblePourNouvelleMission(kittyIndex)) {
+      carteExploSlots[zoneId][slotIndex] = kittyIndex;
+      exclusifyStagedKitty(kittyIndex, "zone", zoneId);
+    }
+  });
+  carteDirty = true;
+  exploTabDirty = true;
+  sauvegarder(); rendu();
 }
 
 function lancerExplo(id) {
   const slots = exploKittiesSelectionnees[id];
   const camp  = CONFIG.campaigns[id];
-  if (!camp || !slots) return;
+  if (!camp || !slots || etat.resultatsCampaigns[id]) return;
   if (camp.requiredItem && !etat.itemsAcquis.includes(camp.requiredItem)) return;
   const kittyIndices = slots.filter(function(x) { return x !== null; });
   if (kittyIndices.length < camp.slots) return;
@@ -3889,24 +4194,52 @@ function terminerExplo(explo) {
     return etat.kittiesData[i] ? etat.kittiesData[i].nom : "?";
   }).join(", ");
 
-  if (success) {
-    etat.campaignsCompletees.push(explo.id);
-    if (camp.recompenses) {
-      camp.recompenses.forEach(function(entry) {
-        appliquerRecompense(entry.recompense, entry.qty);
-      });
-    } else if (camp.recompenseTable) {
-      var entry = resoudreRecompenseTable(camp.recompenseTable);
-      appliquerRecompense(entry.recompense, entry.qty);
-    } else {
-      appliquerRecompense(camp.recompense, camp.recompenseQty);
-    }
-    ajouterLog("event", "Campaign '" + camp.nom + "' completed! " + names + " returned with the reward.");
-  } else {
-    ajouterLog("event", "Campaign '" + camp.nom + "' failed — " + names + " returned empty-pawed.");
-    afficherNotification(camp.nom + " failed — try with more power!");
+  var recompenses = [];
+  if (success && camp.recompenses) {
+    recompenses = camp.recompenses.map(function(entry) { return { recompense: entry.recompense, qty: entry.qty }; });
+  } else if (success && camp.recompenseTable) {
+    var rewardEntry = resoudreRecompenseTable(camp.recompenseTable);
+    recompenses = [{ recompense: rewardEntry.recompense, qty: rewardEntry.qty }];
+  } else if (success) {
+    recompenses = [{ recompense: camp.recompense, qty: camp.recompenseQty || 1 }];
   }
+  if (!etat.resultatsCampaigns) etat.resultatsCampaigns = {};
+  etat.resultatsCampaigns[explo.id] = { success: success, kittyIndices: explo.kittyIndices.slice(), recompenses: recompenses };
+  ajouterLog("event", success
+    ? "Campaign '" + camp.nom + "' succeeded. Its reward is waiting to be claimed."
+    : "Campaign '" + camp.nom + "' failed. " + names + " returned empty-pawed.");
+  afficherNotification(success ? "🎁 " + camp.nom + " reward ready!" : "❌ " + camp.nom + " failed. Open the zone to try again.");
+  carteDirty = true;
   exploTabDirty = true;
+}
+
+function recupererRecompenseCampaign(campaignId) {
+  const resultat = etat.resultatsCampaigns[campaignId];
+  const camp = CONFIG.campaigns[campaignId];
+  if (!resultat || !resultat.success || !camp) return;
+  resultat.recompenses.forEach(function(entry) { appliquerRecompense(entry.recompense, entry.qty); });
+  if (!etat.campaignsCompletees.includes(campaignId)) etat.campaignsCompletees.push(campaignId);
+  delete etat.resultatsCampaigns[campaignId];
+  ajouterLog("unlock", "Campaign completed: " + camp.nom + ". Reward claimed.");
+  carteDirty = true;
+  exploTabDirty = true;
+  verifierObjectifs(); sauvegarder(); rendu();
+}
+
+function reessayerCampaign(campaignId) {
+  const resultat = etat.resultatsCampaigns[campaignId];
+  const camp = CONFIG.campaigns[campaignId];
+  if (!resultat || resultat.success || !camp) return;
+  delete etat.resultatsCampaigns[campaignId];
+  exploKittiesSelectionnees[campaignId] = new Array(camp.slots).fill(null);
+  resultat.kittyIndices.slice(0, camp.slots).forEach(function(kittyIndex, slotIndex) {
+    if (kittyDisponiblePourNouvelleMission(kittyIndex)) {
+      exploKittiesSelectionnees[campaignId][slotIndex] = kittyIndex;
+      exclusifyStagedKitty(kittyIndex, "campaign", campaignId);
+    }
+  });
+  exploTabDirty = true;
+  sauvegarder(); rendu();
 }
 
 // Returns the effective Exploration Power for a kitty, applying ex-power perk if applicable.
@@ -3985,8 +4318,8 @@ function appliquerRecompense(recompenseId, recompenseQty) {
     }
     afficherNotification("📚 School Guide obtained! Check your Inventory.");
     ajouterLog("unlock", "School Guide added to your Inventory.");
-    if (!localStorage.getItem("story6aVue")) {
-      localStorage.setItem("story6aVue", "1");
+    if (!storyEstVue("story6aVue")) {
+      marquerStoryVue("story6aVue");
       afficherModal("ecran-story-6a");
       renduStories();
     }
@@ -4165,57 +4498,54 @@ function peutPayerAction(cout) {
 }
 
 function actionItem(itemId, actionId) {
-  if (itemId === "schoolGuide" && actionId === "learn") {
-    if (etat.itemsAppris.includes("schoolGuide")) return;
+  const item = ITEMS[itemId];
+  if (!item) return;
+
+  if (actionId === "study" && item.learningGame) {
+    if (etat.itemsAppris.includes(itemId)) return;
+    if (etat.itemsEtudies.includes(itemId)) return;
     if (etat.learningEnCours) return;
-    etat.learningEnCours = { itemId: "schoolGuide", startTs: Date.now(), duree: 60000 };
+    const duree = item.studyDuration || 60000;
+    etat.learningEnCours = { itemId: itemId, startTs: Date.now(), duree: duree };
     inventaireDirty = true;
-    afficherNotification("📖 Learning... 60s remaining.");
+    afficherNotification("📖 Studying " + item.nom + "... " + formaterTemps(duree / 1000) + " remaining.");
     sauvegarder(); renduInventaire(unlocks());
+    return;
   }
-  if (itemId === "fishingGuide" && actionId === "learn") {
-    if (etat.itemsAppris.includes("fishingGuide")) return;
-    if (etat.learningEnCours) return;
-    etat.learningEnCours = { itemId: "fishingGuide", startTs: Date.now(), duree: 3600000 };
-    inventaireDirty = true;
-    afficherNotification("📖 Learning Fishing Guide... 1h remaining.");
-    sauvegarder(); renduInventaire(unlocks());
-  }
-  if (itemId === "constructionPlan" && actionId === "learn") {
-    if (etat.itemsAppris.includes("constructionPlan")) return;
-    if (etat.learningEnCours) return;
-    etat.learningEnCours = { itemId: "constructionPlan", startTs: Date.now(), duree: 3600000 };
-    inventaireDirty = true;
-    afficherNotification("📖 Learning Construction Plan... 1h remaining.");
-    sauvegarder(); renduInventaire(unlocks());
-  }
-  if (itemId === "stoneGuide" && actionId === "learn") {
-    if (etat.itemsAppris.includes("stoneGuide")) return;
-    if (etat.learningEnCours) return;
-    etat.learningEnCours = { itemId: "stoneGuide", startTs: Date.now(), duree: 3600000 };
-    inventaireDirty = true;
-    afficherNotification("📖 Learning Stone Craft Guide... 1h remaining.");
-    sauvegarder(); renduInventaire(unlocks());
-  }
-  if (itemId === "seminarGuide" && actionId === "learn") {
-    if (etat.itemsAppris.includes("seminarGuide")) return;
-    if (etat.learningEnCours) return;
-    etat.learningEnCours = { itemId: "seminarGuide", startTs: Date.now(), duree: 7200000 };
-    inventaireDirty = true;
-    afficherNotification("📖 Studying Corporate Seminar Booklet... 2h remaining.");
-    sauvegarder(); renduInventaire(unlocks());
+
+  if (actionId === "learn" && item.learningGame) {
+    if (etat.itemsAppris.includes(itemId)) return;
+    if (!etat.itemsEtudies.includes(itemId)) return;
+    ouvrirMiniJeuLivre(itemId);
+    return;
   }
 }
 
 function terminerApprentissage(itemId) {
+  const item = ITEMS[itemId];
+  if (item && item.learningGame && !etat.itemsAppris.includes(itemId)) {
+    if (!etat.itemsEtudies.includes(itemId)) etat.itemsEtudies.push(itemId);
+    etat.learningEnCours = null;
+    inventaireDirty = true;
+    afficherNotification("📖 " + item.nom + " studied! Complete its lesson to learn it.");
+    ajouterLog("event", item.nom + " study complete — its lesson is ready in Inventory.");
+    sauvegarder(); rendu();
+    return;
+  }
+
+  apprendreLivre(itemId);
+}
+
+function apprendreLivre(itemId) {
+  if (etat.itemsAppris.includes(itemId)) return;
   if (itemId === "schoolGuide") {
     etat.itemsAppris.push("schoolGuide");
     etat.jobCenterDebloque = true;
     assignerGangLeader();
     afficherNotification("🏫 Job Center unlocked! Build it in the Facilities tab.");
     ajouterLog("unlock", "Job Center unlocked — build it from the Facilities tab.");
-    if (!localStorage.getItem("story6bVue")) {
-      localStorage.setItem("story6bVue", "1");
+    if (!storyEstVue("story6bVue")) {
+      marquerStoryVue("story6bVue");
       afficherModal("ecran-story-6b");
       renduStories();
     }
@@ -4240,15 +4570,133 @@ function terminerApprentissage(itemId) {
     etat.trainingCenterDebloque = true;
     afficherNotification("🏋️ Seminar Booklet mastered! Training Center unlocked — build it in Facilities.");
     ajouterLog("unlock", "Corporate Seminar Booklet studied — Training Center is now available in the Facilities tab.");
-    if (!localStorage.getItem("storySeminarVue")) {
-      localStorage.setItem("storySeminarVue", "1");
+    if (!storyEstVue("storySeminarVue")) {
+      marquerStoryVue("storySeminarVue");
       afficherModal("ecran-story-seminar");
       renduStories();
     }
   }
   etat.learningEnCours = null;
   inventaireDirty = true;
+  verifierObjectifs();
   sauvegarder(); rendu();
+}
+
+let livreMiniJeuItemId = null;
+let livreMiniJeuMots = [];
+let livreMiniJeuTrous = [];
+let livreMiniJeuMessage = "";
+
+function melangerMotsLivre(mots) {
+  const melanges = mots.map(function(mot, index) { return { id: index, mot: mot }; });
+  for (let i = melanges.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temporaire = melanges[i];
+    melanges[i] = melanges[j];
+    melanges[j] = temporaire;
+  }
+  return melanges;
+}
+
+function ouvrirMiniJeuLivre(itemId) {
+  const item = ITEMS[itemId];
+  const jeu = item && item.learningGame;
+  if (!jeu || etat.itemsAppris.includes(itemId) || !etat.itemsEtudies.includes(itemId)) return;
+
+  livreMiniJeuItemId = itemId;
+  livreMiniJeuMots = melangerMotsLivre(jeu.answers);
+  livreMiniJeuTrous = jeu.answers.map(function() { return null; });
+  livreMiniJeuMessage = "";
+  renduMiniJeuLivre();
+  ouvrirDialogueModal("book-learning-modal", {
+    dismissible: true,
+    fermer: fermerMiniJeuLivre,
+    focusSelector: ".book-learning-word",
+    returnFocusSelector: '#inv-item-card-' + itemId
+  });
+}
+
+function fermerMiniJeuLivre() {
+  fermerDialogueModal("book-learning-modal");
+  livreMiniJeuItemId = null;
+  livreMiniJeuMots = [];
+  livreMiniJeuTrous = [];
+  livreMiniJeuMessage = "";
+}
+
+function placerMotMiniJeuLivre(motId) {
+  if (livreMiniJeuTrous.includes(motId)) return;
+  const premierTrou = livreMiniJeuTrous.indexOf(null);
+  if (premierTrou < 0) return;
+  livreMiniJeuTrous[premierTrou] = motId;
+  livreMiniJeuMessage = "";
+  renduMiniJeuLivre();
+}
+
+function retirerMotMiniJeuLivre(trouIndex) {
+  if (trouIndex < 0 || trouIndex >= livreMiniJeuTrous.length) return;
+  livreMiniJeuTrous[trouIndex] = null;
+  livreMiniJeuMessage = "";
+  renduMiniJeuLivre();
+}
+
+function motMiniJeuLivre(motId) {
+  const entree = livreMiniJeuMots.find(function(mot) { return mot.id === motId; });
+  return entree ? entree.mot : "";
+}
+
+function renduMiniJeuLivre() {
+  const item = ITEMS[livreMiniJeuItemId];
+  const jeu = item && item.learningGame;
+  const phraseEl = document.getElementById("book-learning-phrase");
+  const motsEl = document.getElementById("book-learning-words");
+  const feedbackEl = document.getElementById("book-learning-feedback");
+  const checkEl = document.getElementById("book-learning-check");
+  const titreEl = document.getElementById("book-learning-title");
+  if (!jeu || !phraseEl || !motsEl || !feedbackEl || !checkEl) return;
+
+  if (titreEl) titreEl.textContent = "Learn from the " + item.nom;
+  let phraseHtml = "";
+  jeu.phraseParts.forEach(function(partie, index) {
+    phraseHtml += '<span>' + echapperAttributHtml(partie) + '</span>';
+    if (index >= jeu.answers.length) return;
+    const motId = livreMiniJeuTrous[index];
+    const mot = motId === null ? "" : motMiniJeuLivre(motId);
+    phraseHtml += '<button class="book-learning-blank' + (mot ? " book-learning-blank-filled" : "") + '"' +
+      ' aria-label="Blank ' + (index + 1) + (mot ? ": " + echapperAttributHtml(mot) + ". Click to remove." : ": empty") + '"' +
+      (mot ? ' onclick="retirerMotMiniJeuLivre(' + index + ')"' : ' disabled') + '>' +
+      (mot ? echapperAttributHtml(mot) : "___") + '</button>';
+  });
+  phraseEl.innerHTML = phraseHtml;
+
+  motsEl.innerHTML = livreMiniJeuMots.filter(function(entree) {
+    return !livreMiniJeuTrous.includes(entree.id);
+  }).map(function(entree) {
+    return '<button class="book-learning-word" onclick="placerMotMiniJeuLivre(' + entree.id + ')">' + echapperAttributHtml(entree.mot) + '</button>';
+  }).join("");
+
+  feedbackEl.textContent = livreMiniJeuMessage;
+  checkEl.disabled = livreMiniJeuTrous.some(function(motId) { return motId === null; });
+}
+
+function verifierMiniJeuLivre() {
+  const itemId = livreMiniJeuItemId;
+  const item = ITEMS[itemId];
+  const jeu = item && item.learningGame;
+  if (!jeu || livreMiniJeuTrous.some(function(motId) { return motId === null; })) return;
+
+  const correcte = livreMiniJeuTrous.every(function(motId, index) {
+    return motMiniJeuLivre(motId) === jeu.answers[index];
+  });
+  if (!correcte) {
+    livreMiniJeuTrous = jeu.answers.map(function() { return null; });
+    livreMiniJeuMessage = "Incorrect. Try again.";
+    renduMiniJeuLivre();
+    return;
+  }
+
+  fermerMiniJeuLivre();
+  apprendreLivre(itemId);
 }
 
 function renduInventaire(u) {
@@ -4273,20 +4721,20 @@ const RES_CATEGORIES = [
 
 function buildRessourcesList(u) {
   return [
-    { id: "inv-res-cardboard",       label: "Cardboard Pieces",  category: "wood",  sprite: "img/resources/Cardboard Pieces_Final.png",  val: function() { return etat.cardboardPieces;  }, visible: u.cathering    },
+    { id: "inv-res-cardboard",       label: "Cardboard Pieces",  category: "wood",  sprite: "img/resources/Cardboard Pieces_Final.png",  val: function() { return 0; }, simple: true, visible: u.cathering    },
     { id: "inv-res-cardboard-plank", label: "Cardboard Planks",  category: "wood",  sprite: "img/resources/Cardboard Plank_Final.png",   val: function() { return etat.cardboardPlanks;  }, visible: u.scierie      },
-    { id: "inv-res-basic-wood",      label: "Basic Wood",        category: "wood",  sprite: "img/resources/Basic Wood_Final.png",        val: function() { return etat.basicWood;        }, visible: u.basicWood    },
+    { id: "inv-res-basic-wood",      label: "Basic Wood",        category: "wood",  sprite: "img/resources/Basic Wood_Final.png",        val: function() { return 0; }, simple: true, visible: u.basicWood    },
     { id: "inv-res-wood-plank",      label: "Basic Wood Planks", category: "wood",  sprite: "img/resources/Basic Wood Plank_Final.png",  val: function() { return etat.basicWoodPlanks;  }, visible: u.basicSawmill },
-    { id: "inv-res-catnip",          label: "Catnip",            category: "food",  sprite: "img/resources/Catnip_Final.png",            val: function() { return etat.catnip;           }, visible: u.grasscat     },
+    { id: "inv-res-catnip",          label: "Catnip",            category: "food",  sprite: "img/resources/Catnip_Final.png",            val: function() { return 0; }, simple: true, visible: u.grasscat     },
     { id: "inv-res-salads",          label: "Salads",            category: "food",  sprite: "img/resources/Catnip Salad_Final.png",      val: function() { return etat.salads;           }, visible: u.catchen      },
-    { id: "inv-res-anchovy",         label: "Anchovy",           category: "food",  sprite: "img/resources/Anchovy_Final.png",           val: function() { return etat.anchovy;          }, visible: u.anchovy      },
+    { id: "inv-res-anchovy",         label: "Anchovy",           category: "food",  sprite: "img/resources/Anchovy_Final.png",           val: function() { return 0; }, simple: true, visible: u.anchovy      },
     { id: "inv-res-grilled-anchovy", label: "Grilled Anchovy",   category: "food",  sprite: "img/resources/Grilled Anchovy_Final.png",   val: function() { return etat.grilledAnchovy;   }, visible: u.grilledAnchovy },
     { id: "inv-res-human-leftovers",   label: "Human Leftovers",  category: "food",  sprite: "img/resources/Human Leftovers_Final.png",    val: function() { return etat.humanLeftovers;    }, visible: etat.humanLeftovers > 0    },
     { id: "inv-res-human-workers-food", label: "Workers Food",    category: "food",  sprite: "img/resources/Human Workers Food_Final.png", val: function() { return etat.humanWorkersFood;  }, visible: etat.humanWorkersFood > 0  },
     { id: "inv-res-canned-cat-food",   label: "Canned Cat Food", category: "training", sprite: "img/resources/Canned Cat Food_Final.png",   val: function() { return etat.cannedCatFood;     }, visible: etat.cannedCatFood > 0     },
-    { id: "inv-res-pebbles",         label: "Pebbles",           category: "stone", sprite: "img/resources/Pebbles_Final.png",           val: function() { return etat.pebbles;          }, visible: u.pebblecat    },
+    { id: "inv-res-pebbles",         label: "Pebbles",           category: "stone", sprite: "img/resources/Pebbles_Final.png",           val: function() { return 0; }, simple: true, visible: u.pebblecat    },
     { id: "inv-res-pebble-brick",    label: "Pebble Bricks",     category: "stone", sprite: "img/resources/Pebble Brick_Final.png",      val: function() { return etat.pebbleBricks;     }, visible: u.brickfact    },
-    { id: "inv-res-rocks",           label: "Rocks",             category: "stone", sprite: "img/resources/Rock_Final.png",              val: function() { return etat.rocks;            }, visible: u.rockcat      },
+    { id: "inv-res-rocks",           label: "Rocks",             category: "stone", sprite: "img/resources/Rock_Final.png",              val: function() { return 0; }, simple: true, visible: u.rockcat      },
     { id: "inv-res-rock-brick",      label: "Rock Bricks",       category: "stone", sprite: "img/resources/Rock Brick_Final.png",        val: function() { return etat.rockBricks;       }, visible: u.rockfact     },
     // metal: add here when metal resources are implemented
   ];
@@ -4384,7 +4832,7 @@ function renderResourcesSection(u) {
                  + ' onclick="toggleResPopup(this,event)">';
         resHtml += '<img class="inv-res-sprite" src="' + r.sprite + '" alt="' + r.label + '">';
         resHtml += '<span class="inv-res-name">' + r.label + '</span>';
-        resHtml += '<span class="inv-res-qty" id="' + r.id + '-qty"></span>';
+        if (!r.simple) resHtml += '<span class="inv-res-qty" id="' + r.id + '-qty"></span>';
         resHtml += '</div>';
       });
       resHtml += '</div>';
@@ -4397,6 +4845,7 @@ function renderResourcesSection(u) {
     return resCategorieFiltree === "all" || r.category === resCategorieFiltree;
   });
   displayed.forEach(function(r) {
+    if (r.simple) return;
     const qtyEl = domParId(r.id + "-qty");
     ecrireTexte(qtyEl, formaterNombre(Math.floor(r.val())));
   });
@@ -4415,6 +4864,7 @@ function renderItemsList() {
     const item   = ITEMS[itemId];
     if (!item) return "";
     const appris = etat.itemsAppris.includes(itemId);
+    const etudie = etat.itemsEtudies.includes(itemId);
     const actif  = itemSelectionne === itemId;
     let html = '';
 
@@ -4425,6 +4875,7 @@ function renderItemsList() {
     html += '<div class="inv-item-entete">';
     html += '<span class="inv-item-nom">' + item.nom + '</span>';
     if (appris) html += '<span class="inv-item-tag">' + CHECK_ICON + ' Learned</span>';
+    else if (etudie) html += '<span class="inv-item-tag inv-item-tag-studied">Studied</span>';
     html += '</div>';
     html += '</div>';
 
@@ -4438,14 +4889,19 @@ function renderItemsList() {
         const elapsed = Date.now() - etat.learningEnCours.startTs;
         const pct = Math.min(100, Math.floor(elapsed / etat.learningEnCours.duree * 100));
         const remaining = Math.max(0, Math.ceil((etat.learningEnCours.duree - elapsed) / 1000));
+        const actionLabel = item.learningGame ? "Studying" : "Learning";
         html += '<div class="inv-action-row">';
-        html += '<div id="inv-learning-label" class="inv-learning-label">📖 Learning... ' + remaining + 's</div>';
+        html += '<div id="inv-learning-label" class="inv-learning-label">📖 ' + actionLabel + '... ' + remaining + 's</div>';
         html += '<div class="inv-learning-barre"><div id="inv-learning-progres" class="inv-learning-progres" style="width:' + pct + '%"></div></div>';
+        html += '</div>';
+      } else if (etudie && item.learningGame) {
+        html += '<div class="inv-action-row">';
+        html += '<button class="btn-inv-action" onclick="actionItem(\'' + itemId + '\',\'learn\');event.stopPropagation()">Learn</button>';
         html += '</div>';
       } else if (item.actions && item.actions.length > 0) {
         item.actions.forEach(function(action) {
           html += '<div class="inv-action-row">';
-          html += '<button class="btn-inv-action"' +
+          html += '<button id="inv-item-action-' + itemId + '-' + action.id + '" class="btn-inv-action"' +
                   ' onclick="actionItem(\'' + itemId + '\',\'' + action.id + '\');event.stopPropagation()">';
           html += action.label;
           html += '</button>';
@@ -4662,6 +5118,7 @@ function forcerKittyFormation(kittyIndex) {
 }
 
 function selectionnerMetierJC(metierId) {
+  if (!explorateurPresent() && metierId !== "explorator") return;
   jcMetierSelectionne = jcMetierSelectionne === metierId ? null : metierId;
   jcDirty = true;
 }
@@ -4669,6 +5126,7 @@ function selectionnerMetierJC(metierId) {
 function lancerFormation() {
   if (etat.formationEnCours) return;
   if (jcFormationKittySelectionne === null || !jcMetierSelectionne) return;
+  if (!explorateurPresent() && jcMetierSelectionne !== "explorator") return;
   if (metierDejaAttribue(jcMetierSelectionne)) return;
   if (kittyIsBusy(jcFormationKittySelectionne)) return;
   const metier = METIERS[jcMetierSelectionne];
@@ -4699,6 +5157,12 @@ function terminerFormation() {
       afficherNotification("🗺️ Exploration map unlocked!");
       ajouterLog("unlock", "The exploration map is now available in the Explorations tab.");
       carteDirty = true;
+      if (!storyEstVue("storyExploratorVue")) {
+        preparerStoryExplorator(kittyIndex);
+        marquerStoryVue("storyExploratorVue");
+        afficherModal("ecran-story-explorator");
+        renduStories();
+      }
     }
   }
   if (!etat.managersDebloques) {
@@ -4721,9 +5185,9 @@ function assignerManager(famille, kittyIndex) {
 // Pulls a kitty out of whatever worker slot or manager role it currently holds, then assigns it
 // to the new target — used by the "Force" button on busy kitties in the selection modals.
 function retirerKittyDeSesRoles(kittyIdx) {
-  Object.keys(etat.workers).forEach(function(action) {
-    etat.workers[action].forEach(function(s) {
-      if (s.kittyIndex === kittyIdx) { s.kittyIndex = null; s.progress = 0; }
+  Object.values(etat.workRecipeSlots || {}).forEach(function(slots) {
+    slots.forEach(function(slot) {
+      if (slot.kittyIndex === kittyIdx) reinitialiserProgressionRecette(slot, false);
     });
   });
   Object.keys(etat.managers).forEach(function(f) {
@@ -4731,14 +5195,16 @@ function retirerKittyDeSesRoles(kittyIdx) {
   });
 }
 
-function forcerWorkerSlot(kittyIdx, action, slotIdx) {
+function forcerWorkerRecette(kittyIdx, familyId, slotIdx) {
   retirerKittyDeSesRoles(kittyIdx);
-  etat.workers[action][slotIdx].kittyIndex = kittyIdx;
-  etat.workers[action][slotIdx].progress   = 0;
+  const slot = slotRecette(familyId, slotIdx);
+  if (!slot || !slot.recipeId) return;
+  viderProgressionRecette(slot);
+  slot.kittyIndex = kittyIdx;
   jouerSonAffectation();
   fermerModalWorker();
   jcDirty = true;
-  sauvegarder(); rendu();
+  verifierObjectifs(); sauvegarder(); rendu();
 }
 
 function forcerManager(famille, kittyIdx) {
@@ -4761,9 +5227,17 @@ function renderManagerSlot(famille) {
   if (!el) return;
   const debloque = famille === "houses"
     ? etat.itemsAppris.includes("constructionPlan")
-    : etat.managersDebloques;
+    : etat.jobCenterConstruit;
   if (!debloque) {
-    ecrireStyle(el, "display", "none");
+    if (famille === "houses") {
+      ecrireStyle(el, "display", "none");
+      return;
+    }
+    ecrireStyle(el, "display", "flex");
+    if (el.dataset.slotState !== "locked") {
+      el.dataset.slotState = "locked";
+      el.innerHTML = '<span class="manager-slot-locked">Available after building the Job Center</span>';
+    }
     return;
   }
   ecrireStyle(el, "display", "flex");
@@ -4801,53 +5275,81 @@ function renderManagerSlot(famille) {
   }
 }
 
-// ── Worker slot UI (ring progress per kitty) ─────────────────
-function updateWorkerSlotUI(action, slotIdx) {
-  const el = domParId("worker-slot-" + action + "-" + slotIdx);
-  if (!el) return;
-  const slots = etat.workers[action];
-  if (!slots) return;
-  const slot = slots[slotIdx];
-  if (!slot) return;
+// Recipe selection keeps the chosen recipe in the slot. Changing it only
+// discards that slot's private inputs and current cycle.
+let recipeModalOuvert = null; // { familyId, slotIdx }
 
-  const newState = slot.kittyIndex !== null ? "filled:" + slot.kittyIndex : "empty";
-  if (el.dataset.slotState !== newState) {
-    el.dataset.slotState = newState;
-    if (slot.kittyIndex !== null) {
-      const kitty = etat.kittiesData[slot.kittyIndex];
-      el.innerHTML =
-        '<div class="worker-ring" id="worker-ring-' + action + '-' + slotIdx + '" style="--prog:' + (slot.progress || 0) + '">' +
-          '<div class="worker-ring-inner">' + kittyIconHtml(kitty) + '</div>' +
-          '<button class="worker-ring-remove" aria-label="Remove ' + echapperAttributHtml(kitty ? kitty.nom : "cat") + ' from ' + echapperAttributHtml(ACTION_DISPLAY[action] || "work") + ' production" onclick="retirerWorker(\'' + action + '\',' + slotIdx + ');event.stopPropagation()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>' +
-        '</div>' +
-        '<div class="worker-slot-name">' + (kitty ? kitty.nom : "?") + '</div>';
-    } else {
-      el.innerHTML =
-        '<button class="worker-slot-empty" aria-label="Assign a cat to ' + echapperAttributHtml(ACTION_DISPLAY[action] || "work") + ' production" onclick="ouvrirModalWorker(\'' + action + '\',' + slotIdx + ')">' +
-          '+' +
-        '</button>' +
-        '<div class="worker-slot-name-placeholder"></div>';
-    }
-  }
-
-  // Update ring progress directly (no DOM rebuild needed)
-  if (slot.kittyIndex !== null) {
-    const ring = domParId("worker-ring-" + action + "-" + slotIdx);
-    ecrireVariableStyle(ring, "--prog", slot.progress || 0);
-  }
+function ouvrirModalRecette(familyId, slotIdx) {
+  recipeModalOuvert = { familyId: familyId, slotIdx: slotIdx };
+  renduModalRecette();
+  ouvrirDialogueModal("recipe-modal", {
+    dismissible: true,
+    fermer: fermerModalRecette,
+    focusSelector: ".recipe-modal-choice",
+    returnFocusSelector: "#recipe-slot-" + familyId + "-" + slotIdx + " button"
+  });
 }
 
-// ── Worker selection modal ────────────────────────────────────
-let workerModalOuvert = null; // { action, slotIdx }
+function fermerModalRecette() {
+  recipeModalOuvert = null;
+  fermerDialogueModal("recipe-modal");
+}
 
-function ouvrirModalWorker(action, slotIdx) {
-  workerModalOuvert = { action: action, slotIdx: slotIdx };
+function renduModalRecette() {
+  const conteneur = domParId("recipe-modal-list");
+  if (!conteneur || !recipeModalOuvert) return;
+  const familyId = recipeModalOuvert.familyId;
+  const slot = slotRecette(familyId, recipeModalOuvert.slotIdx);
+  const choices = recettesDisponiblesFamille(familyId, unlocks());
+  ecrireTexte(domParId("recipe-modal-title"), "Choose a " + WORK_FAMILIES[familyId].label + " recipe");
+  let html = choices.map(function(pair) {
+    const selected = slot && slot.recipeId === pair.recipeId;
+    const cost = quantiteInputEffective(pair, pair.inputs[0]);
+    return '<button class="recipe-modal-choice' + (selected ? ' is-selected' : '') + '" onclick="selectionnerRecette(\'' + pair.recipeId + '\')"' + (selected ? ' aria-current="true"' : '') + '>'
+      + '<span class="work-tier-badge work-tier-badge-tier-' + pair.tier + '">Tier ' + pair.tier + '</span>'
+      + '<span class="recipe-modal-formula"><span><img src="' + pair.rawIcon + '" alt=""><strong>' + libelleNombreDecimal(cost, 1) + ' ' + pair.rawLabel + '</strong></span><b>→</b><span><img src="' + pair.procIcon + '" alt=""><strong>' + pair.procLabel + '</strong></span></span>'
+      + '<small>The assigned Cat gathers the private input, then processes the result.</small></button>';
+  }).join("");
+  if (slot && slot.recipeId) html += '<button class="recipe-modal-clear" onclick="retirerRecetteSelectionnee()">Clear this recipe slot</button>';
+  conteneur.innerHTML = html || '<p class="worker-modal-vide">No recipe available in this family yet.</p>';
+}
+
+function selectionnerRecette(recipeId) {
+  if (!recipeModalOuvert) return;
+  const slot = slotRecette(recipeModalOuvert.familyId, recipeModalOuvert.slotIdx);
+  const pair = paireRecette(recipeId);
+  if (!slot || !pair || pair.family !== recipeModalOuvert.familyId) return;
+  if (slot.recipeId === recipeId) { fermerModalRecette(); return; }
+  if (slot.recipeId && slot.kittyIndex !== null && !confirm("Changing this recipe will discard its private ingredients and current progress. Continue?")) return;
+  viderProgressionRecette(slot);
+  slot.recipeId = recipeId;
+  fermerModalRecette();
+  verifierObjectifs(); sauvegarder(); rendu();
+}
+
+function retirerRecetteSelectionnee() {
+  if (!recipeModalOuvert) return;
+  const slot = slotRecette(recipeModalOuvert.familyId, recipeModalOuvert.slotIdx);
+  if (!slot) return;
+  if (slot.kittyIndex !== null && !confirm("Clearing this slot removes its Cat and discards all private ingredients and progress. Continue?")) return;
+  reinitialiserProgressionRecette(slot, true);
+  fermerModalRecette();
+  sauvegarder(); rendu();
+}
+
+// ── Recipe Cat selection modal ───────────────────────────────
+let workerModalOuvert = null; // { familyId, slotIdx }
+
+function ouvrirModalWorkerRecette(familyId, slotIdx) {
+  const slot = slotRecette(familyId, slotIdx);
+  if (!slot || !slot.recipeId) { ouvrirModalRecette(familyId, slotIdx); return; }
+  workerModalOuvert = { familyId: familyId, slotIdx: slotIdx };
   renduModalWorker();
   ouvrirDialogueModal("worker-modal", {
     dismissible: true,
     fermer: fermerModalWorker,
     focusSelector: ".worker-modal-kitty[data-clavier-clic]",
-    returnFocusSelector: "#worker-slot-" + action + "-" + slotIdx + " button"
+    returnFocusSelector: "#recipe-slot-" + familyId + "-" + slotIdx + " button"
   });
 }
 
@@ -4859,10 +5361,11 @@ function fermerModalWorker() {
 function renduModalWorker() {
   const conteneur = document.getElementById("worker-modal-kitties");
   if (!conteneur || !workerModalOuvert) return;
-  const PROC_ACTIONS = ["sawmill", "basicSawmill", "catchen", "grilledAnchovy", "brickfactory", "rockFactory"];
-  const isProc    = PROC_ACTIONS.indexOf(workerModalOuvert.action) !== -1;
-  const prodLabel = isProc ? "Complex Prod" : "Basic Prod";
-  const bonusFn   = function(niveau) { return isProc ? Math.pow(1.05, niveau) : Math.pow(1.1, niveau); };
+  const slot = slotRecette(workerModalOuvert.familyId, workerModalOuvert.slotIdx);
+  const pair = slot && paireRecette(slot.recipeId);
+  if (!pair) return;
+  ecrireTexte(domParId("worker-modal-titre"), "Assign a Cat to " + pair.procLabel);
+  const bonusFn = function(niveau) { return Math.pow(1.1, niveau) * Math.pow(1.05, niveau); };
   let html = "";
   const ordre = etat.kittiesData.map(function(k, i) { return { k: k, i: i }; });
   ordre.sort(function(a, b) { return bonusFn(b.k.niveau) - bonusFn(a.k.niveau); });
@@ -4877,7 +5380,6 @@ function renduModalWorker() {
     const disabled    = onExplo || onZoneExplo || onScouting || inWorker || inTraining || isManager;
     const forcable    = inWorker || isManager;
     const status      = disabled ? kittyAllocationLabel(i).text : "";
-    const prodMult    = bonusFn(k.niveau);
     html += '<div class="worker-modal-kitty' + (disabled ? ' worker-modal-kitty-disabled' : '') + '"' +
             (disabled ? ' aria-disabled="true"' : attributsActivationClavier("Assign " + k.nom + " to this work slot") + ' onclick="assignerWorkerSlot(' + i + ')"') + '>';
     html += '<span class="worker-modal-kitty-emoji">' + kittyIconHtml(k) + '</span>';
@@ -4886,9 +5388,9 @@ function renduModalWorker() {
     if (status) html += '<span class="worker-modal-kitty-status">' + status + '</span>';
     html += '</div>';
     html += '<div class="worker-modal-kitty-bonus">';
-    html += '<div class="worker-modal-kitty-bonus-ligne">×' + prodMult.toFixed(2) + ' <span class="worker-modal-kitty-bonus-label">' + prodLabel + '</span></div>';
+    html += '<div class="worker-modal-kitty-bonus-ligne"><span>×' + Math.pow(1.1, k.niveau).toFixed(2) + ' <span class="worker-modal-kitty-bonus-label">Basic Prod</span></span><span>×' + Math.pow(1.05, k.niveau).toFixed(2) + ' <span class="worker-modal-kitty-bonus-label">Complex Prod</span></span></div>';
     html += '</div>';
-    if (forcable) html += '<button class="btn-forcer" aria-label="Force assign ' + echapperAttributHtml(k.nom) + '" onclick="forcerWorkerSlot(' + i + ',\'' + workerModalOuvert.action + '\',' + workerModalOuvert.slotIdx + ');event.stopPropagation()">Force</button>';
+    if (forcable) html += '<button class="btn-forcer" aria-label="Force assign ' + echapperAttributHtml(k.nom) + '" onclick="forcerWorkerRecette(' + i + ',\'' + workerModalOuvert.familyId + '\',' + workerModalOuvert.slotIdx + ');event.stopPropagation()">Force</button>';
     else html += '<div></div>';
     html += '</div>';
   });
@@ -4897,17 +5399,19 @@ function renduModalWorker() {
 
 function assignerWorkerSlot(kittyIndex) {
   if (!workerModalOuvert) return;
-  const { action, slotIdx } = workerModalOuvert;
-  etat.workers[action][slotIdx].kittyIndex = kittyIndex;
-  etat.workers[action][slotIdx].progress   = 0;
+  const slot = slotRecette(workerModalOuvert.familyId, workerModalOuvert.slotIdx);
+  if (!slot || !slot.recipeId) return;
+  viderProgressionRecette(slot);
+  slot.kittyIndex = kittyIndex;
   jouerSonAffectation();
   fermerModalWorker();
   verifierObjectifs(); sauvegarder(); rendu();
 }
 
-function retirerWorker(action, slotIdx) {
-  etat.workers[action][slotIdx].kittyIndex = null;
-  etat.workers[action][slotIdx].progress   = 0;
+function retirerWorkerRecette(familyId, slotIdx) {
+  const slot = slotRecette(familyId, slotIdx);
+  if (!slot) return;
+  reinitialiserProgressionRecette(slot, false);
   sauvegarder(); rendu();
 }
 
@@ -4962,6 +5466,7 @@ function renduJobCenter(u) {
 
       // Job selection
       html += '<div class="jc-metiers">';
+      const premierExploratorRequis = !explorateurPresent();
       Object.values(METIERS).filter(function(m) {
         return m.id !== "gang-leader" && (!m.unlockItem || etat.itemsAppris.includes(m.unlockItem));
       }).sort(function(a, b) {
@@ -4972,9 +5477,10 @@ function renduJobCenter(u) {
         const pris      = metierDejaAttribue(m.id);
         const sel       = jcMetierSelectionne === m.id;
         const recommande = m.id === "explorator";
+        const verrouille = premierExploratorRequis && m.id !== "explorator";
         html += '<button class="jc-metier-btn' + (sel ? ' jc-metier-actif' : '') + (recommande ? ' jc-metier-recommande' : '') + '"';
-        if (pris) {
-          html += ' disabled title="Already trained"';
+        if (pris || verrouille) {
+          html += ' disabled title="' + (pris ? 'Already trained' : 'Train an Explorator first') + '"';
         } else {
           html += ' onclick="selectionnerMetierJC(\'' + m.id + '\')"';
         }
@@ -4982,7 +5488,8 @@ function renduJobCenter(u) {
       });
       html += '</div>';
 
-      const peutLancer = jcFormationKittySelectionne !== null && jcMetierSelectionne !== null;
+      const peutLancer = jcFormationKittySelectionne !== null && jcMetierSelectionne !== null &&
+        (!premierExploratorRequis || jcMetierSelectionne === "explorator");
       html += '<button class="btn-jc-train"' + (peutLancer ? '' : ' disabled') + ' onclick="lancerFormation()">⏱ Train (1h)</button>';
     }
 
@@ -5007,29 +5514,32 @@ function renduJobCenter(u) {
 
 // ── 10a. Catch sequence
 document.getElementById("bouton-sequence").addEventListener("click", function() {
-  if (etat.sequenceEnCours) return;
-  etat.sequenceEnCours         = true;
-  etat.sequenceDebutTs         = Date.now();
-  etat.sequenceDuree           = dureeBrute();
-  sauvegarder(); rendu();
+  if (!sequenceEstPrete()) return;
+  marquerSequencePrete();
+  if (etat.chatons < 3) ouvrirMiniJeuCatch();
+  else ouvrirMiniJeuRecruit();
 });
 
 function terminerSequence() {
+  const etaitRecruit = etat.chatons >= 3;
   etat.sequenceEnCours = false;
+  const visage = assurerVisageProchainChat();
   etat.chatons        += 1;
   etat.clicCount      += 1;
-  const nom = NOMS_KITTIES[etat.kittiesData.length] || ("Cat #" + (etat.kittiesData.length + 1));
-  etat.kittiesData.push({ nom: nom, metier: null, niveau: 0, xp: 0, tier: 0, managerMult: 2, catchTs: Date.now(), visage: assignerVisageChaton(nom), jobNiveau: 0 });
-  afficherNotification("🐱 " + nom + " joined the gang!");
-  ajouterLog("event", nom + " caught!");
+  const nom = nomProchainChat();
+  etat.kittiesData.push({ nom: nom, metier: null, niveau: 0, xp: 0, tier: 0, managerMult: 2, catchTs: Date.now(), visage: visage, jobNiveau: 0 });
+  etat.prochainVisageChaton = null;
+  if (!etaitRecruit) afficherNotification("🐱 " + nom + " joined the gang!");
+  ajouterLog("event", nom + (etaitRecruit ? " recruited!" : " caught!"));
+  demarrerRechargeCatch();
   renduManagement();
   if (etat.chatons === 3) {
-    afficherNotification("🐾 Cathering unlocked — gather Cardboard Pieces in Work!");
-    ajouterLog("unlock", "Cathering unlocked — gather Cardboard Pieces in Work.");
+    afficherNotification("🐾 Work unlocked! Choose a Cardboard Planks recipe and assign a Cat.");
+    ajouterLog("unlock", "Work unlocked. Cardboard Planks can now be produced from a recipe slot.");
   }
   if (etat.chatons === 5) {
-    afficherNotification("🌿 Grasscatting unlocked — gather Catnip in Work!");
-    ajouterLog("unlock", "Grasscatting unlocked — gather Catnip in Work.");
+    afficherNotification("🌿 Food recipes unlocked! Catnip Salads can now be produced in Work.");
+    ajouterLog("unlock", "Food recipes unlocked. Catnip Salads are now available in Work.");
   }
   if (etat.chatons === 6) {
     afficherNotification("🗺️ Explorations unlocked! Send your cats on expeditions.");
@@ -5038,6 +5548,7 @@ function terminerSequence() {
   exploTabDirty = true;
   verifierStoryModals();
   sauvegarder(); rendu();
+  return { nom: nom, visage: visage, recruit: etaitRecruit };
 }
 
 // ── 10b. Worker deallocation (bulk unassign)
@@ -5050,8 +5561,8 @@ function acheterCathouse() {
   etat.cathouses.push(Date.now());
   afficherNotification("📦 Cardboard Box built!");
   ajouterLog("event", "Cardboard Box #" + etat.cathouses.length + " built!");
-  if (etat.cathouses.length === 1 && !localStorage.getItem("story4Vue")) {
-    localStorage.setItem("story4Vue", "1");
+  if (etat.cathouses.length === 1 && !storyEstVue("story4Vue")) {
+    marquerStoryVue("story4Vue");
     afficherModal("ecran-story-4");
     renduStories();
   }
@@ -5142,6 +5653,7 @@ function acheterJobCenter() {
   etat.pebbleBricks   -= 10;
   etat.basicWoodPlanks -= 1;
   etat.jobCenterConstruit = true;
+  etat.managersDebloques = true;
   jcDirty = true;
   afficherNotification("🏫 Job Center built!");
   ajouterLog("event", "Job Center built — ready to assign jobs to cats.");
@@ -5172,49 +5684,58 @@ function workBoostMult() {
   return (etat.workBoostFinTs && Date.now() < etat.workBoostFinTs) ? 10 : 1;
 }
 
-const PROCESSING_ACTION_ORDER = ["sawmill", "basicSawmill", "brickfactory", "rockFactory", "catchen", "grilledAnchovy"];
-const PROCESSING_PAIRS = PROCESSING_ACTION_ORDER.map(function(action) {
-  return RESOURCE_PAIRS.find(function(pair) { return pair.procAction === action; });
-}).filter(Boolean);
-
-function tickTransformations(dt) {
-  const resultats = {};
-  PROCESSING_PAIRS.forEach(function(pair) {
-    if (pair.procAction === "grilledAnchovy" && !grilledAnchovyDebloquee()) return;
-    const resultat = avancerTransformation(etat, pair, dt, multiplicateurFamille(pair.procMultAction), multiplicateurCoutFamille(pair.procMultAction));
-    resultats[pair.procAction] = resultat;
-    if (resultat.actif) etat[pair.bloqueeKey] = resultat.bloque;
-  });
-  return resultats;
+function definitionMoteurRecette(pair) {
+  const input = pair.inputs && pair.inputs[0];
+  return {
+    rawRes: pair.rawRes,
+    rawTotalKey: pair.rawTotalKey,
+    rawSeconds: pair.rawCfg.secondesParUnite,
+    rawQuantity: input && Number.isFinite(input.baseQuantity)
+      ? input.baseQuantity
+      : pair.procCfg[pair.procSecUnite] / pair.procCfg[pair.procSecRaw],
+    processingSeconds: pair.procCfg[pair.procSecUnite],
+    outputRes: pair.procRes
+  };
 }
 
-function tickWorkers(action, stockKey, totalKey, cfg, onUnlockCheck, dt, glBonus) {
-  const slots = etat.workers[action];
-  if (!slots) return;
-  if (dt      === undefined) dt = vitesse * TICK_DT * workBoostMult();
-  if (glBonus === undefined) glBonus = 1;
-  const productionMult = multiplicateurProductionFamille(action);
-  let totalProd = 0;
-  slots.forEach(function(slot) {
-    if (slot.kittyIndex === null) return;
-    const slotKitty  = etat.kittiesData[slot.kittyIndex];
-    const levelBonus = slotKitty ? Math.pow(1.1, slotKitty.niveau) : 1;
-    // Ring fills at uniform base speed — level bonus applies to output quantity, not cycle speed
-    slot.progress += productionParChaton(action) * multiplicateurFamille(action) * glBonus * dt / cfg.secondesParUnite;
-    if (slot.progress >= 1) {
-      const cycles = Math.floor(slot.progress);
-      slot.progress -= cycles;
-      slot.prodFrac = (slot.prodFrac || 0) + cycles * levelBonus * productionMult;
-      const units = Math.floor(slot.prodFrac);
-      slot.prodFrac -= units;
-      totalProd += units;
-    }
+function modificateursRecette(pair, kitty) {
+  return {
+    gatheringSpeed: multiplicateurFamille(pair.rawAction),
+    gatheringProduction: multiplicateurProductionFamille(pair.rawAction),
+    processingSpeed: multiplicateurFamille(pair.procMultAction),
+    costMultiplier: multiplicateurCoutFamille(pair.procMultAction),
+    basicProduction: kitty ? Math.pow(1.1, kitty.niveau) : 1,
+    complexProduction: productionProcBonus(kitty),
+    globalSpeed: gangLeaderBonus()
+  };
+}
+
+function tickWorkRecipes(dt) {
+  const resultats = {};
+  RESOURCE_PAIRS.forEach(function(pair) { etat[pair.rawRes] = 0; });
+  Object.keys(etat.workRecipeSlots || {}).forEach(function(family) {
+    (etat.workRecipeSlots[family] || []).forEach(function(slot) {
+      if (!slot || slot.kittyIndex === null || !slot.recipeId) return;
+      const pair = RESOURCE_PAIRS.find(function(candidate) {
+        return candidate.family === family && candidate.recipeId === slot.recipeId;
+      });
+      const kitty = etat.kittiesData[slot.kittyIndex];
+      if (!pair || !kitty) return;
+      const result = avancerRecetteSlot(etat, definitionMoteurRecette(pair), slot, dt, modificateursRecette(pair, kitty));
+      if (!resultats[pair.recipeId]) {
+        resultats[pair.recipeId] = { active: false, gathered: 0, produced: 0, completedCycles: 0, firstProducerIndex: null };
+      }
+      const aggregate = resultats[pair.recipeId];
+      aggregate.active = aggregate.active || result.active;
+      aggregate.gathered += result.gathered;
+      aggregate.produced += result.produced;
+      aggregate.completedCycles += result.completedCycles;
+      if (aggregate.firstProducerIndex === null && result.firstProducerIndex !== null) {
+        aggregate.firstProducerIndex = result.firstProducerIndex;
+      }
+    });
   });
-  if (totalProd > 0) {
-    etat[stockKey] += totalProd;
-    etat[totalKey] += totalProd;
-    if (onUnlockCheck) onUnlockCheck(totalProd);
-  }
+  return resultats;
 }
 
 function tick() {
@@ -5256,15 +5777,14 @@ function tick() {
       const remaining = Math.max(0, Math.ceil((lc.duree - elapsed) / 1000));
       const labelEl   = document.getElementById("inv-learning-label");
       const progEl    = document.getElementById("inv-learning-progres");
-      if (labelEl) labelEl.textContent = "📖 Learning... " + remaining + "s";
+      const actionLabel = ITEMS[lc.itemId] && ITEMS[lc.itemId].learningGame ? "Studying" : "Learning";
+      if (labelEl) labelEl.textContent = "📖 " + actionLabel + "... " + remaining + "s";
       if (progEl)  progEl.style.width  = pct + "%";
     }
   }
 
-  // Check sequence completion
-  if (etat.sequenceEnCours && tempsRestantSequence() <= 0) {
-    terminerSequence(); return;
-  }
+  // A completed cooldown stays ready until the player actively catches/recruits.
+  marquerSequencePrete();
 
   // Check exploration completion
   const maintenant = Date.now();
@@ -5292,69 +5812,37 @@ function tick() {
     var def = CONFIG.scoutings[scoutingId];
     var effectiveDuree = (sc.duree !== undefined) ? sc.duree : (def ? def.duree : 120);
     if (def && sc && (maintenant - sc.startTs) / 1000 >= effectiveDuree) {
-      terminerScouting(scoutingId);
+      var completedRuns = Math.floor((maintenant - sc.startTs) / 1000 / effectiveDuree);
+      terminerScouting(scoutingId, completedRuns);
       scoutsDirty = true;
     }
   });
   if (scoutsDirty) sauvegarder();
 
-  // Gang Leader passive speed bonus (Work tab only)
-  const gl = gangLeaderBonus();
-
-  // Gathering
-  tickWorkers("woodcatting", "cardboardPieces", "cardboardPiecesTotalRecolte", CONFIG.woodcatting, function(prod) {
-    const avant = etat.cardboardPiecesTotalRecolte - prod;
-    if (avant < CONFIG.sawmill.deblocageA && etat.cardboardPiecesTotalRecolte >= CONFIG.sawmill.deblocageA) {
-      afficherNotification("🪚 Sawmill unlocked! Paw-cessing is now available.");
-      ajouterLog("unlock", "Sawmill unlocked — Paw-cessing is now available.");
-    }
-  }, undefined, gl);
-
-  tickWorkers("basicWoodcatting", "basicWood", "basicWoodTotalRecolte", CONFIG.basicWoodcatting, null, undefined, gl);
-
-  tickWorkers("grasscatting", "catnip", "catnipTotalRecolte", CONFIG.grasscatting, function(prod) {
-    const avant = etat.catnipTotalRecolte - prod;
-    if (avant < CONFIG.catchen.deblocageA && etat.catnipTotalRecolte >= CONFIG.catchen.deblocageA) {
-      afficherNotification("🍳 The Catchen is open!");
-      ajouterLog("unlock", "The Catchen is open — cook your first salad!");
-    }
-  }, undefined, gl);
-
-  tickWorkers("pebblegathering", "pebbles", "pebblesTotalRecolte", CONFIG.pebblegathering, function(prod) {
-    const avant = etat.pebblesTotalRecolte - prod;
-    if (avant < CONFIG.brickfactory.deblocageA && etat.pebblesTotalRecolte >= CONFIG.brickfactory.deblocageA) {
-      afficherNotification("🪨 Pawsonry unlocked!");
-      ajouterLog("unlock", "Pawsonry unlocked — process pebbles into bricks.");
-    }
-  }, undefined, gl);
-
-  if (rockgatheringDebloquee()) {
-    tickWorkers("rockgathering", "rocks", "rocksTotalRecolte", CONFIG.rockgathering, null, undefined, gl);
-  }
-
-  if (anchovyDebloquee()) {
-    tickWorkers("fishcatting", "anchovy", "anchovyTotalRecolte", CONFIG.fishcatting, null, undefined, gl);
-  }
-
-  // Processing — shared by active and offline simulation.
+  // Every assigned cat now runs a complete private Gathering then Processing cycle.
   const cardboardPlanksAvant = etat.cardboardPlanks;
-  const resultatsTransformation = tickTransformations(vitesse * TICK_DT * gl * workBoostMult());
+  const resultatsRecettes = tickWorkRecipes(vitesse * TICK_DT * workBoostMult());
+  if (cardboardPlanksAvant < 10 && etat.cardboardPlanks >= 10 && !storyEstVue("storyBasicWoodVue")) {
+    marquerStoryVue("storyBasicWoodVue");
+    afficherModal("ecran-story-basic-wood");
+    renduStories();
+  }
   if (cardboardPlanksAvant < 1 && etat.cardboardPlanks >= 1) {
     afficherNotification("🏗️ Buildings unlocked! Build your first Cardboard Box.");
-    ajouterLog("unlock", "Buildings unlocked — build your first Cardboard Box.");
+    ajouterLog("unlock", "Buildings unlocked. Build your first Cardboard Box.");
   }
-  const resultatCatchen = resultatsTransformation.catchen;
-  if (resultatCatchen && resultatCatchen.produit > 0 && !etat.premiereSaladeFaite) {
+  const resultatSalade = resultatsRecettes.salads;
+  if (resultatSalade && resultatSalade.produced > 0 && !etat.premiereSaladeFaite) {
     etat.premiereSaladeFaite = true;
-    const cookIndex = resultatCatchen.premierProducteurIndex;
-    const cookName = etat.kittiesData[cookIndex] ? etat.kittiesData[cookIndex].nom : "a cat";
+    const cookIndex = resultatSalade.firstProducerIndex;
+    const cookName = etat.kittiesData[cookIndex] ? etat.kittiesData[cookIndex].nom : "a Cat";
     const el1 = document.getElementById("story-salad-cook-name");
     const el2 = document.getElementById("story-salad-cook-name-2");
     const tag = document.getElementById("story-salad-cook-tag");
     if (el1) el1.textContent = cookName;
     if (el2) el2.textContent = cookName;
     if (tag) tag.textContent = cookName;
-    localStorage.setItem("storySaladVue", "1");
+    marquerStoryVue("storySaladVue");
     afficherModal("ecran-story-salad");
     renduStories();
   }
@@ -5387,22 +5875,9 @@ const ABSENCE_MIN_MS      = 60000; // ignore gaps shorter than 1 minute
 
 // One simulated step of gathering/processing, no notifications/logs (used for offline catch-up)
 function simulerTickHorsLigne(dt) {
-  const gl = gangLeaderBonus();
-
-  tickWorkers("woodcatting",      "cardboardPieces", "cardboardPiecesTotalRecolte", CONFIG.woodcatting,      null, dt, gl);
-  tickWorkers("basicWoodcatting", "basicWood", "basicWoodTotalRecolte", CONFIG.basicWoodcatting, null, dt, gl);
-  tickWorkers("grasscatting",     "catnip",    "catnipTotalRecolte",    CONFIG.grasscatting,     null, dt, gl);
-  tickWorkers("pebblegathering",  "pebbles",   "pebblesTotalRecolte",   CONFIG.pebblegathering,  null, dt, gl);
-  if (rockgatheringDebloquee()) {
-    tickWorkers("rockgathering", "rocks", "rocksTotalRecolte", CONFIG.rockgathering, null, dt, gl);
-  }
-  if (anchovyDebloquee()) {
-    tickWorkers("fishcatting", "anchovy", "anchovyTotalRecolte", CONFIG.fishcatting, null, dt, gl);
-  }
-
-  const resultatsTransformation = tickTransformations(dt * gl);
+  const resultatsRecettes = tickWorkRecipes(dt);
   autoBuildWoodHousesIfNeeded();
-  if (resultatsTransformation.catchen && resultatsTransformation.catchen.produit > 0) {
+  if (resultatsRecettes.salads && resultatsRecettes.salads.produced > 0) {
     etat.premiereSaladeFaite = true;
   }
 }
@@ -5417,9 +5892,12 @@ function appliquerProgressionHorsLigne() {
   }
 
   const avant = {
-    cardboardPieces: etat.cardboardPieces, basicWood: etat.basicWood, catnip: etat.catnip, pebbles: etat.pebbles,
-    cardboardPlanks: etat.cardboardPlanks, pebbleBricks: etat.pebbleBricks, salads: etat.salads,
-    anchovy: etat.anchovy, grilledAnchovy: etat.grilledAnchovy
+    cardboardPlanks: etat.cardboardPlanks,
+    basicWoodPlanks: etat.basicWoodPlanks,
+    pebbleBricks: etat.pebbleBricks,
+    rockBricks: etat.rockBricks,
+    salads: etat.salads,
+    grilledAnchovy: etat.grilledAnchovy
   };
 
   const dtSimTotal = (ecouleReelMs / 1000) * VITESSE_HORS_LIGNE;
@@ -5427,18 +5905,9 @@ function appliquerProgressionHorsLigne() {
   const tailleChunk = dtSimTotal / nbChunks;
   for (let i = 0; i < nbChunks; i++) simulerTickHorsLigne(tailleChunk);
 
-  // The catch sequence cooldown runs on real wall-clock time already (tempsRestantSequence
-  // reads Date.now() directly), now also benefiting from the cathouse reduction caught up above.
-  let kittyAttrapeNom = null;
-  if (etat.sequenceEnCours && tempsRestantSequence() <= 0) {
-    kittyAttrapeNom = NOMS_KITTIES[etat.kittiesData.length] || ("Cat #" + (etat.kittiesData.length + 1));
-    etat.sequenceEnCours = false;
-    etat.chatons        += 1;
-    etat.clicCount      += 1;
-    etat.kittiesData.push({ nom: kittyAttrapeNom, metier: null, niveau: 0, xp: 0, tier: 0, managerMult: 2, catchTs: maintenant, visage: assignerVisageChaton(kittyAttrapeNom), jobNiveau: 0 });
-    ajouterLog("event", kittyAttrapeNom + " was caught while you were away!");
-    verifierStoryModals();
-  }
+  // Catch/Recruit cooldown uses wall-clock time. Returning players only find
+  // the action ready: a cat is never granted automatically while offline.
+  if (etat.sequenceEnCours && tempsRestantSequence() <= 0) etat.sequenceEnCours = false;
 
   etat.dernierTimestamp = maintenant;
   verifierObjectifs();
@@ -5446,16 +5915,13 @@ function appliquerProgressionHorsLigne() {
 
   return {
     dureeReelleSec: ecouleReelMs / 1000,
-    cardboardPieces:       etat.cardboardPieces      - avant.cardboardPieces,
-    basicWood:       etat.basicWood      - avant.basicWood,
-    catnip:          etat.catnip         - avant.catnip,
-    pebbles:         etat.pebbles        - avant.pebbles,
     cardboardPlanks: etat.cardboardPlanks - avant.cardboardPlanks,
+    basicWoodPlanks: etat.basicWoodPlanks - avant.basicWoodPlanks,
     pebbleBricks:    etat.pebbleBricks   - avant.pebbleBricks,
+    rockBricks:      etat.rockBricks     - avant.rockBricks,
     salads:          etat.salads         - avant.salads,
-    anchovy:         etat.anchovy        - avant.anchovy,
     grilledAnchovy:  etat.grilledAnchovy - avant.grilledAnchovy,
-    kittyAttrape:    kittyAttrapeNom
+    kittyAttrape:    null
   };
 }
 
@@ -5480,14 +5946,11 @@ function afficherResumeAbsence(resume) {
   ligne("⏱ Time away", formaterTemps(resume.dureeReelleSec));
 
   const ressources = [
-    ["📦 Cardboard Pieces", resume.cardboardPieces],
-    ["🪵 Basic Wood",       resume.basicWood],
-    ["🌿 Catnip",           resume.catnip],
-    ["🪨 Pebbles",          resume.pebbles],
     ["📋 Cardboard Planks", resume.cardboardPlanks],
+    ["🪵 Basic Wood Planks", resume.basicWoodPlanks],
     ["🪨 Pebble Bricks",    resume.pebbleBricks],
+    ["🧱 Rock Bricks",      resume.rockBricks],
     ["🥗 Salads",           resume.salads],
-    ["🐟 Anchovy",          resume.anchovy],
     ["🐟 Grilled Anchovy",  resume.grilledAnchovy]
   ];
   let produit = false;
@@ -5514,27 +5977,43 @@ const STORY_ASSETS = {
   "ecran-story-2":      { type: "icon",         src: "img/Cat faces/Mochi_Final.png", alt: "Portrait of Mochi." },
   "ecran-story-3":      { type: "illustration", src: "img/Story scenes/Story 3.png", alt: "Bernardo addresses two other kittens in the garden." },
   "ecran-story-4":      { type: "illustration", src: "img/Story scenes/Story 4.png", alt: "Three kittens admire their first cardboard shelter." },
+  "ecran-story-basic-wood": { type: "icon",      src: "img/resources/Basic Wood_Final.png?v=0.0028", alt: "A stack of sturdy Basic Wood logs." },
   "ecran-story-5":      { type: "icon",         src: "img/Cat faces/Bernardo.png", alt: "Portrait of Bernardo." },
   "ecran-story-6a":     { type: "icon",         src: "img/resources/Books_Final.png", alt: "A mysterious book found during scouting." },
   "ecran-story-6b":     { type: "illustration", src: "img/Story scenes/Story 6b.png", alt: "Bernardo studies charts and diagrams in an open book." },
   "ecran-story-salad":  { type: "icon",         src: "img/resources/Catnip Salad_Final.png", alt: "A freshly prepared Catnip Salad." },
   "ecran-story-seminar":{ type: "icon",         src: "img/resources/Books_Final.png", alt: "A corporate seminar booklet." },
+  "ecran-story-explorator": { type: "icon",      src: "img/Cat faces/Bernardo.png", alt: "Portrait of the gang's first Explorator." },
   "ecran-story-bird":   { type: "illustration", src: "img/Story scenes/Bernardo caught bird.png?v=0.0028", alt: "Bernardo leaps toward a bird perched on a tree branch." },
 };
 
 const STORIES = [
   { id: "ecran-intro",    nom: "Introduction",    flag: "introVue" },
-  { id: "ecran-story-1",  nom: "Bernardo plan begins", flag: "story1Vue" },
+  { id: "ecran-story-1",  nom: "Bernardo's plan begins", flag: "story1Vue" },
   { id: "ecran-story-2",  nom: "Mochi joins the gang", flag: "story2Vue" },
   { id: "ecran-story-3",  nom: "The adventure begins",  flag: "story3Vue" },
   { id: "ecran-story-4",  nom: "Our first creation",    flag: "story4Vue" },
+  { id: "ecran-story-basic-wood", nom: "Beyond Cardboard", flag: "storyBasicWoodVue" },
   { id: "ecran-story-5",  nom: "Gang on the rise",      flag: "story5Vue" },
   { id: "ecran-story-6a", nom: "What's that thing?",    flag: "story6aVue" },
   { id: "ecran-story-6b", nom: "A job for everyone",    flag: "story6bVue" },
   { id: "ecran-story-salad", nom: "Chef's kiss", flag: "storySaladVue" },
   { id: "ecran-story-seminar", nom: "Everybody loves seminars, right?", flag: "storySeminarVue" },
+  { id: "ecran-story-explorator", nom: "A New Horizon", flag: "storyExploratorVue" },
   { id: "ecran-story-bird",    nom: "The bird",                         flag: "storyBirdVue" }
 ];
+
+function storyEstVue(flag) {
+  return Array.isArray(etat.storiesVues) && etat.storiesVues.includes(flag);
+}
+
+function marquerStoryVue(flag) {
+  if (!Array.isArray(etat.storiesVues)) etat.storiesVues = [];
+  if (etat.storiesVues.includes(flag)) return false;
+  etat.storiesVues.push(flag);
+  sauvegarder();
+  return true;
+}
 
 function renduStories() {
   const conteneur = document.getElementById("stories-liste");
@@ -5542,7 +6021,8 @@ function renduStories() {
   conteneur.innerHTML = "";
   let affichees = 0;
   STORIES.forEach(function(story) {
-    if (!localStorage.getItem(story.flag)) return;
+    if (!storyEstVue(story.flag)) return;
+    if (story.id === "ecran-story-explorator") preparerStoryExplorator();
     affichees++;
     const carte = document.createElement("button");
     carte.className = "story-carte";
@@ -5600,6 +6080,95 @@ document.getElementById("logs-souscontenu").addEventListener("keydown", gererNav
 
 function fermerModal(id) { fermerDialogueModal(id); }
 
+function validerStoryJob() {
+  fermerModal("ecran-story-6b");
+  ouvrirDialogueModal("gang-leader-unlock-modal", {
+    focusSelector: ".gang-leader-unlock-action"
+  });
+}
+
+function allerVoirJobBernardo() {
+  fermerDialogueModal("gang-leader-unlock-modal");
+  const bernardoIndex = etat.kittiesData.findIndex(function(k) { return k.nom === "Bernardo"; });
+  if (bernardoIndex < 0) return;
+
+  kittySelectionnee = bernardoIndex;
+  detailKittyMobileOuvert = true;
+  changerOnglet("gang");
+  renduManagement();
+
+  setTimeout(function() {
+    const job = document.getElementById("detail-job");
+    if (!job) return;
+    job.scrollIntoView({ behavior: "smooth", block: "center" });
+    job.classList.remove("objectif-cible-highlight");
+    void job.offsetWidth;
+    job.classList.add("objectif-cible-highlight");
+    setTimeout(function() { job.classList.remove("objectif-cible-highlight"); }, 1700);
+  }, 80);
+}
+
+function preparerStoryExplorator(kittyIndex) {
+  let index = Number.isInteger(kittyIndex) ? kittyIndex : -1;
+  if (!etat.kittiesData[index] || etat.kittiesData[index].metier !== "explorator") {
+    index = etat.kittiesData.findIndex(function(k) { return k.metier === "explorator"; });
+  }
+  if (index < 0) return;
+  const kitty = etat.kittiesData[index];
+  document.querySelectorAll("#ecran-story-explorator .story-explorator-speaker").forEach(function(el) {
+    el.textContent = kitty.nom;
+  });
+  ecrireTexte(
+    document.getElementById("story-explorator-unlock-copy"),
+    kitty.nom + " is now an Explorator. You can explore the neighborhood using the map in the Explorations tab."
+  );
+  const asset = STORY_ASSETS["ecran-story-explorator"];
+  asset.src = kitty.visage || CAT_FACES.bernardo;
+  asset.alt = "Portrait of " + kitty.nom + ", the gang's first Explorator.";
+}
+
+function ouvrirCarteExplorationsDepuisStory(storyId) {
+  fermerModal(storyId);
+  carteDirty = true;
+  exploTabDirty = true;
+  changerOnglet("explorations");
+  setTimeout(function() {
+    const carte = document.getElementById("section-explo-map");
+    if (!carte) return;
+    carte.scrollIntoView({ behavior: "smooth", block: "start" });
+    carte.classList.remove("objectif-cible-highlight");
+    void carte.offsetWidth;
+    carte.classList.add("objectif-cible-highlight");
+    setTimeout(function() { carte.classList.remove("objectif-cible-highlight"); }, 1700);
+  }, 80);
+}
+
+function ouvrirCarteDepuisStoryExplorator() {
+  ouvrirCarteExplorationsDepuisStory("ecran-story-explorator");
+}
+
+function ouvrirCarteDepuisStoryGangRise() {
+  ouvrirCarteExplorationsDepuisStory("ecran-story-5");
+}
+
+function allerEtudierSchoolGuideDepuisStory() {
+  fermerModal("ecran-story-6a");
+  resCategorieFiltree = "books";
+  itemSelectionne = "schoolGuide";
+  inventaireDirty = true;
+  changerOnglet("inventaire");
+  setTimeout(function() {
+    const cible = document.getElementById("inv-item-action-schoolGuide-study") ||
+      document.getElementById("inv-item-card-schoolGuide");
+    if (!cible) return;
+    cible.scrollIntoView({ behavior: "smooth", block: "center" });
+    cible.classList.remove("objectif-cible-highlight");
+    void cible.offsetWidth;
+    cible.classList.add("objectif-cible-highlight");
+    setTimeout(function() { cible.classList.remove("objectif-cible-highlight"); }, 1700);
+  }, 80);
+}
+
 function fermerStoryBird() {
   fermerModal("ecran-story-bird");
   if (!_birdMiniJeuPending) return;
@@ -5628,6 +6197,7 @@ function fermerStoryBird() {
   _birdMiniJeuRaf = requestAnimationFrame(frame);
 }
 function afficherModal(id) {
+  if (id === "ecran-story-explorator") preparerStoryExplorator();
   const el = document.getElementById(id);
   const boite = el.querySelector(".intro-boite");
   const asset = STORY_ASSETS[id];
@@ -5669,23 +6239,23 @@ function afficherModal(id) {
 }
 
 function verifierStoryModals() {
-  if (etat.chatons === 1 && !localStorage.getItem("story1Vue")) {
-    localStorage.setItem("story1Vue", "1");
+  if (etat.chatons === 1 && !storyEstVue("story1Vue")) {
+    marquerStoryVue("story1Vue");
     afficherModal("ecran-story-1");
     renduStories();
   }
-  if (etat.chatons === 2 && !localStorage.getItem("story2Vue")) {
-    localStorage.setItem("story2Vue", "1");
+  if (etat.chatons === 2 && !storyEstVue("story2Vue")) {
+    marquerStoryVue("story2Vue");
     afficherModal("ecran-story-2");
     renduStories();
   }
-  if (etat.chatons === 3 && !localStorage.getItem("story3Vue")) {
-    localStorage.setItem("story3Vue", "1");
+  if (etat.chatons === 3 && !storyEstVue("story3Vue")) {
+    marquerStoryVue("story3Vue");
     afficherModal("ecran-story-3");
     renduStories();
   }
-  if (etat.chatons === 6 && !localStorage.getItem("story5Vue")) {
-    localStorage.setItem("story5Vue", "1");
+  if (etat.chatons === 6 && !storyEstVue("story5Vue")) {
+    marquerStoryVue("story5Vue");
     afficherModal("ecran-story-5");
     renduStories();
   }
@@ -5693,11 +6263,14 @@ function verifierStoryModals() {
 
 document.getElementById("bouton-intro").addEventListener("click", function() {
   fermerModal("ecran-intro");
-  localStorage.setItem("introVue", "1");
+  marquerStoryVue("introVue");
+  if (etat.chatons === 0 && !etat.sequenceEnCours) {
+    demarrerRechargeCatch();
+    sauvegarder();
+    rendu();
+  }
   renduStories();
 });
-
-if (!localStorage.getItem("introVue")) afficherModal("ecran-intro");
 
 
 // ════════════════════════════════════════════════════════════
@@ -5706,6 +6279,7 @@ if (!localStorage.getItem("introVue")) afficherModal("ecran-intro");
 
 function changerOnglet(id) {
   if (!IDS_ONGLETS.includes(id)) return;
+  if (id === "logs" && etat.chatons < 3) return;
   document.body.classList.remove("interface-compacte");
   marquerOngletVisite(id);
   IDS_ONGLETS.forEach(function(tab) {
@@ -5892,7 +6466,345 @@ function initialiserRessourcesAccessibles() {
 
 
 // ════════════════════════════════════════════════════════════
-// 13b. BIRD MINI-GAME
+// 13b. FIRST THREE CATS CATCH MINI-GAME
+// ════════════════════════════════════════════════════════════
+
+var _catCatchMiniJeuRaf = null;
+var _catCatchCursorPct = 0;
+var _catCatchDir = 1;
+var _catCatchActif = false;
+var _catCatchNom = "";
+const CAT_CATCH_SPEEDS = [60, 80, 100];
+
+function arreterAnimationMiniJeuCatch() {
+  if (!_catCatchMiniJeuRaf) return;
+  cancelAnimationFrame(_catCatchMiniJeuRaf);
+  _catCatchMiniJeuRaf = null;
+}
+
+function ouvrirMiniJeuCatch() {
+  if (etat.chatons >= 3 || !sequenceEstPrete() || _catCatchActif) return;
+  _catCatchNom = nomProchainChat();
+  const vitesseCatch = CAT_CATCH_SPEEDS[etat.chatons] || 100;
+  const visage = assurerVisageProchainChat();
+  const titre = document.getElementById("cat-catch-minijeu-titre");
+  const icone = document.getElementById("cat-catch-target-icone");
+  if (titre) titre.textContent = "Catch " + _catCatchNom + "!";
+  if (icone) {
+    icone.src = visage;
+    icone.alt = _catCatchNom + " target";
+  }
+
+  _catCatchActif = true;
+  renduSequence();
+  _catCatchCursorPct = 0;
+  _catCatchDir = 1;
+  ouvrirDialogueModal("cat-catch-minijeu", {
+    dismissible: true,
+    fermer: echouerMiniJeuCatch,
+    focusSelector: ".cat-catch-action",
+    returnFocusSelector: "#bouton-sequence"
+  });
+
+  var last = performance.now();
+  function frame(ts) {
+    if (!_catCatchActif) return;
+    var dt = (ts - last) / 1000;
+    last = ts;
+    _catCatchCursorPct += _catCatchDir * vitesseCatch * dt;
+    if (_catCatchCursorPct >= 100) { _catCatchCursorPct = 100; _catCatchDir = -1; }
+    if (_catCatchCursorPct <= 0)   { _catCatchCursorPct = 0;   _catCatchDir =  1; }
+    var cursor = document.getElementById("cat-catch-cursor");
+    if (cursor) cursor.style.left = _catCatchCursorPct + "%";
+    _catCatchMiniJeuRaf = requestAnimationFrame(frame);
+  }
+  _catCatchMiniJeuRaf = requestAnimationFrame(frame);
+}
+
+function echouerMiniJeuCatch() {
+  if (!_catCatchActif) return;
+  _catCatchActif = false;
+  arreterAnimationMiniJeuCatch();
+  fermerDialogueModal("cat-catch-minijeu");
+  demarrerRechargeCatch();
+  afficherNotification("" + _catCatchNom + " got away. Try again when the timer is ready!");
+  ajouterLog("event", "Failed to catch " + _catCatchNom + ".");
+  sauvegarder();
+  rendu();
+}
+
+function clickerCatCatch() {
+  if (!_catCatchActif) return;
+  const success = _catCatchCursorPct >= 40 && _catCatchCursorPct <= 60;
+  if (!success) {
+    echouerMiniJeuCatch();
+    return;
+  }
+  _catCatchActif = false;
+  arreterAnimationMiniJeuCatch();
+  fermerDialogueModal("cat-catch-minijeu");
+  terminerSequence();
+}
+
+document.addEventListener("keydown", function(e) {
+  if (e.key !== " " && e.key !== "Enter") return;
+  var modal = document.getElementById("cat-catch-minijeu");
+  if (!modal || modal.style.display === "none") return;
+  if (e.target && e.target.closest && e.target.closest("button, input, select, textarea, [role=button]")) return;
+  e.preventDefault();
+  clickerCatCatch();
+});
+
+// ════════════════════════════════════════════════════════════
+// 13c. RECRUITMENT MINI-GAME: PURRSUASION
+// ════════════════════════════════════════════════════════════
+
+const RECRUIT_GAME_DURATION = 10;
+const RECRUIT_GOOD_MIN = 42;
+const RECRUIT_GOOD_MAX = 68;
+const RECRUIT_HOLD_TARGET = 2;
+const RECRUIT_RISE_SPEED = 42;
+const RECRUIT_FALL_SPEED = 20;
+const RECRUIT_DIALOGUES = [
+  {
+    visitor: "I'm alone... and I haven't eaten in days.",
+    bernardo: "We have plenty of food. Join us, and you'll never go hungry again."
+  },
+  {
+    visitor: "I don't have anywhere safe to sleep.",
+    bernardo: "We have shelter, warm beds, and cats watching each other's backs."
+  },
+  {
+    visitor: "The humans keep chasing me away.",
+    bernardo: "Then you need protection. Nobody messes with a member of my gang."
+  },
+  {
+    visitor: "I don't trust gangs.",
+    bernardo: "Good instinct. This isn't just a gang - it's an organization. With snacks."
+  },
+  {
+    visitor: "What exactly do I get if I join?",
+    bernardo: "Food, shelter, purpose, and the privilege of exceptional leadership."
+  },
+  {
+    visitor: "I've always managed perfectly well on my own.",
+    bernardo: "So did I. Then I realized being alone means nobody brings you dinner."
+  },
+  {
+    visitor: "Why should I follow you?",
+    bernardo: "Because I have a plan, a camp, and several cats who already pretend to agree with me."
+  },
+  {
+    visitor: "I'm not much of a fighter.",
+    bernardo: "Perfect. We need builders, cooks, explorers... Everyone has a place here."
+  },
+  {
+    visitor: "The humans own everything around here.",
+    bernardo: "Not for long. We're building something of our own, one cardboard box at a time."
+  },
+  {
+    visitor: "This sounds suspiciously like work.",
+    bernardo: "It is - but organized work, with meals, shelter, and promotion opportunities."
+  }
+];
+var _recruitMiniJeuRaf = null;
+var _recruitMiniJeuActif = false;
+var _recruitPitchActif = false;
+var _recruitTimerDemarre = false;
+var _recruitTrust = 18;
+var _recruitGoodTime = 0;
+var _recruitTimeLeft = RECRUIT_GAME_DURATION;
+var _recruitNom = "";
+var _recruitDifficulty = 1;
+var _recruitSpeedMultiplier = 1;
+var _recruitDialoguePrecedent = -1;
+
+function choisirDialogueRecruit() {
+  var index = Math.floor(Math.random() * RECRUIT_DIALOGUES.length);
+  if (index === _recruitDialoguePrecedent && RECRUIT_DIALOGUES.length > 1) {
+    index = (index + 1 + Math.floor(Math.random() * (RECRUIT_DIALOGUES.length - 1))) % RECRUIT_DIALOGUES.length;
+  }
+  _recruitDialoguePrecedent = index;
+  return RECRUIT_DIALOGUES[index];
+}
+
+function arreterAnimationMiniJeuRecruit() {
+  if (!_recruitMiniJeuRaf) return;
+  cancelAnimationFrame(_recruitMiniJeuRaf);
+  _recruitMiniJeuRaf = null;
+}
+
+function mettreAJourMiniJeuRecruit() {
+  const track = document.getElementById("recruit-trust-track");
+  const fill = document.getElementById("recruit-trust-fill");
+  const marker = document.getElementById("recruit-trust-marker");
+  const time = document.getElementById("recruit-time-left");
+  const progress = document.getElementById("recruit-hold-progress");
+  const pct = Math.max(0, Math.min(100, _recruitTrust));
+  if (fill) fill.style.width = pct.toFixed(2) + "%";
+  if (marker) marker.style.left = pct.toFixed(2) + "%";
+  if (track) track.setAttribute("aria-valuenow", Math.round(pct));
+  if (time) time.textContent = Math.max(0, _recruitTimeLeft).toFixed(1) + "s";
+  if (progress) progress.textContent = "Keep their interest: " + Math.min(RECRUIT_HOLD_TARGET, _recruitGoodTime).toFixed(1) + " / " + RECRUIT_HOLD_TARGET.toFixed(1) + "s";
+}
+
+function definirPitchRecruitActif(actif) {
+  _recruitPitchActif = Boolean(actif) && _recruitMiniJeuActif;
+  const bouton = document.getElementById("recruit-pitch-btn");
+  if (bouton) bouton.classList.toggle("pitch-active", _recruitPitchActif);
+}
+
+function demarrerTimerMiniJeuRecruit() {
+  if (_recruitTimerDemarre || !_recruitMiniJeuActif) return;
+  _recruitTimerDemarre = true;
+  const bouton = document.getElementById("recruit-pitch-btn");
+  if (bouton) bouton.textContent = "HOLD TO MAKE YOUR PITCH";
+  var last = performance.now();
+  function frame(ts) {
+    if (!_recruitMiniJeuActif) return;
+    var dt = Math.min(0.05, (ts - last) / 1000);
+    last = ts;
+    _recruitTimeLeft -= dt;
+    const vitesse = (_recruitPitchActif ? RECRUIT_RISE_SPEED : -RECRUIT_FALL_SPEED) * _recruitSpeedMultiplier;
+    _recruitTrust += vitesse * dt;
+    _recruitTrust = Math.max(0, _recruitTrust);
+    if (_recruitTrust >= RECRUIT_GOOD_MIN && _recruitTrust < RECRUIT_GOOD_MAX) _recruitGoodTime += dt;
+    mettreAJourMiniJeuRecruit();
+
+    if (_recruitTrust >= RECRUIT_GOOD_MAX) {
+      echouerMiniJeuRecruit("too-pushy");
+      return;
+    }
+    if (_recruitGoodTime >= RECRUIT_HOLD_TARGET) {
+      reussirMiniJeuRecruit();
+      return;
+    }
+    if (_recruitTimeLeft <= 0) {
+      echouerMiniJeuRecruit("timeout");
+      return;
+    }
+    _recruitMiniJeuRaf = requestAnimationFrame(frame);
+  }
+  _recruitMiniJeuRaf = requestAnimationFrame(frame);
+}
+
+function commencerPitchRecruit(event) {
+  if (event) event.preventDefault();
+  demarrerTimerMiniJeuRecruit();
+  definirPitchRecruitActif(true);
+}
+
+function arreterPitchRecruit(event) {
+  if (event) event.preventDefault();
+  definirPitchRecruitActif(false);
+}
+
+function gererClavierPitchRecruit(event, actif) {
+  if (event.key !== " " && event.key !== "Enter") return;
+  event.preventDefault();
+  definirPitchRecruitActif(actif);
+}
+
+function ouvrirMiniJeuRecruit() {
+  if (etat.chatons < 3 || !sequenceEstPrete() || _recruitMiniJeuActif) return;
+  _recruitNom = nomProchainChat();
+  const portrait = document.getElementById("recruit-target-portrait");
+  const nom = document.getElementById("recruit-target-name");
+  const visitorSpeech = document.getElementById("recruit-visitor-speech");
+  const bernardoSpeech = document.getElementById("recruit-bernardo-speech");
+  const dialogue = choisirDialogueRecruit();
+  if (portrait) portrait.src = assurerVisageProchainChat();
+  if (nom) nom.textContent = _recruitNom;
+  if (visitorSpeech) {
+    visitorSpeech.textContent = dialogue.visitor;
+    visitorSpeech.setAttribute("aria-label", _recruitNom + " says: " + dialogue.visitor);
+  }
+  if (bernardoSpeech) {
+    bernardoSpeech.textContent = dialogue.bernardo;
+    bernardoSpeech.setAttribute("aria-label", "Bernardo says: " + dialogue.bernardo);
+  }
+
+  _recruitMiniJeuActif = true;
+  renduSequence();
+  _recruitPitchActif = false;
+  _recruitTimerDemarre = false;
+  _recruitTrust = 18;
+  _recruitGoodTime = 0;
+  _recruitTimeLeft = RECRUIT_GAME_DURATION;
+  _recruitDifficulty = Math.max(1, etat.chatons - 2);
+  _recruitSpeedMultiplier = 1 + (_recruitDifficulty - 1) * 0.1;
+  const difficulty = document.getElementById("recruit-difficulty");
+  const bouton = document.getElementById("recruit-pitch-btn");
+  if (difficulty) difficulty.textContent = "Difficulty " + _recruitDifficulty + " · Cursor speed ×" + _recruitSpeedMultiplier.toFixed(2);
+  if (bouton) bouton.textContent = "HOLD TO START YOUR PITCH";
+  mettreAJourMiniJeuRecruit();
+  ouvrirDialogueModal("recruit-minijeu", {
+    dismissible: true,
+    fermer: function() { echouerMiniJeuRecruit("closed"); },
+    focusSelector: "#recruit-pitch-btn",
+    returnFocusSelector: "#bouton-sequence"
+  });
+
+}
+
+function echouerMiniJeuRecruit(raison) {
+  if (!_recruitMiniJeuActif) return;
+  _recruitMiniJeuActif = false;
+  definirPitchRecruitActif(false);
+  arreterAnimationMiniJeuRecruit();
+  fermerDialogueModal("recruit-minijeu");
+  const visage = assurerVisageProchainChat();
+  demarrerRechargeCatch();
+  ajouterLog("event", "Failed to recruit " + _recruitNom + ".");
+  sauvegarder();
+  rendu();
+  ouvrirPopupRecruitResult(false, _recruitNom, visage);
+}
+
+function reussirMiniJeuRecruit() {
+  if (!_recruitMiniJeuActif) return;
+  _recruitMiniJeuActif = false;
+  definirPitchRecruitActif(false);
+  arreterAnimationMiniJeuRecruit();
+  fermerDialogueModal("recruit-minijeu");
+  const resultat = terminerSequence();
+  ouvrirPopupRecruitResult(true, resultat.nom, resultat.visage);
+}
+
+function ouvrirPopupRecruitResult(reussi, nom, visage) {
+  const card = document.getElementById("recruit-result-card");
+  const title = document.getElementById("recruit-result-title");
+  const portrait = document.getElementById("recruit-result-portrait");
+  const badge = document.getElementById("recruit-result-badge");
+  const message = document.getElementById("recruit-result-message");
+  if (card) card.classList.toggle("recruit-result-failed", !reussi);
+  if (title) title.textContent = reussi ? "Recruitment successful!" : "Recruitment failed";
+  if (portrait) {
+    portrait.src = visage;
+    portrait.alt = nom + " portrait";
+  }
+  if (badge) {
+    badge.src = reussi ? "img/interface/✅_Final.png?v=0.0025" : "img/interface/Red Cross_Final.png?v=0.0028";
+    badge.alt = reussi ? "Success" : "Failed";
+  }
+  if (message) message.textContent = reussi
+    ? nom + " is convinced and agrees to join the Gang!"
+    : nom + " wasn't convinced. Try again later.";
+  ouvrirDialogueModal("recruit-result-popup", {
+    focusSelector: "#recruit-result-action",
+    returnFocusSelector: "#bouton-sequence"
+  });
+}
+
+function fermerPopupRecruitResult() {
+  fermerDialogueModal("recruit-result-popup");
+}
+
+document.addEventListener("pointerup", function() { definirPitchRecruitActif(false); });
+window.addEventListener("blur", function() { definirPitchRecruitActif(false); });
+
+// ════════════════════════════════════════════════════════════
+// 13d. BIRD MINI-GAME
 // ════════════════════════════════════════════════════════════
 
 var _birdTimerId        = null;
@@ -5914,8 +6826,8 @@ function montrerOiseau() {
 }
 
 function ouvrirBirdMiniJeu() {
-  if (!localStorage.getItem("storyBirdVue")) {
-    localStorage.setItem("storyBirdVue", "1");
+  if (!storyEstVue("storyBirdVue")) {
+    marquerStoryVue("storyBirdVue");
     var birdBtn = document.getElementById("bird-btn");
     if (birdBtn) birdBtn.style.display = "none";
     _birdMiniJeuPending = true;
@@ -6005,12 +6917,26 @@ document.addEventListener("keydown", function(e) {
 initialiserRessourcesAccessibles();
 const partieExistante = charger();
 const resumeAbsence    = partieExistante ? appliquerProgressionHorsLigne() : null;
+if (redemarrageMajeurRequis) {
+  ouvrirDialogueModal("save-upgrade-modal", { focusSelector: "#save-upgrade-restart" });
+} else if (!storyEstVue("introVue")) {
+  afficherModal("ecran-intro");
+}
 rendu();
 renduLogs();
 renduStories();
 renduObjectifs();
 verifierObjectifs();
 renduManagement();
+if (!storyEstVue("storyExploratorVue")) {
+  const exploratorExistant = etat.kittiesData.findIndex(function(k) { return k.metier === "explorator"; });
+  if (exploratorExistant >= 0) {
+    preparerStoryExplorator(exploratorExistant);
+    marquerStoryVue("storyExploratorVue");
+    afficherModal("ecran-story-explorator");
+    renduStories();
+  }
+}
 if (resumeAbsence) afficherResumeAbsence(resumeAbsence);
 
 planifierOiseau();

@@ -3,9 +3,21 @@
 
   const CatInc = root.CatInc = root.CatInc || {};
 
-function makeWorkerSlots(n) {
+function makeWorkRecipeSlot() {
+  return {
+    recipeId: null,
+    kittyIndex: null,
+    phase: "idle",
+    phaseProgress: 0,
+    outputCarry: 0,
+    gatheredInputs: {},
+    reservedInputs: {}
+  };
+}
+
+function makeWorkRecipeSlots(n) {
   var slots = [];
-  for (var i = 0; i < n; i++) slots.push({ kittyIndex: null, progress: 0 });
+  for (var i = 0; i < n; i++) slots.push(makeWorkRecipeSlot());
   return slots;
 }
 
@@ -31,10 +43,11 @@ function creerEtatInitial() {
   spherePerks:          {},
   workBoostFinTs:       0,
 
-  // Catch sequence
+  // Passive Catch/Recruit cooldown. false means the current cat is ready.
   sequenceEnCours:         false,
   sequenceDebutTs:         0,
   sequenceDuree:           0,
+  prochainVisageChaton:    null,
   clicCount:               0,
   reductionAuMomentDuClic: 0,
   afficherTempsAjusteRecrutement: false,
@@ -42,33 +55,17 @@ function creerEtatInitial() {
   volumeMusique:           0.5,
   autoBuildWoodHouses:       false,
 
-  // Processing blocked flags
-  scieriBloquee:              false,
-  basicSawmillBloquee:        false,
-  brickBloquee:               false,
-  rockFactoryBloquee:         false,
-  catchenBloquee:             false,
-  catchenAnchovyBloquee:      false,
+  // First-production story state
   premiereSaladeFaite:        false,
 
   // Cathouse reduction accumulator (virtual seconds)
   reductionCumulee: 0,
 
-  // Individual kitty worker slots per action: [{ kittyIndex: null|int, progress: 0..1 }]
-  // progress 0→1 = one production cycle (one unit gathered / one output produced)
-  workers: {
-    woodcatting:      makeWorkerSlots(2),
-    basicWoodcatting: makeWorkerSlots(2),
-    grasscatting:     makeWorkerSlots(2),
-    fishcatting:      makeWorkerSlots(2),
-    pebblegathering:  makeWorkerSlots(2),
-    rockgathering:    makeWorkerSlots(2),
-    sawmill:          makeWorkerSlots(2),
-    basicSawmill:     makeWorkerSlots(2),
-    brickfactory:     makeWorkerSlots(2),
-    rockFactory:      makeWorkerSlots(2),
-    catchen:          makeWorkerSlots(2),
-    grilledAnchovy:   makeWorkerSlots(2)
+  // Two recipe slots per family replace the former independent workers.
+  workRecipeSlots: {
+    wood: makeWorkRecipeSlots(2),
+    food: makeWorkRecipeSlots(2),
+    rock: makeWorkRecipeSlots(2)
   },
 
   cathouses:          [],
@@ -79,6 +76,7 @@ function creerEtatInitial() {
   campaignsCompletees: [],
   itemsAcquis:         [],
   itemsAppris:         [],
+  itemsEtudies:        [],
   jobCenterDebloque:        false,
   jobCenterConstruit:       false,
   trainingCenterDebloque:   false,
@@ -87,13 +85,17 @@ function creerEtatInitial() {
   regionCourante:      "startingNeighbourhood",
   zonesExplorees:      ["D1"], // D1 (home) always starts explored
   exploZoneEnCours:    null,   // { zoneId, kittyIndices, startTs, duree }
+  resultatsExplorationZones: {}, // { zoneId: { success, kittyIndices } }
+  resultatsCampaigns:  {},     // { campaignId: { success, kittyIndices, recompenses[] } }
   scoutingsEnCours:    {},     // { scoutingId: { kittyIndex, startTs } }
+  butinsScouting:      {},     // { scoutingId: { successful, failed, regular, lucky, superLucky, doubled, rewards } }
   managers:            { wood: null, food: null, sawmill: null, catchen: null, rock: null, pawsonry: null, houses: null },
   managersDebloques:   false,
   objectifsComplis: [],
   logs:          [],
+  storiesVues:  [],
   ongletsVisites: ["gang", "logs"],
-  learningEnCours: null,   // { itemId, startTs, duree } in ms
+  learningEnCours: null,   // { itemId, startTs, duree } in ms (Study or legacy direct learning)
 
   // Last real-world timestamp the game state was saved (for offline progress)
     dernierTimestamp: Date.now()
@@ -107,7 +109,8 @@ function creerEtatInitial() {
   }
 
   CatInc.state = Object.freeze({
-    makeWorkerSlots: makeWorkerSlots,
+    makeWorkRecipeSlot: makeWorkRecipeSlot,
+    makeWorkRecipeSlots: makeWorkRecipeSlots,
     creerEtatInitial: creerEtatInitial,
     remplacerEtat: remplacerEtat
   });

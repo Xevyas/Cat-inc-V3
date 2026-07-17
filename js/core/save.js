@@ -7,35 +7,43 @@
 
   const SAVE_KEY = "chatonClicker";
   const SAVE_RECOVERY_KEY = "chatonClickerRecovery";
-  const SAVE_VERSION = 1;
+  // Version 2 introduces recipe slots and deliberately starts a new save era.
+  // Version 0/1 saves belong to the former independent Gathering/Processing model.
+  const SAVE_VERSION = 2;
   const ONGLETS_VALIDES = ["gang", "work", "buildings", "facilities", "explorations", "inventaire", "logs"];
+  const WORK_FAMILIES = ["wood", "food", "rock"];
+  const WORK_RECIPE_PHASES = ["idle", "gathering", "processing", "waiting"];
 
 function estObjetSauvegarde(valeur) {
   return valeur !== null && typeof valeur === "object" && !Array.isArray(valeur);
 }
 
+function donneesSauvegardeReconnaissables(d) {
+  if (!estObjetSauvegarde(d)) return false;
+  const champsConnus = ["chatons", "wood", "cardboard", "cardboardPieces", "kittiesData", "workRecipeSlots"];
+  return champsConnus.some(function(cle) { return d[cle] !== undefined; });
+}
+
 function validerStructureSauvegarde(d) {
   if (!estObjetSauvegarde(d)) return "The save root must be an object.";
 
-  const champsConnus = ["chatons", "wood", "cardboard", "cardboardPieces", "kittiesData", "workers"];
-  if (!champsConnus.some(function(cle) { return d[cle] !== undefined; })) {
+  if (!donneesSauvegardeReconnaissables(d)) {
     return "This file does not contain recognizable Cat Inc save data.";
   }
 
-  if (d.saveVersion !== undefined) {
-    if (!Number.isInteger(d.saveVersion) || d.saveVersion < 0) return "Invalid save version.";
-    if (d.saveVersion > SAVE_VERSION) return "This save was created by a newer version of Cat Inc.";
-  }
+  if (!Number.isInteger(d.saveVersion) || d.saveVersion < 0) return "Invalid save version.";
+  if (d.saveVersion > SAVE_VERSION) return "This save was created by a newer version of Cat Inc.";
+  if (d.saveVersion < SAVE_VERSION) return "This save uses the previous Work system and requires a new game.";
 
   const champsTableaux = [
-    "cathouses", "kittiesData", "exploEnCours", "campaignsCompletees", "itemsAcquis", "itemsAppris",
-    "zonesExplorees", "objectifsComplis", "logs", "ongletsVisites"
+    "cathouses", "kittiesData", "exploEnCours", "campaignsCompletees", "itemsAcquis", "itemsAppris", "itemsEtudies",
+    "zonesExplorees", "objectifsComplis", "logs", "storiesVues", "ongletsVisites"
   ];
   for (const cle of champsTableaux) {
     if (d[cle] !== undefined && !Array.isArray(d[cle])) return "Invalid field: " + cle + " must be an array.";
   }
 
-  const champsObjets = ["workers", "spherePerks", "scoutingsEnCours", "managers"];
+  const champsObjets = ["workRecipeSlots", "spherePerks", "scoutingsEnCours", "resultatsExplorationZones", "resultatsCampaigns", "butinsScouting", "managers"];
   for (const cle of champsObjets) {
     if (d[cle] !== undefined && !estObjetSauvegarde(d[cle])) return "Invalid field: " + cle + " must be an object.";
   }
@@ -61,6 +69,11 @@ function validerStructureSauvegarde(d) {
       return "Invalid numeric field: " + cle + ".";
     }
   }
+
+  if (d.prochainVisageChaton !== undefined && d.prochainVisageChaton !== null
+      && (typeof d.prochainVisageChaton !== "string" || d.prochainVisageChaton.length > 300 || /[<>]/.test(d.prochainVisageChaton))) {
+    return "Invalid next cat portrait.";
+  }
   for (const cle of ["volumeEffetsSonores", "volumeMusique"]) {
     if (d[cle] !== undefined && d[cle] > 1) return "Invalid audio volume: " + cle + ".";
   }
@@ -79,7 +92,7 @@ function validerStructureSauvegarde(d) {
     return "Invalid cathouse history.";
   }
 
-  const champsTableauxDeChaines = ["campaignsCompletees", "itemsAcquis", "itemsAppris", "zonesExplorees", "objectifsComplis", "ongletsVisites"];
+  const champsTableauxDeChaines = ["campaignsCompletees", "itemsAcquis", "itemsAppris", "itemsEtudies", "zonesExplorees", "objectifsComplis", "storiesVues", "ongletsVisites"];
   for (const cle of champsTableauxDeChaines) {
     if (d[cle] && !d[cle].every(function(valeur) { return typeof valeur === "string"; })) {
       return "Invalid entries in field: " + cle + ".";
@@ -110,17 +123,31 @@ function validerStructureSauvegarde(d) {
     return Number.isInteger(kittyIndex) && kittyIndex >= 0 && kittyIndex < nombreKitties;
   }
 
-  if (d.workers) {
-    const workersValides = Object.values(d.workers).every(function(slots) {
-      return Array.isArray(slots) && slots.every(function(slot) {
-        return estObjetSauvegarde(slot)
-          && indexKittyValide(slot.kittyIndex, true)
-          && (slot.progress === undefined || (typeof slot.progress === "number" && Number.isFinite(slot.progress) && slot.progress >= 0))
-          && (slot.prodFrac === undefined || (typeof slot.prodFrac === "number" && Number.isFinite(slot.prodFrac) && slot.prodFrac >= 0));
+  if (!d.workRecipeSlots || !WORK_FAMILIES.every(function(family) {
+    return Array.isArray(d.workRecipeSlots[family]) && d.workRecipeSlots[family].length >= 2;
+  })) {
+    return "Invalid Work recipe slot data.";
+  }
+  const recipeSlotsValides = WORK_FAMILIES.every(function(family) {
+    return d.workRecipeSlots[family].every(function(slot) {
+      if (!estObjetSauvegarde(slot)
+          || !indexKittyValide(slot.kittyIndex, true)
+          || (slot.recipeId !== null && (typeof slot.recipeId !== "string" || slot.recipeId.length > 100 || /[<>]/.test(slot.recipeId)))
+          || !WORK_RECIPE_PHASES.includes(slot.phase)
+          || typeof slot.phaseProgress !== "number" || !Number.isFinite(slot.phaseProgress) || slot.phaseProgress < 0
+          || typeof slot.outputCarry !== "number" || !Number.isFinite(slot.outputCarry) || slot.outputCarry < 0
+          || !estObjetSauvegarde(slot.gatheredInputs)
+          || !estObjetSauvegarde(slot.reservedInputs)) return false;
+      return [slot.gatheredInputs, slot.reservedInputs].every(function(inputs) {
+        return Object.keys(inputs).every(function(resourceId) {
+          const quantity = inputs[resourceId];
+          return resourceId.length <= 100 && !/[<>]/.test(resourceId)
+            && typeof quantity === "number" && Number.isFinite(quantity) && quantity >= 0;
+        });
       });
     });
-    if (!workersValides) return "Invalid worker slot data.";
-  }
+  });
+  if (!recipeSlotsValides) return "Invalid Work recipe slot data.";
 
   if (d.managers) {
     const managersValides = Object.values(d.managers).every(function(kittyIndex) {
@@ -155,6 +182,47 @@ function validerStructureSauvegarde(d) {
         && (scouting.duree === undefined || (typeof scouting.duree === "number" && Number.isFinite(scouting.duree) && scouting.duree >= 0));
     });
     if (!scoutingsValides) return "Invalid scouting data.";
+  }
+
+  if (d.resultatsExplorationZones) {
+    const resultatsZonesValides = Object.values(d.resultatsExplorationZones).every(function(resultat) {
+      return estObjetSauvegarde(resultat)
+        && typeof resultat.success === "boolean"
+        && Array.isArray(resultat.kittyIndices)
+        && resultat.kittyIndices.every(function(kittyIndex) { return indexKittyValide(kittyIndex, false); });
+    });
+    if (!resultatsZonesValides) return "Invalid pending zone exploration results.";
+  }
+
+  if (d.resultatsCampaigns) {
+    const resultatsCampaignsValides = Object.values(d.resultatsCampaigns).every(function(resultat) {
+      return estObjetSauvegarde(resultat)
+        && typeof resultat.success === "boolean"
+        && Array.isArray(resultat.kittyIndices)
+        && resultat.kittyIndices.every(function(kittyIndex) { return indexKittyValide(kittyIndex, false); })
+        && Array.isArray(resultat.recompenses)
+        && resultat.recompenses.every(function(recompense) {
+          return estObjetSauvegarde(recompense)
+            && typeof recompense.recompense === "string"
+            && typeof recompense.qty === "number" && Number.isFinite(recompense.qty) && recompense.qty >= 0;
+        });
+    });
+    if (!resultatsCampaignsValides) return "Invalid pending campaign results.";
+  }
+
+  if (d.butinsScouting) {
+    const compteurs = ["successful", "failed", "regular", "lucky", "superLucky", "doubled"];
+    const butinsValides = Object.values(d.butinsScouting).every(function(butin) {
+      return estObjetSauvegarde(butin)
+        && compteurs.every(function(cle) {
+          return Number.isInteger(butin[cle]) && butin[cle] >= 0;
+        })
+        && estObjetSauvegarde(butin.rewards)
+        && Object.values(butin.rewards).every(function(qty) {
+          return typeof qty === "number" && Number.isFinite(qty) && qty >= 0;
+        });
+    });
+    if (!butinsValides) return "Invalid accumulated scouting rewards.";
   }
 
   if (d.learningEnCours) {
@@ -194,6 +262,17 @@ function analyserSauvegardeBrute(raw) {
   } catch (e) {
     return { ok: false, erreur: "The file does not contain valid JSON." };
   }
+  const version = data && data.saveVersion === undefined ? 0 : data && data.saveVersion;
+  if (donneesSauvegardeReconnaissables(data)
+      && Number.isInteger(version) && version >= 0 && version < SAVE_VERSION) {
+    return {
+      ok: false,
+      incompatible: true,
+      ancienneVersion: version,
+      data: data,
+      erreur: "This save uses the previous Work system and requires a new game."
+    };
+  }
   const erreur = validerStructureSauvegarde(data);
   return erreur ? { ok: false, erreur: erreur } : { ok: true, data: data };
 }
@@ -223,6 +302,7 @@ function analyserSauvegardeBrute(raw) {
     sequenceEnCours:         etat.sequenceEnCours,
     sequenceDebutTs:         etat.sequenceDebutTs,
     sequenceDuree:           etat.sequenceDuree,
+    prochainVisageChaton:    etat.prochainVisageChaton,
     clicCount:               etat.clicCount,
     reductionAuMomentDuClic: etat.reductionAuMomentDuClic,
     afficherTempsAjusteRecrutement: etat.afficherTempsAjusteRecrutement,
@@ -237,7 +317,7 @@ function analyserSauvegardeBrute(raw) {
     catchenAnchovyBloquee:      etat.catchenAnchovyBloquee,
     premiereSaladeFaite:        etat.premiereSaladeFaite,
     reductionCumulee: etat.reductionCumulee,
-    workers:       etat.workers,
+    workRecipeSlots: etat.workRecipeSlots,
     cathouses:          etat.cathouses,
     cathouseCount:      etat.cathouseCount,
     stoneCathouseCount: etat.stoneCathouseCount,
@@ -246,6 +326,7 @@ function analyserSauvegardeBrute(raw) {
     campaignsCompletees: etat.campaignsCompletees,
     itemsAcquis:         etat.itemsAcquis,
     itemsAppris:         etat.itemsAppris,
+    itemsEtudies:        etat.itemsEtudies,
     learningEnCours:     etat.learningEnCours,
     jobCenterDebloque:        etat.jobCenterDebloque,
     jobCenterConstruit:       etat.jobCenterConstruit,
@@ -255,11 +336,15 @@ function analyserSauvegardeBrute(raw) {
     regionCourante:           etat.regionCourante,
     zonesExplorees:      etat.zonesExplorees,
     exploZoneEnCours:    etat.exploZoneEnCours,
+    resultatsExplorationZones: etat.resultatsExplorationZones,
+    resultatsCampaigns:  etat.resultatsCampaigns,
     scoutingsEnCours:    etat.scoutingsEnCours,
+    butinsScouting:      etat.butinsScouting,
     managers:            etat.managers,
     managersDebloques:   etat.managersDebloques,
     objectifsComplis: etat.objectifsComplis,
     logs:          etat.logs,
+    storiesVues:   etat.storiesVues,
     ongletsVisites: etat.ongletsVisites
   };
   }
@@ -275,7 +360,6 @@ function analyserSauvegardeBrute(raw) {
     const assignerVisageChaton = typeof options.assignerVisageChaton === "function"
       ? options.assignerVisageChaton
       : function() { return null; };
-    const makeWorkerSlots = stateCore.makeWorkerSlots;
     const d = JSON.parse(JSON.stringify(data));
     const etat = stateCore.creerEtatInitial(maintenant);
 
@@ -311,6 +395,7 @@ function analyserSauvegardeBrute(raw) {
   etat.sequenceEnCours         = d.sequenceEnCours         || false;
   etat.sequenceDebutTs         = d.sequenceDebutTs         || 0;
   etat.sequenceDuree           = d.sequenceDuree           || 0;
+  etat.prochainVisageChaton    = d.prochainVisageChaton    || null;
   etat.clicCount               = d.clicCount               || 0;
   etat.reductionAuMomentDuClic = d.reductionAuMomentDuClic || 0;
   etat.afficherTempsAjusteRecrutement = d.afficherTempsAjusteRecrutement || false;
@@ -318,12 +403,6 @@ function analyserSauvegardeBrute(raw) {
   etat.volumeMusique       = d.volumeMusique       !== undefined ? Math.min(1, d.volumeMusique)       : 0.5;
   etat.autoBuildWoodHouses       = d.autoBuildWoodHouses || false;
 
-  etat.scieriBloquee        = d.scieriBloquee        || false;
-  etat.basicSawmillBloquee  = d.basicSawmillBloquee  || false;
-  etat.brickBloquee         = d.brickBloquee         || false;
-  etat.rockFactoryBloquee   = d.rockFactoryBloquee   || false;
-  etat.catchenBloquee             = d.catchenBloquee             || false;
-  etat.catchenAnchovyBloquee      = d.catchenAnchovyBloquee      || false;
   etat.premiereSaladeFaite        = d.premiereSaladeFaite        || false;
   // Migration: compute reduction from old timestamp-based saves
   etat.reductionCumulee = d.reductionCumulee !== undefined
@@ -332,19 +411,12 @@ function analyserSauvegardeBrute(raw) {
         return total + Math.floor((maintenant - ts) / 1000);
       }, 0);
 
-  // Load worker slots — migrate from old allocation-count format
-  const allActions = ["woodcatting", "basicWoodcatting", "grasscatting", "fishcatting", "pebblegathering", "rockgathering", "sawmill", "basicSawmill", "brickfactory", "rockFactory", "catchen", "grilledAnchovy"];
-  if (d.workers) {
-    etat.workers = d.workers;
-    allActions.forEach(function(a) {
-      if (!etat.workers[a]) etat.workers[a] = makeWorkerSlots(2);
-      while (etat.workers[a].length < 2) etat.workers[a].push({ kittyIndex: null, progress: 0 });
-    });
-  } else {
-    // Old save: allocation was just a count — discard counts (can't know which kitties were assigned)
-    etat.workers = {};
-    allActions.forEach(function(a) { etat.workers[a] = makeWorkerSlots(2); });
-  }
+  const makeWorkRecipeSlots = stateCore.makeWorkRecipeSlots;
+  etat.workRecipeSlots = d.workRecipeSlots || {
+    wood: makeWorkRecipeSlots(2),
+    food: makeWorkRecipeSlots(2),
+    rock: makeWorkRecipeSlots(2)
+  };
 
   etat.cathouses          = d.cathouses          || [];
   etat.cathouseCount      = d.cathouseCount      || 0;
@@ -353,6 +425,7 @@ function analyserSauvegardeBrute(raw) {
   etat.campaignsCompletees = d.campaignsCompletees || [];
   etat.itemsAcquis         = d.itemsAcquis         || [];
   etat.itemsAppris         = d.itemsAppris         || [];
+  etat.itemsEtudies        = d.itemsEtudies        || [];
   etat.learningEnCours     = d.learningEnCours     || null;
   etat.jobCenterDebloque        = d.jobCenterDebloque        || false;
   etat.jobCenterConstruit       = d.jobCenterConstruit       || false;
@@ -363,7 +436,10 @@ function analyserSauvegardeBrute(raw) {
   etat.zonesExplorees      = d.zonesExplorees      || ["D1"];
   if (!etat.zonesExplorees.includes("D1")) etat.zonesExplorees.push("D1");
   etat.exploZoneEnCours    = d.exploZoneEnCours    || null;
+  etat.resultatsExplorationZones = d.resultatsExplorationZones || {};
+  etat.resultatsCampaigns  = d.resultatsCampaigns  || {};
   etat.scoutingsEnCours    = d.scoutingsEnCours    || {};
+  etat.butinsScouting      = d.butinsScouting      || {};
   etat.managers            = d.managers            || { wood: null, food: null, sawmill: null, catchen: null, rock: null, pawsonry: null };
   etat.managersDebloques   = d.managersDebloques   || false;
   // Migration: backfill manager keys added in later versions
@@ -376,6 +452,31 @@ function analyserSauvegardeBrute(raw) {
   if (etat.managers.houses   === undefined) etat.managers.houses   = null;
   etat.objectifsComplis = d.objectifsComplis || [];
   etat.logs            = d.logs            || [];
+  if (Array.isArray(d.storiesVues)) {
+    etat.storiesVues = d.storiesVues;
+  } else {
+    // Legacy saves kept story flags outside the exported state. Reconstruct
+    // only what this save's own progression proves, never from the browser's
+    // newer localStorage flags.
+    const storiesInferees = [];
+    const ajouterStory = function(flag, condition) { if (condition) storiesInferees.push(flag); };
+    const itemsAcquis = d.itemsAcquis || [];
+    const itemsAppris = d.itemsAppris || [];
+    const campaigns = d.campaignsCompletees || [];
+    const chatons = d.chatons || 0;
+    ajouterStory("introVue", chatons > 0);
+    ajouterStory("story1Vue", chatons >= 1);
+    ajouterStory("story2Vue", chatons >= 2);
+    ajouterStory("story3Vue", chatons >= 3);
+    ajouterStory("story4Vue", Array.isArray(d.cathouses) && d.cathouses.length >= 1);
+    ajouterStory("storyBasicWoodVue", (d.cardboardPlanks || d.planks || 0) >= 10 || (d.basicWoodTotalRecolte || 0) >= 1);
+    ajouterStory("story5Vue", chatons >= 6);
+    ajouterStory("story6aVue", itemsAcquis.includes("schoolGuide") || campaigns.includes("checkTheTrash"));
+    ajouterStory("story6bVue", itemsAppris.includes("schoolGuide") || !!d.jobCenterDebloque || !!d.jobCenterConstruit);
+    ajouterStory("storySaladVue", !!d.premiereSaladeFaite);
+    ajouterStory("storySeminarVue", itemsAppris.includes("seminarGuide") || !!d.trainingCenterDebloque || !!d.trainingCenterConstruit);
+    etat.storiesVues = storiesInferees;
+  }
   if (Array.isArray(d.ongletsVisites)) {
     etat.ongletsVisites = Array.from(new Set(d.ongletsVisites.filter(function(id) {
       return ONGLETS_VALIDES.includes(id);
@@ -406,10 +507,17 @@ function analyserSauvegardeBrute(raw) {
     const nom = NOMS_KITTIES[etat.kittiesData.length] || ("Cat #" + (etat.kittiesData.length + 1));
     etat.kittiesData.push({ nom: nom, metier: null, niveau: 0, xp: 0, tier: 0, managerMult: 2, catchTs: null, visage: assignerVisageChaton(nom), jobNiveau: 0 });
   }
-  // Migration: add xp field and reset niveau to 0-based for existing kitties
+  // Migration: cats from the pre-XP format used level 1 as their initial
+  // value. Only that legacy shape may be converted; current level-1 cats
+  // already have an xp field and must survive every reload unchanged.
   etat.kittiesData.forEach(function(k) {
-    if (k.xp === undefined) k.xp = 0;
-    if (k.niveau === undefined || k.niveau === 1) { k.niveau = 0; k.xp = 0; }
+    const legacySansXp = k.xp === undefined;
+    if (legacySansXp) {
+      k.xp = 0;
+      if (k.niveau === undefined || k.niveau === 1) k.niveau = 0;
+    } else if (k.niveau === undefined) {
+      k.niveau = 0;
+    }
     if (k.managerMult === undefined) k.managerMult = 2;
     if (!k.visage) k.visage = assignerVisageChaton(k.nom);
     if (k.jobNiveau === undefined) k.jobNiveau = 0;
