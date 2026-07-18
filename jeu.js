@@ -7648,8 +7648,8 @@ function clickerBird() {
   fermerDialogueModal("bird-minijeu");
   if (success) {
     if (premiere) etat.birdPremiereReussie = true;
-    etat.workBoostFinTs = Date.now() + 120000;
-    ajouterLog("event", "Bernardo caught a bird, boosting worker production x10 for 2 minutes!");
+    etat.workBoostFinTs = Date.now() + 60000;
+    ajouterLog("event", "Bernardo caught a bird, boosting worker production x10 for 1 minute!");
     var successMessage = document.getElementById("bird-success-titre");
     if (successMessage) successMessage.textContent = premiere
       ? "Great catch! This mini-game boosts worker production for a short time. Other bird types may appear in the future, and it will be harder from now on."

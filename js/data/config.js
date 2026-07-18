@@ -22,12 +22,12 @@ const CONFIG = {
     speedBonus:     0.10
   },
   woodcatting:      { secondesParUnite: 60 },
-  basicWoodcatting: { secondesParUnite: 600 },
+  basicWoodcatting: { secondesParUnite: 300 },
   grasscatting:     { secondesParUnite: 120 },
   pebblegathering: { deblocageA: 5,  secondesParUnite: 180 },
-  rockgathering:   { secondesParUnite: 2400 },
+  rockgathering:   { secondesParUnite: 900 },
   rockFactory: {
-    secondesParBrique: 12000,
+    secondesParBrique: 4500,
     secondesParRock:   1200
   },
   sawmill: {
@@ -36,7 +36,7 @@ const CONFIG = {
     secondesParCardboard: 30
   },
   basicSawmill: {
-    secondesParPlanche:   3000,
+    secondesParPlanche:   1500,
     secondesParBasicWood: 300
   },
   brickfactory: {
@@ -49,9 +49,9 @@ const CONFIG = {
     secondesParSalad:  600,
     secondesParCatnip: 60
   },
-  fishcatting:     { secondesParUnite: 1200 },
+  fishcatting:     { secondesParUnite: 600 },
   grilledAnchovy: {
-    secondesParRecette: 6000,
+    secondesParRecette: 3000,
     secondesParAnchovy: 600
   },
   scoutings: {
