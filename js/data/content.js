@@ -4,7 +4,7 @@
   const CatInc = root.CatInc = root.CatInc || {};
   CatInc.data = CatInc.data || {};
 
-const LIVRE_ICONE = '<img class="livre-icone" src="img/resources/Books_Final.png?v=0.0025" alt="Book">';
+const LIVRE_ICONE = '<img class="livre-icone" src="img/resources/Books_Final.png?v=0.0026" alt="Book">';
 
 // ── Resource info popups (Inventory tab) ─────────────────────
 // Keep this in sync whenever a resource is added or changed.
@@ -41,14 +41,14 @@ const RESOURCE_INFO = {
     nom:     "Catnip",
     tier:    "Tier 1 · Food family",
     desc:    "Fresh catnip from the garden. Nutritious, if you're a cat.",
-    produce: "Gathered by a Cat assigned to a Catnip Salads recipe.",
+    produce: "Gathered by a Cat assigned to a Catnip Salad recipe.",
     usage:   "Used inside that recipe slot (10 catnip per salad). It is never stored globally."
   },
   "inv-res-salads": {
-    nom:     "Salads",
+    nom:     "Catnip Salad",
     tier:    "Tier 1 · Food family (processed)",
     desc:    "A balanced catnip salad. Even Bernardo eats his greens.",
-    produce: "Assign a Cat to a Catnip Salads recipe in Work. The slot gathers 10 Catnip first.",
+    produce: "Assign a Cat to a Catnip Salad recipe in Work. The slot gathers 10 Catnip first.",
     usage:   "Feed to a cat in the Gang tab to give them +1 XP."
   },
   "inv-res-anchovy": {
@@ -121,7 +121,7 @@ const ITEMS = {
     id:           "compass",
     type:         "unique",
     nom:          "Compass",
-    emoji:        '<img class="inv-item-sprite" src="img/resources/Compass_Final.png?v=0.0039" alt="Compass">',
+    emoji:        '<img class="inv-item-sprite" src="img/resources/Compass_Final.png?v=0.0040" alt="Compass">',
     description:  "A battered compass recovered from the Gas Station. Its needle points beyond the neighbourhood, toward somewhere none of us have explored yet.",
     produce:      "Found in the Gas Station after sneaking through the back entrance.",
     usage:        "Useful for navigating through the woods and finding the way to the wider world.",
@@ -300,7 +300,7 @@ function builderSphereGrid() {
     spheres: [
       { id: 'builder-auto', x: 290, y: 90, r: 36, couleur: '#3aaecf',
         nom: 'AUTO BUILD',
-        desc: 'Automatically builds Wood Houses when the next house costs less than 50% of the available Planks. Adds an On/Off toggle in the Buildings tab.',
+        desc: 'Automatically builds Wood Houses when the next house costs less than 50% of the available Planks. Adds an On/Off toggle in the Houses tab.',
         etat: 'unlocked', cout: { cannedCatFood: 1 } },
       { id: 'builder-cost', x: 135, y: 290, r: 36, couleur: '#ffbf00',
         nom: 'COST REDUCED',
@@ -503,16 +503,16 @@ const NOMS_KITTIES = [
   "Violet", "Dune", "Cobble", "Toffee", "Pretzel"
 ];
 
-const KITTY_ICON = '<img src="img/interface/Gang_Final.png?v=0.0025" class="kitty-icon" alt="cat">';
-const CHECK_ICON = '<img src="img/interface/✅_Final.png?v=0.0025" class="check-icon" alt="done">';
+const KITTY_ICON = '<img src="img/interface/Gang_Final.png?v=0.0026" class="kitty-icon" alt="cat">';
+const CHECK_ICON = '<img src="img/interface/✅_Final.png?v=0.0026" class="check-icon" alt="done">';
 
 // ── Per-kitty face icons ────────────────────────────────────
 const CAT_FACES = {
-  bernardo: "img/Cat faces/Bernardo.png?v=0.0025",
-  mochi:    "img/Cat faces/Mochi_Final.png?v=0.0025",
-  luna:     "img/Cat faces/Luna_Final.png?v=0.0025",
-  alt1:     "img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0025",
-  alt2:     "img/Cat faces/Alternative Kitty face 2_Final.png?v=0.0025"
+  bernardo: "img/Cat faces/Bernardo.png?v=0.0026",
+  mochi:    "img/Cat faces/Mochi_Final.png?v=0.0026",
+  luna:     "img/Cat faces/Luna_Final.png?v=0.0026",
+  alt1:     "img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0026",
+  alt2:     "img/Cat faces/Alternative Kitty face 2_Final.png?v=0.0026"
 };
 const CAT_FACES_ALEATOIRES = [CAT_FACES.mochi, CAT_FACES.luna, CAT_FACES.alt1, CAT_FACES.alt2];
 

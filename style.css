@@ -745,6 +745,9 @@ body {
   background: var(--couleur-panneau);
   border-radius: 16px;
   box-shadow: 0 8px 36px rgba(0,0,0,0.45);
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 .recruit-title-row {
   display: flex;
@@ -913,6 +916,9 @@ body {
   font-weight: 900;
   cursor: pointer;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .recruit-pitch-btn.pitch-active {
   background: var(--couleur-survol);
@@ -5138,7 +5144,7 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
   position: relative;
   width: min(760px, 94vw, 92vh);
   aspect-ratio: 1;
-  background: url("img/resources/Open Book.png?v=0.0070") center / contain no-repeat;
+  background: url("img/resources/Open Book.png?v=0.0071") center / contain no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -6000,11 +6006,16 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
 
 @media (max-width: 768px) {
 
+  #gang-leader-banner { display: none !important; }
+
   :root {
     --hauteur-onglets-principaux-mobile: 61px;
+    --safe-area-inferieure-mobile: env(safe-area-inset-bottom, 0px);
+    --hauteur-navigation-mobile: calc(var(--hauteur-onglets-principaux-mobile) + var(--safe-area-inferieure-mobile));
     --hauteur-sous-onglets-mobile: 48px;
     --hauteur-work-sous-onglets-mobile: 48px;
     --hauteur-work-boost-mobile: 30px;
+    --hauteur-tutorial-mobile: 52px;
   }
 
   .pinfo-columns { grid-template-columns: 1fr; }
@@ -6045,7 +6056,10 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding-bottom: var(--hauteur-onglets-principaux-mobile);
+    padding-bottom: var(--hauteur-navigation-mobile);
+  }
+  @supports (height: 100dvh) {
+    body { height: 100dvh; }
   }
 
   /* Reserve the fixed boost strip in normal flow so it cannot cover game cards. */
@@ -6064,6 +6078,11 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
     flex: 1 1 auto;
     min-height: 0;
     overflow-y: auto;
+    scroll-padding-bottom: var(--hauteur-tutorial-mobile);
+  }
+  body.objectifs-disponibles #contenu-principal {
+    /* The fixed collapsed guide never covers the last part of a section. */
+    padding-bottom: var(--hauteur-tutorial-mobile);
   }
 
   /* Tab bar fixed at bottom of viewport */
@@ -6072,7 +6091,8 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
     bottom: 0;
     left: 0;
     right: 0;
-    height: var(--hauteur-onglets-principaux-mobile);
+    height: var(--hauteur-navigation-mobile);
+    padding-bottom: var(--safe-area-inferieure-mobile);
     z-index: 100;
   }
 
@@ -6114,16 +6134,25 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
     object-fit: contain;
     margin: 2px auto 10px;
   }
-  #bouton-vitesse { order: 2; padding: 6px 8px; font-size: 0.72rem; }
-  .stats-attrapage-wrapper { order: 3; display: flex; }
-  #bouton-sequence { order: 4; flex: 1 1 auto; min-width: 0; padding: 7px 8px; font-size: 0.78rem; }
-  .bouton-settings { order: 5; width: 28px; height: 28px; font-size: 0.95rem; flex-shrink: 0; }
+  #bouton-vitesse { order: 0; padding: 6px 8px; font-size: 0.72rem; }
+  .stats-attrapage-wrapper { order: 1; display: flex; }
+  #bouton-sequence { order: 2; flex: 0 1 auto; min-width: 0; padding: 7px 8px; font-size: 0.78rem; }
+  .bouton-settings { order: 4; width: 28px; height: 28px; font-size: 0.95rem; flex-shrink: 0; }
 
-  /* Progress bar + label drop to their own full-width row below */
-  .conteneur-barre { order: 10; flex-basis: 100%; }
-  .info-subtile    { order: 11; flex-basis: 100%; font-size: 0.7rem; min-width: 0; }
+  /* Keep the Next Cat label and timer on their own full-width row below. */
+  body #conteneur-barre-sequence { order: 3; width: auto; margin-inline: 0; flex: 1 1 72px; flex-basis: auto; min-width: 40px; }
+  .info-subtile    { order: 5; flex-basis: 100%; margin-top: -10px; font-size: 0.7rem; min-width: 0; }
   #info-sequence { width: 100%; flex-direction: row; gap: 6px; }
   .info-sequence-label::after { content: ":"; }
+
+  /* The family sub-tab already identifies the active family on mobile. Keep
+     the manager rail when unlocked, but remove the redundant family heading. */
+  body[data-work-filter="wood"] #famille-wood .work-recipe-family-header > div:first-child,
+  body[data-work-filter="food"] #famille-food .work-recipe-family-header > div:first-child,
+  body[data-work-filter="rock"] #famille-rock .work-recipe-family-header > div:first-child {
+    display: none;
+  }
+  .work-recipe-family-header-no-manager { display: none; }
 
   /* ── Resource bar — horizontal scroll strip ── */
   .ressources {
@@ -6145,7 +6174,7 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
   .popover-stats { min-width: 220px; left: auto; right: 0; }
 
   /* ── Tabs — ajustement mobile ── */
-  .barre-onglets { padding: 3px 4px 4px; gap: 0; }
+  .barre-onglets { padding: 3px 4px calc(4px + var(--safe-area-inferieure-mobile)); gap: 0; }
   .onglet {
     height: 52px;
     flex-direction: column;
@@ -6184,7 +6213,7 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
     position: fixed;
     left: 0;
     right: 0;
-    bottom: var(--hauteur-onglets-principaux-mobile);
+    bottom: var(--hauteur-navigation-mobile);
     z-index: 95;
     width: 100%;
     height: var(--hauteur-sous-onglets-mobile);
@@ -6204,7 +6233,7 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
     position: fixed;
     left: 0;
     right: 0;
-    bottom: var(--hauteur-onglets-principaux-mobile);
+    bottom: var(--hauteur-navigation-mobile);
     z-index: 95;
     width: 100%;
     height: var(--hauteur-work-sous-onglets-mobile);
@@ -6243,7 +6272,7 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
     position: fixed;
     left: 0;
     right: 0;
-    bottom: var(--hauteur-onglets-principaux-mobile);
+    bottom: var(--hauteur-navigation-mobile);
     z-index: 95;
     height: var(--hauteur-sous-onglets-mobile);
     padding: 4px 12px 0;
@@ -6254,15 +6283,14 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
   }
   #contenu-logs { padding-bottom: var(--hauteur-sous-onglets-mobile); }
 
-  /* An expanded guide floats above both bottom navigation rails. The
-     collapsed guide remains in its dedicated flex dock instead. */
-  body[data-onglet-actif="work"] #panneau-objectifs:not(.reduit),
-  body[data-onglet-actif="inventaire"] #panneau-objectifs:not(.reduit),
-  body[data-onglet-actif="logs"] #panneau-objectifs:not(.reduit) {
-    bottom: calc(var(--hauteur-onglets-principaux-mobile) + var(--hauteur-sous-onglets-mobile) + 8px);
+  /* The Tutorial dock stays above whichever bottom rails are currently shown. */
+  body[data-onglet-actif="work"] #panneau-objectifs,
+  body[data-onglet-actif="inventaire"] #panneau-objectifs,
+  body[data-onglet-actif="logs"] #panneau-objectifs {
+    bottom: calc(var(--hauteur-navigation-mobile) + var(--hauteur-sous-onglets-mobile));
   }
-  body[data-onglet-actif="work"] #panneau-objectifs:not(.reduit) {
-    bottom: calc(var(--hauteur-onglets-principaux-mobile) + var(--hauteur-work-sous-onglets-mobile) + 8px);
+  body[data-onglet-actif="work"] #panneau-objectifs {
+    bottom: calc(var(--hauteur-navigation-mobile) + var(--hauteur-work-sous-onglets-mobile));
   }
 
   /* ── Worker slots — touch-comfortable ── */
@@ -6502,41 +6530,55 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
 
   /* ── Objectives panel — collapsed state owns a dock slot; expanded state floats ── */
   #panneau-objectifs {
-    position: relative;
-    inset: auto;
-    flex: 0 0 auto;
-    width: 100%;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: var(--hauteur-navigation-mobile);
+    width: auto;
     max-width: none;
-    max-height: none;
+    height: var(--hauteur-tutorial-mobile);
+    min-height: var(--hauteur-tutorial-mobile);
+    max-height: var(--hauteur-tutorial-mobile);
     font-size: 0.9em;
     border-right: none;
     border-bottom: none;
     border-left: none;
     border-radius: 0;
     box-shadow: 0 -2px 8px rgba(60, 40, 20, 0.12);
+    z-index: 96;
   }
   #panneau-objectifs.reduit {
-    height: 52px;
+    height: var(--hauteur-tutorial-mobile);
+    min-height: var(--hauteur-tutorial-mobile);
+    max-height: var(--hauteur-tutorial-mobile);
   }
   #panneau-objectifs.reduit #objectifs-entete { border-radius: 0; }
   #panneau-objectifs:not(.reduit) {
-    position: fixed;
     left: 8px;
     right: 8px;
-    bottom: calc(var(--hauteur-onglets-principaux-mobile) + 8px);
     width: auto;
-    max-height: 220px;
+    height: auto;
+    min-height: 0;
+    max-height: min(62vh, 360px);
+    bottom: calc(var(--hauteur-navigation-mobile) + 8px);
+    border: 1.5px solid #e8ddd0;
+    border-radius: var(--rayon);
     z-index: 150;
   }
-  body[data-onglet-actif="work"] #panneau-objectifs.reduit {
-    margin-bottom: var(--hauteur-work-sous-onglets-mobile);
+  @supports (height: 100dvh) {
+    #panneau-objectifs:not(.reduit) { max-height: min(62dvh, 360px); }
   }
-  body[data-onglet-actif="inventaire"] #panneau-objectifs.reduit,
-  body[data-onglet-actif="logs"] #panneau-objectifs.reduit {
-    margin-bottom: var(--hauteur-sous-onglets-mobile);
+  body[data-onglet-actif="work"] #panneau-objectifs:not(.reduit),
+  body[data-onglet-actif="inventaire"] #panneau-objectifs:not(.reduit),
+  body[data-onglet-actif="logs"] #panneau-objectifs:not(.reduit) {
+    bottom: calc(var(--hauteur-navigation-mobile) + var(--hauteur-sous-onglets-mobile) + 8px);
   }
+  body[data-onglet-actif="work"] #panneau-objectifs:not(.reduit) {
+    bottom: calc(var(--hauteur-navigation-mobile) + var(--hauteur-work-sous-onglets-mobile) + 8px);
+  }
+  #panneau-objectifs:not(.reduit) #objectifs-entete { border-radius: var(--rayon) var(--rayon) 0 0; }
   .obj-guide-navigation { display: grid; }
-  .obj-guide-liste { overflow: visible; padding: 0; }
+  .obj-guide-liste { overflow-y: auto; padding: 0; }
   .obj-guide-action { display: none; }
   .obj-guide-action.obj-guide-selectionne { display: flex; }
   .obj-guide-secondaires { display: none; }

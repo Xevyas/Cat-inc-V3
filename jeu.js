@@ -28,6 +28,16 @@ const CHECK_ICON = gameContentData.CHECK_ICON;
 const CAT_FACES = gameContentData.CAT_FACES;
 const CAT_FACES_ALEATOIRES = gameContentData.CAT_FACES_ALEATOIRES;
 
+// Keep navigation and log copy text-only. Resource and item cards retain their
+// visual sprites; this only strips decorative emoji from interface labels and
+// any legacy log entries loaded from an older save.
+function retirerEmojisInterface(texte) {
+  return String(texte == null ? "" : texte)
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F\u200D]/gu, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 // Development helpers are available only through an explicit URL flag.
 // Normal games always run at 1× and never expose the forced bird trigger.
 const devQuery = typeof location !== "undefined" ? location.search : "";
@@ -119,12 +129,12 @@ const OBJECTIFS = [
 
   // ── Catnip & Catchen
   {
-    id: "firstGrasscatter", label: "Choose the Catnip Salads recipe",
+    id: "firstGrasscatter", label: "Choose the Catnip Salad recipe",
     visible:  function(e) { return e.chatons >= 5; },
     accompli: function() { return recetteChoisieCount("salads") >= 1; }
   },
   {
-    id: "firstCatchenWorker", label: "Assign a cat to the Catnip Salads recipe",
+    id: "firstCatchenWorker", label: "Assign a cat to the Catnip Salad recipe",
     visible:  function() { return recetteChoisieCount("salads") >= 1; },
     accompli: function() { return allocationCount("salads") >= 1; }
   },
@@ -462,7 +472,7 @@ function kittyIsInScoutingStaging(kittyIdx) {
 }
 
 // Maps a worker action to the exact resource it produces, e.g. "génère des Cardboard Pieces"
-var ACTION_DISPLAY = { fishcatting: "Anchovy", grilledAnchovy: "Grilled Anchovy", woodcatting: "Cardboard Pieces", basicWoodcatting: "Basic Wood", grasscatting: "Catnip", pebblegathering: "Pebbles", rockgathering: "Rocks", sawmill: "Cardboard Planks", basicSawmill: "Basic Wood Planks", brickfactory: "Pebble Bricks", rockFactory: "Rock Bricks", catchen: "Salads" };
+var ACTION_DISPLAY = { fishcatting: "Anchovy", grilledAnchovy: "Grilled Anchovy", woodcatting: "Cardboard Pieces", basicWoodcatting: "Basic Wood", grasscatting: "Catnip", pebblegathering: "Pebbles", rockgathering: "Rocks", sawmill: "Cardboard Planks", basicSawmill: "Basic Wood Planks", brickfactory: "Pebble Bricks", rockFactory: "Rock Bricks", catchen: "Catnip Salad" };
 
 function kittyAllocationLabel(kittyIdx) {
   // Recipe slot
@@ -1180,6 +1190,20 @@ function jouerSonAffectation() {
   }
 }
 
+function jouerSonMiaulement() {
+  const audio = globalThis.CatInc && globalThis.CatInc.audio;
+  if (audio && typeof audio.playCatMeow === "function") {
+    audio.playCatMeow(etat.volumeEffetsSonores);
+  }
+}
+
+function jouerSonAilesOiseau() {
+  const audio = globalThis.CatInc && globalThis.CatInc.audio;
+  if (audio && typeof audio.playBirdWingFlaps === "function") {
+    audio.playBirdWingFlaps(etat.volumeEffetsSonores);
+  }
+}
+
 function conserverSauvegardeRecuperation(raw, raison) {
   try {
     localStorage.setItem(SAVE_RECOVERY_KEY, JSON.stringify({
@@ -1438,7 +1462,7 @@ function renduLogs() {
     bloc.className = "log-texte";
     lignes.forEach(function(ligne, i) {
       if (i > 0) bloc.appendChild(document.createElement("br"));
-      bloc.appendChild(document.createTextNode(ligne));
+      bloc.appendChild(document.createTextNode(retirerEmojisInterface(ligne)));
     });
     el.appendChild(heure);
     el.appendChild(bloc);
@@ -1486,7 +1510,7 @@ let objectifsGuideStructureKey = "";
 const NOMS_DESTINATIONS_GUIDE = {
   gang: "Recruitment",
   work: "Work",
-  buildings: "Buildings",
+  buildings: "Houses",
   facilities: "Facilities",
   explorations: "Explorations",
   inventaire: "Inventory",
@@ -1561,6 +1585,7 @@ function renduObjectifs() {
   if (!panneau || !liste) return;
 
   const actifs = objectifsActifsTries();
+  document.body.classList.toggle("objectifs-disponibles", actifs.length > 0);
   if (actifs.length === 0) {
     ecrireStyle(panneau, "display", "none");
     objectifPrincipalId = null;
@@ -1961,7 +1986,7 @@ const RESOURCE_PAIRS = [
     rawLabel: "Catnip", rawIcon: "img/resources/Catnip_Final.png",
     rawUnlocked: function(u) { return u.grasscat; },
     procAction: "catchen", procRes: "salads", procCfg: CONFIG.catchen,
-    procLabel: "Catnip Salads", procIcon: "img/resources/Catnip Salad_Final.png",
+    procLabel: "Catnip Salad", procIcon: "img/resources/Catnip Salad_Final.png",
     procSecUnite: "secondesParSalad", procSecRaw: "secondesParCatnip",
     procMultAction: "catchen", procUnlocked: function(u) { return u.catchen; },
     bloqueeKey: "catchenBloquee",
@@ -1970,14 +1995,14 @@ const RESOURCE_PAIRS = [
   {
     recipeId: "grilledAnchovy", family: "food", tier: 2, rawTotalKey: "anchovyTotalRecolte",
     rawAction: "fishcatting", rawRes: "anchovy", rawCfg: CONFIG.fishcatting,
-    rawLabel: "Anchovy", rawIcon: "img/resources/Anchovy_Final.png?v=0.0028",
+    rawLabel: "Anchovy", rawIcon: "img/resources/Anchovy_Final.png?v=0.0029",
     rawUnlocked: function(u) { return u.anchovy; },
     procAction: "grilledAnchovy", procRes: "grilledAnchovy", procCfg: CONFIG.grilledAnchovy,
-    procLabel: "Grilled Anchovy", procIcon: "img/resources/Grilled Anchovy_Final.png?v=0.0028",
+    procLabel: "Grilled Anchovy", procIcon: "img/resources/Grilled Anchovy_Final.png?v=0.0029",
     procSecUnite: "secondesParRecette", procSecRaw: "secondesParAnchovy",
     procMultAction: "grilledAnchovy", procUnlocked: function(u) { return u.grilledAnchovy; },
     bloqueeKey: "catchenAnchovyBloquee",
-    inputs: [{ res: "anchovy", label: "Anchovy", icon: "img/resources/Anchovy_Final.png?v=0.0028", baseQuantity: 10, costAdjusted: true }]
+    inputs: [{ res: "anchovy", label: "Anchovy", icon: "img/resources/Anchovy_Final.png?v=0.0029", baseQuantity: 10, costAdjusted: true }]
   },
   {
     recipeId: "pebbleBricks", family: "rock", tier: 1, rawTotalKey: "pebblesTotalRecolte",
@@ -2220,7 +2245,7 @@ function renduSlotRecette(familyId, slotIdx) {
   const processingDuration = kitty ? dureeProcessingRecette(pair, kitty) : Infinity;
   const catHtml = kitty
     ? '<div class="work-recipe-cat-ring" style="--prog:' + progress.overall + '" role="progressbar" aria-label="Full recipe progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(progress.overall * 100) + '"><div class="work-recipe-cat-face">' + kittyIconHtml(kitty) + '</div>'
-      + '<button class="work-recipe-cat-remove" aria-label="Remove ' + echapperAttributHtml(kitty.nom) + ' from this recipe" onclick="retirerWorkerRecette(\'' + familyId + '\',' + slotIdx + ');event.stopPropagation()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button></div>'
+      + '<button class="work-recipe-cat-remove" aria-label="Remove ' + echapperAttributHtml(kitty.nom) + ' from this recipe" onclick="retirerWorkerRecette(\'' + familyId + '\',' + slotIdx + ');event.stopPropagation()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button></div>'
       + '<strong class="work-recipe-cat-name">' + echapperAttributHtml(kitty.nom) + '</strong>'
       + '<span class="work-recipe-cat-rate">' + libelleNombreDecimal(outputRate * 60, 2) + '/min</span>'
     : '<button class="work-recipe-cat-empty" onclick="ouvrirModalWorkerRecette(\'' + familyId + '\',' + slotIdx + ')" aria-label="Assign a Cat to ' + echapperAttributHtml(pair.procLabel) + '">+</button><strong class="work-recipe-cat-name">Assign a Cat</strong>';
@@ -2427,6 +2452,7 @@ function renduWorkPairs(u) {
   if (u.pebblecat || u.rockcat) unlockedFamilies.push("rock");
   const availableFilters = ["all"].concat(unlockedFamilies);
   if (!availableFilters.includes(workFiltre)) workFiltre = "all";
+  document.body.dataset.workFilter = workFiltre;
   ["all", "wood", "food", "rock"].forEach(function(familyId) {
     const button = domParId("filtre-work-" + familyId);
     if (!button) return;
@@ -2436,12 +2462,15 @@ function renduWorkPairs(u) {
   });
 
   const summaryVisible = workFiltre === "all";
+  ecrireStyle(domParId("btn-unaffect-all"), "display", summaryVisible ? "" : "none");
   ecrireStyle(domParId("work-summary-all"), "display", summaryVisible ? "grid" : "none");
   ["wood", "food", "rock"].forEach(function(familyId) {
     const familyEl = domParId("famille-" + familyId);
     const visible = familyId === workFiltre && unlockedFamilies.includes(familyId);
+    const familyHeader = familyEl && familyEl.querySelector(".work-recipe-family-header");
     ecrireStyle(familyEl, "display", visible ? "grid" : "none");
     ecrireStyle(domParId("work-managers-" + familyId), "display", visible && etat.jobCenterConstruit ? "grid" : "none");
+    basculerClasse(familyHeader, "work-recipe-family-header-no-manager", !visible || !etat.jobCenterConstruit);
   });
 
   unlockedFamilies.forEach(function(familyId) {
@@ -3353,6 +3382,7 @@ let workFiltre = "all";  // "all" | "wood" | "food" | "rock"
 
 function filtrerWork(filtre) {
   workFiltre = filtre || "all";
+  document.body.dataset.workFilter = workFiltre;
   ["all", "wood", "food", "rock"].forEach(function(f) {
     const el = document.getElementById("filtre-work-" + f);
     if (el) {
@@ -3498,7 +3528,7 @@ function renderCampaignCards() {
       if (resultatZone.success) {
         html += '<button class="explo-result-action explo-result-reveal" onclick="revelerZoneExploree(\'' + zoneId + '\')">🔍 Reveal the explored zone</button>';
       } else {
-        html += '<button class="explo-result-action explo-result-failure" onclick="reessayerExploZone(\'' + zoneId + '\')"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt="">Try again</button>';
+        html += '<button class="explo-result-action explo-result-failure" onclick="reessayerExploZone(\'' + zoneId + '\')"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt="">Try again</button>';
       }
     } else if (inProgress) {
       const ez        = etat.exploZoneEnCours;
@@ -3588,7 +3618,7 @@ function renderCampaignCards() {
         if (resultatCampaign.success) {
           html += '<button class="explo-result-action explo-result-reward" onclick="recupererRecompenseCampaign(\'' + camp.id + '\')">🎁 Claim campaign reward</button>';
         } else {
-          html += '<button class="explo-result-action explo-result-failure" onclick="reessayerCampaign(\'' + camp.id + '\')"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt="">Try again</button>';
+          html += '<button class="explo-result-action explo-result-failure" onclick="reessayerCampaign(\'' + camp.id + '\')"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt="">Try again</button>';
         }
       } else if (completed) {
         html += '<div class="explo-complete">' + CHECK_ICON + ' Completed &#x2014; ' + recompenseLabel(camp) + '</div>';
@@ -3989,7 +4019,7 @@ function renduCarteDetail() {
         html += '<span class="explo-slot-kitty-power">⚡ EP ' + kittyEP(ki) + '</span>';
         html += '</div>';
         html += '</div>';
-        html += '<button class="explo-slot-remove" aria-label="Remove ' + echapperAttributHtml(k ? k.nom : "cat") + ' from ' + echapperAttributHtml(zone.nom) + '" onclick="retirerKittyExploZone(\'' + zoneId + '\',' + si + ')"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>';
+        html += '<button class="explo-slot-remove" aria-label="Remove ' + echapperAttributHtml(k ? k.nom : "cat") + ' from ' + echapperAttributHtml(zone.nom) + '" onclick="retirerKittyExploZone(\'' + zoneId + '\',' + si + ')"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>';
         html += '</div>';
       }
     }
@@ -4065,7 +4095,7 @@ function renduZoneInfo() {
   let html = '<div class="zone-info-titre">' + (exploree ? zone.nom : 'Unknown zone') + '</div>';
   if (zone.description) html += '<div class="zone-description">' + zone.description + '</div>';
 
-  html += '<div class="zone-info-ligne"><span>Exploration Status ' + (exploree ? CHECK_ICON : '<img class="icon-close-inline" src="img/interface/Red Cross_Final.png?v=0.0028" alt="not explored">') + '</span></div>';
+  html += '<div class="zone-info-ligne"><span>Exploration Status ' + (exploree ? CHECK_ICON : '<img class="icon-close-inline" src="img/interface/Red Cross_Final.png?v=0.0029" alt="not explored">') + '</span></div>';
 
   html += '<div class="zone-info-bloc"><span class="zone-info-label">Campaign completion</span>';
   if (!exploree) {
@@ -5123,7 +5153,7 @@ function buildRessourcesList(u) {
     { id: "inv-res-basic-wood",      label: "Basic Wood",        category: "wood",  sprite: "img/resources/Basic Wood_Final.png",        val: function() { return 0; }, simple: true, visible: u.basicWood    },
     { id: "inv-res-wood-plank",      label: "Basic Wood Planks", category: "wood",  sprite: "img/resources/Basic Wood Plank_Final.png",  val: function() { return etat.basicWoodPlanks;  }, visible: u.basicSawmill },
     { id: "inv-res-catnip",          label: "Catnip",            category: "food",  sprite: "img/resources/Catnip_Final.png",            val: function() { return 0; }, simple: true, visible: u.grasscat     },
-    { id: "inv-res-salads",          label: "Salads",            category: "food",  sprite: "img/resources/Catnip Salad_Final.png",      val: function() { return etat.salads;           }, visible: u.catchen      },
+    { id: "inv-res-salads",          label: "Catnip Salad",       category: "food",  sprite: "img/resources/Catnip Salad_Final.png",      val: function() { return etat.salads;           }, visible: u.catchen      },
     { id: "inv-res-anchovy",         label: "Anchovy",           category: "food",  sprite: "img/resources/Anchovy_Final.png",           val: function() { return 0; }, simple: true, visible: u.anchovy      },
     { id: "inv-res-grilled-anchovy", label: "Grilled Anchovy",   category: "food",  sprite: "img/resources/Grilled Anchovy_Final.png",   val: function() { return etat.grilledAnchovy;   }, visible: u.grilledAnchovy },
     { id: "inv-res-human-leftovers",   label: "Human Leftovers",  category: "food",  sprite: "img/resources/Human Leftovers_Final.png",    val: function() { return etat.humanLeftovers;    }, visible: etat.humanLeftovers > 0    },
@@ -5169,7 +5199,7 @@ function renderInventoryTabs(u) {
   let tabsHtml = '<div class="inv-res-tabs" role="group" aria-label="Inventory categories">';
   availableTabs.forEach(function(tab) {
     const actif = resCategorieFiltree === tab.id;
-    tabsHtml += '<button class="inv-res-tab' + (actif ? " inv-res-tab-actif" : "") + '" aria-pressed="' + (actif ? "true" : "false") + '" onclick="filtrerResources(\'' + tab.id + '\')">' + tab.label + '</button>';
+    tabsHtml += '<button class="inv-res-tab' + (actif ? " inv-res-tab-actif" : "") + '" aria-pressed="' + (actif ? "true" : "false") + '" onclick="filtrerResources(\'' + tab.id + '\')">' + retirerEmojisInterface(tab.label) + '</button>';
   });
   tabsHtml += '</div>';
   tabsEl.innerHTML = tabsHtml;
@@ -5288,7 +5318,7 @@ function renderItemsList() {
         const remaining = Math.max(0, Math.ceil((etat.learningEnCours.duree - elapsed) / 1000));
         const actionLabel = item.learningGame ? "Studying" : "Learning";
         html += '<div class="inv-action-row">';
-        html += '<div id="inv-learning-label" class="inv-learning-label">📖 ' + actionLabel + '... ' + remaining + 's</div>';
+        html += '<div id="inv-learning-label" class="inv-learning-label">' + actionLabel + '... ' + remaining + 's</div>';
         html += '<div class="inv-learning-barre"><div id="inv-learning-progres" class="inv-learning-progres" style="width:' + pct + '%"></div></div>';
         html += '</div>';
       } else if (etudie && item.learningGame) {
@@ -5665,7 +5695,7 @@ function renderManagerSlot(famille) {
       +   '<span class="manager-kitty-nom">' + kitty.nom + '</span>'
       +   '<span class="manager-bonus-txt">' + bonusTxt + '</span>'
       + '</div>'
-      + '<button class="manager-slot-remove" aria-label="Remove ' + echapperAttributHtml(kitty.nom) + ' as ' + echapperAttributHtml(famille) + ' manager" onclick="retirerManager(\'' + famille + '\');event.stopPropagation()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>'
+      + '<button class="manager-slot-remove" aria-label="Remove ' + echapperAttributHtml(kitty.nom) + ' as ' + echapperAttributHtml(famille) + ' manager" onclick="retirerManager(\'' + famille + '\');event.stopPropagation()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>'
       + '</div>';
   } else {
     el.innerHTML = '<button class="manager-slot-btn" aria-label="Assign a ' + echapperAttributHtml(famille) + ' manager" onclick="ouvrirModalJC(\'manager\',\'' + famille + '\')">+ Manager</button>';
@@ -5928,7 +5958,7 @@ function renduJobCenter(u) {
         html += '<span class="jc-slot-metier">Stray Cat</span>';
         html += '</div>';
         html += '</div>';
-        html += '<button class="jc-slot-remove" aria-label="Remove ' + echapperAttributHtml(kitty ? kitty.nom : "cat") + ' from job training" onclick="jcFormationKittySelectionne=null;jcDirty=true"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>';
+        html += '<button class="jc-slot-remove" aria-label="Remove ' + echapperAttributHtml(kitty ? kitty.nom : "cat") + ' from job training" onclick="jcFormationKittySelectionne=null;jcDirty=true"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>';
         html += '</div>';
       } else {
         html += '<div class="jc-slot-empty" data-jc-modal-trigger="formation"' + attributsActivationClavier("Select an unassigned cat for job training") + ' onclick="ouvrirModalJC(\'formation\')">';
@@ -6002,6 +6032,7 @@ function terminerSequence() {
   const nom = nomProchainChat();
   etat.kittiesData.push({ nom: nom, metier: null, niveau: 0, xp: 0, tier: 0, managerMult: 1.5, catchTs: Date.now(), visage: visage, jobNiveau: 0 });
   etat.prochainVisageChaton = null;
+  jouerSonMiaulement();
   if (!etaitRecruit) afficherNotification("🐱 " + nom + " joined the gang!");
   ajouterLog("event", nom + (etaitRecruit ? " recruited!" : " caught!"));
   demarrerRechargeCatch();
@@ -6014,8 +6045,8 @@ function terminerSequence() {
     planifierOiseau();
   }
   if (etat.chatons === 5) {
-    afficherNotification("🌿 Food recipes unlocked! Catnip Salads can now be produced in Work.");
-    ajouterLog("unlock", "Food recipes unlocked. Catnip Salads are now available in Work.");
+    afficherNotification("🌿 Food recipes unlocked! Catnip Salad can now be produced in Work.");
+    ajouterLog("unlock", "Food recipes unlocked. Catnip Salad is now available in Work.");
   }
   if (etat.chatons === 6) {
     afficherNotification("🗺️ Explorations unlocked! Send your cats on expeditions.");
@@ -6254,7 +6285,7 @@ function tick() {
       const labelEl   = document.getElementById("inv-learning-label");
       const progEl    = document.getElementById("inv-learning-progres");
       const actionLabel = ITEMS[lc.itemId] && ITEMS[lc.itemId].learningGame ? "Studying" : "Learning";
-      if (labelEl) labelEl.textContent = "📖 " + actionLabel + "... " + remaining + "s";
+      if (labelEl) labelEl.textContent = actionLabel + "... " + remaining + "s";
       if (progEl)  progEl.style.width  = pct + "%";
     }
   }
@@ -6305,8 +6336,8 @@ function tick() {
     renduStories();
   }
   if (cardboardPlanksAvant < 1 && etat.cardboardPlanks >= 1) {
-    afficherNotification("🏗️ Buildings unlocked! Build your first Cardboard Box.");
-    ajouterLog("unlock", "Buildings unlocked. Build your first Cardboard Box.");
+    afficherNotification("🏗️ Houses unlocked! Build your first Cardboard Box.");
+    ajouterLog("unlock", "Houses unlocked. Build your first Cardboard Box.");
   }
   const resultatSalade = resultatsRecettes.salads;
   if (resultatSalade && resultatSalade.produced > 0 && !etat.premiereSaladeFaite) {
@@ -6520,7 +6551,7 @@ function afficherResumeAbsence(resume) {
     ["🪵 Basic Wood Planks", resume.basicWoodPlanks],
     ["🪨 Pebble Bricks",    resume.pebbleBricks],
     ["🧱 Rock Bricks",      resume.rockBricks],
-    ["🥗 Salads",           resume.salads],
+    ["🥗 Catnip Salad",      resume.salads],
     ["🐟 Grilled Anchovy",  resume.grilledAnchovy]
   ];
   let produit = false;
@@ -6547,14 +6578,14 @@ const STORY_ASSETS = {
   "ecran-story-2":      { type: "icon",         src: "img/Cat faces/Mochi_Final.png", alt: "Portrait of Mochi." },
   "ecran-story-3":      { type: "illustration", src: "img/Story scenes/Story 3.png", alt: "Bernardo addresses two other kittens in the garden." },
   "ecran-story-4":      { type: "illustration", src: "img/Story scenes/Story 4.png", alt: "Three kittens admire their first cardboard shelter." },
-  "ecran-story-basic-wood": { type: "icon",      src: "img/resources/Basic Wood_Final.png?v=0.0028", alt: "A stack of sturdy Basic Wood logs." },
+  "ecran-story-basic-wood": { type: "icon",      src: "img/resources/Basic Wood_Final.png?v=0.0029", alt: "A stack of sturdy Basic Wood logs." },
   "ecran-story-5":      { type: "icon",         src: "img/Cat faces/Bernardo.png", alt: "Portrait of Bernardo." },
   "ecran-story-6a":     { type: "icon",         src: "img/resources/Books_Final.png", alt: "A mysterious book found during scouting." },
   "ecran-story-6b":     { type: "illustration", src: "img/Story scenes/Story 6b.png", alt: "Bernardo studies charts and diagrams in an open book." },
   "ecran-story-salad":  { type: "icon",         src: "img/resources/Catnip Salad_Final.png", alt: "A freshly prepared Catnip Salad." },
   "ecran-story-seminar":{ type: "icon",         src: "img/resources/Books_Final.png", alt: "A corporate seminar booklet." },
   "ecran-story-explorator": { type: "icon",      src: "img/Cat faces/Bernardo.png", alt: "Portrait of the gang's first Explorator." },
-  "ecran-story-bird":   { type: "illustration", src: "img/Story scenes/Bernardo caught bird.png?v=0.0028", alt: "Bernardo leaps toward a bird perched on a tree branch." },
+  "ecran-story-bird":   { type: "illustration", src: "img/Story scenes/Bernardo caught bird.png?v=0.0029", alt: "Bernardo leaps toward a bird perched on a tree branch." },
 };
 
 const STORIES = [
@@ -6841,9 +6872,10 @@ document.getElementById("bouton-intro").addEventListener("click", function() {
 function changerOnglet(id) {
   if (!IDS_ONGLETS.includes(id)) return;
   if (id === "logs" && etat.chatons < 3) return;
+  const estMobile = window.matchMedia("(max-width: 768px)").matches;
   // On mobile, the Gang tab is the list landing view. Returning to it from
   // another tab must not reopen the kitty profile that was previously open.
-  if (id === "gang" && window.matchMedia("(max-width: 768px)").matches) {
+  if (id === "gang" && estMobile) {
     detailKittyMobileOuvert = false;
   }
   document.body.classList.remove("interface-compacte");
@@ -6864,6 +6896,15 @@ function changerOnglet(id) {
   if (id === "facilities")  { jcDirty = true; }
   rendu(); // render the newly visible tab immediately instead of waiting for the next 100 ms tick
   if (id === "gang") renduManagement();
+  if (estMobile) {
+    // Every tab opens from its own top. The guide is collapsed into its fixed
+    // dock so it cannot retain an overlay or move the new section off-screen.
+    definirObjectifsReduits(true);
+    const contenuPrincipal = document.getElementById("contenu-principal");
+    const panneauActif = document.getElementById("contenu-" + id);
+    if (contenuPrincipal) contenuPrincipal.scrollTop = 0;
+    if (panneauActif) panneauActif.scrollTop = 0;
+  }
 }
 
 function gererNavigationOnglets(e) {
@@ -6894,7 +6935,8 @@ function gererDensiteMobileAuScroll() {
     document.body.classList.remove("interface-compacte");
     return;
   }
-  const position = document.scrollingElement ? document.scrollingElement.scrollTop : window.scrollY;
+  const contenuPrincipal = document.getElementById("contenu-principal");
+  const position = contenuPrincipal ? contenuPrincipal.scrollTop : window.scrollY;
   const estCompacte = document.body.classList.contains("interface-compacte");
 
   // Deux seuils evitent la boucle produite quand le bandeau raccourci modifie
@@ -7353,7 +7395,7 @@ function ouvrirPopupRecruitResult(reussi, nom, visage) {
     portrait.alt = nom + " portrait";
   }
   if (badge) {
-    badge.src = reussi ? "img/interface/✅_Final.png?v=0.0025" : "img/interface/Red Cross_Final.png?v=0.0028";
+    badge.src = reussi ? "img/interface/✅_Final.png?v=0.0026" : "img/interface/Red Cross_Final.png?v=0.0029";
     badge.alt = reussi ? "Success" : "Failed";
   }
   if (message) message.textContent = reussi
@@ -7371,6 +7413,10 @@ function fermerPopupRecruitResult() {
 
 document.addEventListener("pointerup", function() { definirPitchRecruitActif(false); });
 window.addEventListener("blur", function() { definirPitchRecruitActif(false); });
+document.addEventListener("selectstart", function(event) {
+  var target = event.target;
+  if (target && target.closest && target.closest(".recruit-minijeu-carte")) event.preventDefault();
+});
 
 // ════════════════════════════════════════════════════════════
 // 13d. BIRD MINI-GAME
@@ -7405,6 +7451,7 @@ function planifierOiseau() {
 
 function montrerOiseau() {
   if (!catheringDebloquee()) return;
+  jouerSonAilesOiseau();
   var el = document.getElementById("bird-btn");
   if (el) el.style.display = "inline-flex";
   var dbg = document.getElementById("bird-debug-btn");

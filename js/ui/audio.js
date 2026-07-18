@@ -3,8 +3,12 @@
 
   const CatInc = root.CatInc = root.CatInc || {};
   const SOURCES = Object.freeze({
-    catAssignment: "Sounds/Meow Modal.mp3"
+    meowNormal: "Sounds/Meows/Meow Normal.wav",
+    meowPurr: "Sounds/Meows/Meow Purr.wav",
+    meowStrong: "Sounds/Meows/Meow Strong.wav",
+    birdWingFlaps: "Sounds/Bird/Bird Wing Flaps.wav"
   });
+  let assignmentMeowIndex = 0;
 
   function clampVolume(value) {
     const number = Number(value);
@@ -24,7 +28,15 @@
   CatInc.audio = Object.freeze({
     sources: SOURCES,
     playCatAssignment: function(volume) {
-      play(SOURCES.catAssignment, volume);
+      var meow = assignmentMeowIndex === 0 ? SOURCES.meowNormal : SOURCES.meowStrong;
+      assignmentMeowIndex = assignmentMeowIndex === 0 ? 1 : 0;
+      play(meow, volume);
+    },
+    playCatMeow: function(volume) {
+      play(SOURCES.meowPurr, volume);
+    },
+    playBirdWingFlaps: function(volume) {
+      play(SOURCES.birdWingFlaps, volume);
     }
   });
 })(typeof window !== "undefined" ? window : globalThis);

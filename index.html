@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0095" />
+  <link rel="stylesheet" href="style.css?v=0.0101" />
 </head>
 <body>
 
@@ -25,7 +25,7 @@
   <!-- MANDATORY SAVE RESTART: recipe-based Work update -->
   <div id="save-upgrade-modal" class="ecran-intro save-upgrade-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="save-upgrade-title" aria-describedby="save-upgrade-copy" style="display:none">
     <div class="intro-boite save-upgrade-box" role="document" tabindex="-1">
-      <img class="save-upgrade-logo" src="img/interface/Cat Inc. Logo_Final.png?v=0.0028" alt="Cat Inc">
+      <img class="save-upgrade-logo" src="img/interface/Cat Inc. Logo_Final.png?v=0.0029" alt="Cat Inc">
       <div class="intro-dialogue">
         <h2 id="save-upgrade-title" class="save-upgrade-title">A new way to work</h2>
         <p id="save-upgrade-copy" class="save-upgrade-copy">Work has been completely rebuilt around recipes. Your previous save uses the old production system and cannot continue with this update.</p>
@@ -252,8 +252,8 @@
   <!-- HEADER -->
   <header class="header">
     <div class="titre-zone">
-      <h1 class="titre"><img class="titre-logo" src="img/interface/Cat Inc. Logo_Final.png?v=0.0028" alt="Cat Inc"></h1>
-      <button class="bouton-settings" onclick="ouvrirModalSettings()" title="Settings" aria-label="Open Settings"><img src="img/interface/Settings_Final.png?v=0.0028" alt=""></button>
+      <h1 class="titre"><img class="titre-logo" src="img/interface/Cat Inc. Logo_Final.png?v=0.0029" alt="Cat Inc"></h1>
+      <button class="bouton-settings" onclick="ouvrirModalSettings()" title="Settings" aria-label="Open Settings"><img src="img/interface/Settings_Final.png?v=0.0029" alt=""></button>
     </div>
     <div class="zone-sequence">
       <button id="bouton-vitesse" onclick="cyclerVitesse()">1×</button>
@@ -272,7 +272,7 @@
       <button id="bouton-sequence">Catch a cat 🐾</button>
       <div class="conteneur-barre" id="conteneur-barre-sequence" style="display:none">
         <div id="barre-sequence" class="barre barre-verte">
-          <img id="sequence-chat-marker" class="sequence-chat-marker" src="img/Cat faces/Bernardo.png?v=0.0025" alt="Bernardo">
+          <img id="sequence-chat-marker" class="sequence-chat-marker" src="img/Cat faces/Bernardo.png?v=0.0026" alt="Bernardo">
         </div>
       </div>
       <div id="info-sequence" class="info-subtile" aria-live="polite">
@@ -293,7 +293,7 @@
       <div class="reflex-status-row" aria-hidden="true"><span>TIMING</span><span>ONE ATTEMPT</span></div>
       <div class="bird-track">
         <div class="bird-target">
-          <img class="bird-target-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0028" alt="Bird target">
+          <img class="bird-target-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0029" alt="Bird target">
         </div>
         <div id="bird-cursor" class="bird-cursor"></div>
       </div>
@@ -313,10 +313,10 @@
 
   <!-- RESOURCES -->
   <section class="ressources" aria-label="Resources">
-    <button id="bird-btn" onclick="ouvrirBirdMiniJeu()" title="Bernardo spotted a bird!" aria-label="Open the bird mini-game" style="display:none"><img class="bird-btn-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0028" alt=""></button>
-    <button id="bird-debug-btn" onclick="montrerOiseau()" title="[DEV] Force bird spawn" aria-label="Force a bird spawn for testing" class="bird-debug-btn"><img class="bird-btn-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0028" alt=""></button>
+    <button id="bird-btn" onclick="ouvrirBirdMiniJeu()" title="Bernardo spotted a bird!" aria-label="Open the bird mini-game" style="display:none"><img class="bird-btn-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0029" alt=""></button>
+    <button id="bird-debug-btn" onclick="montrerOiseau()" title="[DEV] Force bird spawn" aria-label="Force a bird spawn for testing" class="bird-debug-btn"><img class="bird-btn-icone" src="img/interface/Bird Minigame Icon_Final.png?v=0.0029" alt=""></button>
     <div class="ressource" data-tooltip="Cats">
-      <img class="ressource-icone" src="img/interface/Gang_Final.png?v=0.0028" alt="Cats">
+      <img class="ressource-icone" src="img/interface/Gang_Final.png?v=0.0029" alt="Cats">
       <div class="ressource-chiffres">
         <span class="ressource-valeur" id="val-chatons">0</span>
       </div>
@@ -349,7 +349,7 @@
         <span class="ressource-taux" id="taux-rock-bricks"></span>
       </div>
     </div>
-    <div class="ressource" id="row-salads" data-tooltip="Salads" style="display:none">
+    <div class="ressource" id="row-salads" data-tooltip="Catnip Salad" style="display:none">
       <img class="ressource-icone" src="img/resources/Catnip Salad_Final.png" alt="Catnip Salad">
       <div class="ressource-chiffres">
         <span class="ressource-valeur" id="val-salads">0</span>
@@ -357,26 +357,26 @@
       </div>
     </div>
     <div class="ressource" id="row-grilled-anchovy" data-tooltip="Grilled Anchovy" style="display:none">
-      <img class="ressource-icone" src="img/resources/Grilled Anchovy_Final.png?v=0.0028" alt="Grilled Anchovy">
+      <img class="ressource-icone" src="img/resources/Grilled Anchovy_Final.png?v=0.0029" alt="Grilled Anchovy">
       <div class="ressource-chiffres">
         <span class="ressource-valeur" id="val-grilled-anchovy">0</span>
         <span class="ressource-taux" id="taux-grilled-anchovy"></span>
       </div>
     </div>
     <div class="ressource" id="row-human-leftovers" data-tooltip="Human Leftovers" style="display:none">
-      <img class="ressource-icone" src="img/resources/Human Leftovers_Final.png?v=0.0028" alt="Human Leftovers">
+      <img class="ressource-icone" src="img/resources/Human Leftovers_Final.png?v=0.0029" alt="Human Leftovers">
       <div class="ressource-chiffres">
         <span class="ressource-valeur" id="val-human-leftovers">0</span>
       </div>
     </div>
     <div class="ressource" id="row-human-workers-food" data-tooltip="Workers Food" style="display:none">
-      <img class="ressource-icone" src="img/resources/Human Workers Food_Final.png?v=0.0028" alt="Workers Food">
+      <img class="ressource-icone" src="img/resources/Human Workers Food_Final.png?v=0.0029" alt="Workers Food">
       <div class="ressource-chiffres">
         <span class="ressource-valeur" id="val-human-workers-food">0</span>
       </div>
     </div>
     <div class="ressource" id="row-canned-cat-food" data-tooltip="Canned Cat Food" style="display:none">
-      <img class="ressource-icone" src="img/resources/Canned Cat Food_Final.png?v=0.0028" alt="Canned Cat Food">
+      <img class="ressource-icone" src="img/resources/Canned Cat Food_Final.png?v=0.0029" alt="Canned Cat Food">
       <div class="ressource-chiffres">
         <span class="ressource-valeur" id="val-canned-cat-food">0</span>
       </div>
@@ -386,9 +386,9 @@
 
   <!-- ONGLETS: moved to bottom via flex order on mobile; stays here on desktop -->
   <div class="barre-onglets" role="tablist" aria-label="Main sections" aria-orientation="horizontal">
-    <button id="onglet-gang"         class="onglet onglet-actif" role="tab" aria-selected="true" aria-controls="contenu-gang" tabindex="0" onclick="changerOnglet('gang')"><img class="onglet-icone" src="img/interface/Gang_Final.png?v=0.0028" alt=""> <span class="onglet-label" data-mobile-label="Gang">Gang</span></button>
+    <button id="onglet-gang"         class="onglet onglet-actif" role="tab" aria-selected="true" aria-controls="contenu-gang" tabindex="0" onclick="changerOnglet('gang')"><img class="onglet-icone" src="img/interface/Gang_Final.png?v=0.0029" alt=""> <span class="onglet-label" data-mobile-label="Gang">Gang</span></button>
     <button id="onglet-work"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-work" tabindex="-1" style="display:none" onclick="changerOnglet('work')"><img class="onglet-icone" src="img/interface/Work_Final.png?v=2" alt=""> <span class="onglet-label" data-mobile-label="Work">Work</span></button>
-    <button id="onglet-buildings"    class="onglet" role="tab" aria-selected="false" aria-controls="contenu-buildings" tabindex="-1" style="display:none" onclick="changerOnglet('buildings')"><img class="onglet-icone" src="img/interface/Building_Tier1_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Build">Buildings</span></button>
+    <button id="onglet-buildings"    class="onglet" role="tab" aria-selected="false" aria-controls="contenu-buildings" tabindex="-1" style="display:none" onclick="changerOnglet('buildings')"><img class="onglet-icone" src="img/interface/Building_Tier1_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Houses">Houses</span></button>
     <button id="onglet-facilities"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-facilities" tabindex="-1" style="display:none" onclick="changerOnglet('facilities')"><img class="onglet-icone" src="img/Buildings/Job Center_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Jobs">Facilities</span></button>
     <button id="onglet-explorations" class="onglet" role="tab" aria-selected="false" aria-controls="contenu-explorations" tabindex="-1" style="display:none" onclick="changerOnglet('explorations')"><img class="onglet-icone" src="img/interface/Exploration_Final.png" alt=""><span id="exploration-tab-alerts" class="exploration-tab-alerts" role="status" style="display:none"></span> <span class="onglet-label" data-mobile-label="Explore">Explorations</span></button>
     <button id="onglet-inventaire"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-inventaire" tabindex="-1" onclick="changerOnglet('inventaire')"><img class="onglet-icone" src="img/interface/Inventory_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Bag">Inventory</span></button>
@@ -412,7 +412,7 @@
           <button class="btn-filtre-work" id="filtre-work-rock" aria-pressed="false" onclick="filtrerWork('rock')"><span>Rocks</span><span class="work-family-warning" id="work-warning-rock" hidden></span></button>
         </div>
       </div>
-      <button class="btn-unaffect-all" onclick="deallouerTous()">↩ Unassign all Cats</button>
+      <button class="btn-unaffect-all" id="btn-unaffect-all" onclick="deallouerTous()">↩ Unassign all Cats</button>
     </div>
     <div id="work-discovery-hint" class="work-discovery-hint" role="note">
       <div class="work-discovery-hint-copy">
@@ -601,14 +601,14 @@
       <p>Review important events or replay the stories you have unlocked.</p>
     </div>
     <div id="logs-souscontenu" role="tablist" aria-label="Log views" aria-orientation="horizontal">
-      <button id="logs-subtab-log" class="logs-subtab logs-subtab-actif" role="tab" aria-selected="true" aria-controls="logs-vue-log" tabindex="0" onclick="changerSousOngletLogs('log')">📜 Log</button>
-      <button id="logs-subtab-stories" class="logs-subtab" role="tab" aria-selected="false" aria-controls="logs-vue-stories" tabindex="-1" onclick="changerSousOngletLogs('stories')">📖 Stories</button>
+      <button id="logs-subtab-log" class="logs-subtab logs-subtab-actif" role="tab" aria-selected="true" aria-controls="logs-vue-log" tabindex="0" onclick="changerSousOngletLogs('log')">Log</button>
+      <button id="logs-subtab-stories" class="logs-subtab" role="tab" aria-selected="false" aria-controls="logs-vue-stories" tabindex="-1" onclick="changerSousOngletLogs('stories')">Stories</button>
     </div>
     <div id="logs-vue-log" class="logs-vue" role="tabpanel" aria-labelledby="logs-subtab-log" aria-hidden="false">
       <div id="logs-filtres">
-        <button id="filtre-event"  class="filtre-btn" aria-pressed="true" onclick="toggleFiltreLogs('event')">🐾 Events</button>
-        <button id="filtre-unlock" class="filtre-btn" aria-pressed="true" onclick="toggleFiltreLogs('unlock')">🔓 Unlocks</button>
-        <button id="filtre-objective" class="filtre-btn filtre-inactif" aria-pressed="false" onclick="toggleFiltreLogs('objective')">🎯 Guide</button>
+        <button id="filtre-event"  class="filtre-btn" aria-pressed="true" onclick="toggleFiltreLogs('event')">Events</button>
+        <button id="filtre-unlock" class="filtre-btn" aria-pressed="true" onclick="toggleFiltreLogs('unlock')">Unlocks</button>
+        <button id="filtre-objective" class="filtre-btn filtre-inactif" aria-pressed="false" onclick="toggleFiltreLogs('objective')">Guide</button>
       </div>
       <div id="logs-liste"></div>
     </div>
@@ -643,11 +643,11 @@
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalSettings()"></div>
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
-        <span class="explo-modal-titre" id="settings-modal-titre"><img src="img/interface/Settings_Final.png?v=0.0028" alt=""> Settings</span>
-        <button class="explo-modal-close" aria-label="Close Settings" onclick="fermerModalSettings()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>
+        <span class="explo-modal-titre" id="settings-modal-titre"><img src="img/interface/Settings_Final.png?v=0.0029" alt=""> Settings</span>
+        <button class="explo-modal-close" aria-label="Close Settings" onclick="fermerModalSettings()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <div class="settings-corps">
-        <img class="settings-logo-mobile" src="img/interface/Cat Inc. Logo_Final.png?v=0.0028" alt="Cat Inc">
+        <img class="settings-logo-mobile" src="img/interface/Cat Inc. Logo_Final.png?v=0.0029" alt="Cat Inc">
         <button class="settings-btn" onclick="sauvegarderManuel()">Save now</button>
         <button class="settings-btn" onclick="exporterSauvegarde()">Export save (.txt)</button>
         <button class="settings-btn" onclick="document.getElementById('import-fichier').click()">Import save (.txt)</button>
@@ -671,7 +671,7 @@
           <span class="settings-toggle-switch"></span>
         </label>
         <div class="settings-separateur"></div>
-        <div class="settings-version" aria-label="Game version">Version <strong>v0.0028</strong></div>
+        <div class="settings-version" aria-label="Game version">Version <strong>v0.0029</strong></div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
       </div>
     </div>
@@ -683,7 +683,7 @@
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
         <span class="explo-modal-titre" id="jc-modal-titre">🐱 Choose a cat</span>
-        <button class="explo-modal-close" aria-label="Close cat selection" onclick="fermerModalJC()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>
+        <button class="explo-modal-close" aria-label="Close cat selection" onclick="fermerModalJC()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <div id="jc-modal-contenu"></div>
     </div>
@@ -695,7 +695,7 @@
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
         <span class="explo-modal-titre" id="worker-modal-titre">🐱 Assign a cat</span>
-        <button class="explo-modal-close" aria-label="Close worker selection" onclick="fermerModalWorker()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>
+        <button class="explo-modal-close" aria-label="Close worker selection" onclick="fermerModalWorker()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <div id="worker-modal-kitties"></div>
     </div>
@@ -707,7 +707,7 @@
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
         <span class="explo-modal-titre" id="recipe-modal-title">Choose a recipe</span>
-        <button class="explo-modal-close" aria-label="Close recipe selection" onclick="fermerModalRecette()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>
+        <button class="explo-modal-close" aria-label="Close recipe selection" onclick="fermerModalRecette()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <div id="recipe-modal-list" class="recipe-modal-list"></div>
     </div>
@@ -719,7 +719,7 @@
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
         <span class="explo-modal-titre" id="work-confirm-title">Confirm action</span>
-        <button class="explo-modal-close" aria-label="Close confirmation" onclick="annulerConfirmationTravail()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>
+        <button class="explo-modal-close" aria-label="Close confirmation" onclick="annulerConfirmationTravail()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <p class="work-confirm-copy" id="work-confirm-copy"></p>
       <div class="work-confirm-actions">
@@ -735,7 +735,7 @@
     <div class="explo-modal-panneau" role="document" tabindex="-1">
       <div class="explo-modal-header">
         <span class="explo-modal-titre" id="explo-modal-titre">🐱 Choose a cat</span>
-        <button class="explo-modal-close" aria-label="Close exploration selection" onclick="fermerModalExplo()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>
+        <button class="explo-modal-close" aria-label="Close exploration selection" onclick="fermerModalExplo()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <div id="explo-modal-kitties"></div>
     </div>
@@ -753,7 +753,7 @@
       <div class="reflex-status-row" aria-hidden="true"><span>TIMING</span><span>DON'T MISS!</span></div>
       <div class="bird-track">
         <div class="bird-target cat-catch-target">
-          <img id="cat-catch-target-icone" class="bird-target-icone cat-catch-target-icone" src="img/Cat faces/Bernardo.png?v=0.0025" alt="Bernardo target">
+          <img id="cat-catch-target-icone" class="bird-target-icone cat-catch-target-icone" src="img/Cat faces/Bernardo.png?v=0.0026" alt="Bernardo target">
         </div>
         <div id="cat-catch-cursor" class="bird-cursor"></div>
       </div>
@@ -775,11 +775,11 @@
       <div class="recruit-scene">
         <div id="recruit-visitor-speech" class="recruit-speech recruit-speech-visitor" aria-label="Visitor says: I'm alone and I haven't eaten in days.">I'm alone... and I haven't eaten in days.</div>
         <div class="recruit-portrait-wrap recruit-portrait-visitor">
-          <img id="recruit-target-portrait" class="recruit-portrait" src="img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0025" alt="">
+          <img id="recruit-target-portrait" class="recruit-portrait" src="img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0026" alt="">
           <span id="recruit-target-name">Visitor</span>
         </div>
         <div class="recruit-portrait-wrap recruit-portrait-bernardo">
-          <img class="recruit-portrait" src="img/Cat faces/Bernardo.png?v=0.0025" alt="">
+          <img class="recruit-portrait" src="img/Cat faces/Bernardo.png?v=0.0026" alt="">
           <span>Bernardo</span>
         </div>
         <div id="recruit-bernardo-speech" class="recruit-speech recruit-speech-bernardo" aria-label="Bernardo says: We have plenty of food. Join us, and you'll never go hungry again.">We have plenty of food. Join us, and you'll never go hungry again.</div>
@@ -807,8 +807,8 @@
     <div id="recruit-result-card" class="recruit-result-card" role="document" tabindex="-1">
       <h3 id="recruit-result-title">Recruitment successful!</h3>
       <div class="recruit-result-portrait-wrap">
-        <img id="recruit-result-portrait" class="recruit-result-portrait" src="img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0025" alt="">
-        <img id="recruit-result-badge" class="recruit-result-badge" src="img/interface/✅_Final.png?v=0.0025" alt="Success">
+        <img id="recruit-result-portrait" class="recruit-result-portrait" src="img/Cat faces/Alternative Kitty face 1_Final.png?v=0.0026" alt="">
+        <img id="recruit-result-badge" class="recruit-result-badge" src="img/interface/✅_Final.png?v=0.0026" alt="Success">
       </div>
       <p id="recruit-result-message">The cat is convinced and agrees to join the Gang!</p>
       <button id="recruit-result-action" class="bird-success-btn" type="button" onclick="fermerPopupRecruitResult()">Continue</button>
@@ -819,7 +819,7 @@
   <div id="book-learning-modal" class="explo-modal book-learning-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="book-learning-title" aria-describedby="book-learning-instructions" style="display:none">
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerMiniJeuLivre()"></div>
     <div class="book-learning-panel" role="document" tabindex="-1">
-      <button class="explo-modal-close book-learning-close" aria-label="Close book lesson" onclick="fermerMiniJeuLivre()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>
+      <button class="explo-modal-close book-learning-close" aria-label="Close book lesson" onclick="fermerMiniJeuLivre()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       <div class="book-learning-content">
         <h2 id="book-learning-title">Learn from the School Guide</h2>
         <p id="book-learning-instructions">Complete the sentence with the correct words.</p>
@@ -834,15 +834,15 @@
 
   <div id="inv-res-popup" role="tooltip" aria-hidden="true" style="display:none"></div>
 
-  <script src="js/cat-inc.js?v=0.0031"></script>
-  <script src="js/data/config.js?v=0.0036"></script>
-  <script src="js/data/content.js?v=0.0046"></script>
-  <script src="js/core/state.js?v=0.0036"></script>
-  <script src="js/core/save.js?v=0.0038"></script>
-  <script src="js/core/production.js?v=0.0035"></script>
-  <script src="js/ui/dom.js?v=0.0031"></script>
-  <script src="js/ui/audio.js?v=0.0001"></script>
-  <script src="jeu.js?v=0.0111"></script>
+  <script src="js/cat-inc.js?v=0.0032"></script>
+  <script src="js/data/config.js?v=0.0037"></script>
+  <script src="js/data/content.js?v=0.0048"></script>
+  <script src="js/core/state.js?v=0.0037"></script>
+  <script src="js/core/save.js?v=0.0039"></script>
+  <script src="js/core/production.js?v=0.0036"></script>
+  <script src="js/ui/dom.js?v=0.0032"></script>
+  <script src="js/ui/audio.js?v=0.0004"></script>
+  <script src="jeu.js?v=0.0117"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>
