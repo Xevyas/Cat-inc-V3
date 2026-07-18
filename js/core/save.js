@@ -59,9 +59,9 @@ function validerStructureSauvegarde(d) {
     "dernierTimestamp", "chatons", "wood", "woodTotalRecolte", "cardboard", "cardboardTotalRecolte",
     "cardboardPieces", "cardboardPiecesTotalRecolte", "basicWood", "basicWoodTotalRecolte", "catnip",
     "catnipTotalRecolte", "pebbles", "pebblesTotalRecolte", "rocks", "rocksTotalRecolte", "planks",
-    "cardboardPlanks", "basicWoodPlanks", "bricks", "pebbleBricks", "rockBricks", "salads", "anchovy",
+    "cardboardPlanks", "cardboardPlanksTotalProduit", "basicWoodPlanks", "bricks", "pebbleBricks", "rockBricks", "salads", "anchovy",
     "anchovyTotalRecolte", "grilledAnchovy", "humanLeftovers", "humanWorkersFood", "cannedCatFood",
-    "workBoostFinTs", "sequenceDebutTs", "sequenceDuree", "clicCount", "reductionAuMomentDuClic",
+    "workBoostFinTs", "birdPremierSpawnTs", "sequenceDebutTs", "sequenceDuree", "sequenceProgressBrute", "sequenceDerniereMajTs", "sequenceVitesseDerniere", "clicCount", "reductionAuMomentDuClic",
     "reductionCumulee", "cathouseCount", "stoneCathouseCount", "volumeEffetsSonores", "volumeMusique"
   ];
   for (const cle of champsNumeriques) {
@@ -81,7 +81,7 @@ function validerStructureSauvegarde(d) {
   const champsBooleens = [
     "sequenceEnCours", "afficherTempsAjusteRecrutement", "autoBuildWoodHouses", "scieriBloquee", "basicSawmillBloquee",
     "brickBloquee", "rockFactoryBloquee", "catchenBloquee", "catchenAnchovyBloquee", "premiereSaladeFaite",
-    "jobCenterDebloque", "jobCenterConstruit", "trainingCenterDebloque", "trainingCenterConstruit",
+    "jobCenterDebloque", "jobCenterConstruit", "trainingCenterDebloque", "trainingCenterConstruit", "birdPremiereReussie",
     "managersDebloques"
   ];
   for (const cle of champsBooleens) {
@@ -288,6 +288,7 @@ function analyserSauvegardeBrute(raw) {
     pebbles:                etat.pebbles,           pebblesTotalRecolte:   etat.pebblesTotalRecolte,
     rocks:                  etat.rocks,             rocksTotalRecolte:     etat.rocksTotalRecolte,
     cardboardPlanks:        etat.cardboardPlanks,
+    cardboardPlanksTotalProduit: etat.cardboardPlanksTotalProduit,
     basicWoodPlanks:        etat.basicWoodPlanks,
     pebbleBricks:           etat.pebbleBricks,
     rockBricks:             etat.rockBricks,
@@ -299,9 +300,14 @@ function analyserSauvegardeBrute(raw) {
     cannedCatFood:          etat.cannedCatFood,
     spherePerks:            etat.spherePerks,
     workBoostFinTs:         etat.workBoostFinTs,
+    birdPremierSpawnTs:      etat.birdPremierSpawnTs,
+    birdPremiereReussie:     etat.birdPremiereReussie,
     sequenceEnCours:         etat.sequenceEnCours,
     sequenceDebutTs:         etat.sequenceDebutTs,
     sequenceDuree:           etat.sequenceDuree,
+    sequenceProgressBrute:   etat.sequenceProgressBrute,
+    sequenceDerniereMajTs:   etat.sequenceDerniereMajTs,
+    sequenceVitesseDerniere: etat.sequenceVitesseDerniere,
     prochainVisageChaton:    etat.prochainVisageChaton,
     clicCount:               etat.clicCount,
     reductionAuMomentDuClic: etat.reductionAuMomentDuClic,
@@ -379,6 +385,13 @@ function analyserSauvegardeBrute(raw) {
   etat.rocksTotalRecolte      = d.rocksTotalRecolte      || 0;
   // Migration: planks → cardboardPlanks, bricks → pebbleBricks
   etat.cardboardPlanks        = d.cardboardPlanks        !== undefined ? d.cardboardPlanks        : (d.planks || 0);
+  // New saves track lifetime finished Cardboard Planks. Older saves can
+  // safely infer completion when the tutorial objective was already done;
+  // otherwise keep at least the current stock as the conservative baseline.
+  const legacyTenPlanks = Array.isArray(d.objectifsComplis) && d.objectifsComplis.includes("tenPlanks");
+  etat.cardboardPlanksTotalProduit = d.cardboardPlanksTotalProduit !== undefined
+    ? d.cardboardPlanksTotalProduit
+    : Math.max(etat.cardboardPlanks, legacyTenPlanks ? 10 : 0);
   etat.basicWoodPlanks        = d.basicWoodPlanks        || 0;
   etat.pebbleBricks           = d.pebbleBricks           !== undefined ? d.pebbleBricks           : (d.bricks || 0);
   etat.rockBricks             = d.rockBricks             || 0;
@@ -391,10 +404,17 @@ function analyserSauvegardeBrute(raw) {
   etat.cannedCatFood          = d.cannedCatFood          || 0;
   etat.spherePerks            = d.spherePerks            || {};
   etat.workBoostFinTs         = d.workBoostFinTs         || 0;
+  etat.birdPremierSpawnTs     = Number.isFinite(d.birdPremierSpawnTs)
+    ? d.birdPremierSpawnTs
+    : maintenant + 5 * 60 * 1000;
+  etat.birdPremiereReussie    = d.birdPremiereReussie === true;
 
   etat.sequenceEnCours         = d.sequenceEnCours         || false;
   etat.sequenceDebutTs         = d.sequenceDebutTs         || 0;
   etat.sequenceDuree           = d.sequenceDuree           || 0;
+  etat.sequenceProgressBrute   = d.sequenceProgressBrute   !== undefined ? d.sequenceProgressBrute   : 0;
+  etat.sequenceDerniereMajTs   = d.sequenceDerniereMajTs   !== undefined ? d.sequenceDerniereMajTs   : 0;
+  etat.sequenceVitesseDerniere = d.sequenceVitesseDerniere !== undefined ? d.sequenceVitesseDerniere : 1;
   etat.prochainVisageChaton    = d.prochainVisageChaton    || null;
   etat.clicCount               = d.clicCount               || 0;
   etat.reductionAuMomentDuClic = d.reductionAuMomentDuClic || 0;
@@ -469,7 +489,7 @@ function analyserSauvegardeBrute(raw) {
     ajouterStory("story2Vue", chatons >= 2);
     ajouterStory("story3Vue", chatons >= 3);
     ajouterStory("story4Vue", Array.isArray(d.cathouses) && d.cathouses.length >= 1);
-    ajouterStory("storyBasicWoodVue", (d.cardboardPlanks || d.planks || 0) >= 10 || (d.basicWoodTotalRecolte || 0) >= 1);
+    ajouterStory("storyBasicWoodVue", (d.cardboardPlanks || d.planks || 0) >= 10 || (d.basicWoodTotalRecolte || 0) >= 1 || (d.objectifsComplis || []).includes("tenPlanks"));
     ajouterStory("story5Vue", chatons >= 6);
     ajouterStory("story6aVue", itemsAcquis.includes("schoolGuide") || campaigns.includes("checkTheTrash"));
     ajouterStory("story6bVue", itemsAppris.includes("schoolGuide") || !!d.jobCenterDebloque || !!d.jobCenterConstruit);
@@ -505,7 +525,7 @@ function analyserSauvegardeBrute(raw) {
   // Migration: backfill kittiesData if save predates the feature
   while (etat.kittiesData.length < etat.chatons) {
     const nom = NOMS_KITTIES[etat.kittiesData.length] || ("Cat #" + (etat.kittiesData.length + 1));
-    etat.kittiesData.push({ nom: nom, metier: null, niveau: 0, xp: 0, tier: 0, managerMult: 2, catchTs: null, visage: assignerVisageChaton(nom), jobNiveau: 0 });
+    etat.kittiesData.push({ nom: nom, metier: null, niveau: 0, xp: 0, tier: 0, managerMult: 1.5, catchTs: null, visage: assignerVisageChaton(nom), jobNiveau: 0 });
   }
   // Migration: cats from the pre-XP format used level 1 as their initial
   // value. Only that legacy shape may be converted; current level-1 cats
@@ -518,7 +538,9 @@ function analyserSauvegardeBrute(raw) {
     } else if (k.niveau === undefined) {
       k.niveau = 0;
     }
-    if (k.managerMult === undefined) k.managerMult = 2;
+    // Balance update: the former default manager speed was ×2. Existing
+    // current-era saves are converted once so managers use ×1.5 too.
+    if (k.managerMult === undefined || k.managerMult === 2) k.managerMult = 1.5;
     if (!k.visage) k.visage = assignerVisageChaton(k.nom);
     if (k.jobNiveau === undefined) k.jobNiveau = 0;
   });

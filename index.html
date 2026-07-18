@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0090" />
+  <link rel="stylesheet" href="style.css?v=0.0095" />
 </head>
 <body>
 
@@ -73,7 +73,19 @@
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Finally. That kid has no idea what he's just done.</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Mochi! Luna! On your paws, both of you. No more napping, no more meowing at nothing. We have a neighborhood to take over, and it starts RIGHT NOW.</p>
       </div>
-      <button class="bouton-intro" onclick="fermerModal('ecran-story-3')">Time to work!</button>
+      <button class="bouton-intro" onclick="fermerStoryAdventure()">Time to work!</button>
+    </div>
+  </div>
+
+  <!-- RECRUITMENT HANDOFF : Bernardo takes over after the third-cat story -->
+  <div id="recruiting-transition-modal" class="explo-modal recruiting-transition-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="recruiting-transition-title" aria-describedby="recruiting-transition-copy" style="display:none">
+    <div class="explo-modal-overlay" aria-hidden="true"></div>
+    <div class="explo-modal-panneau" role="document" tabindex="-1">
+      <div class="explo-modal-header">
+        <span class="explo-modal-titre" id="recruiting-transition-title">A new way to get more cats</span>
+      </div>
+      <p class="gang-leader-unlock-copy" id="recruiting-transition-copy">The kid left the gang in the back garden. From now on, Bernardo is taking matters into his own paws and recruiting new cats into the Gang.</p>
+      <button class="btn-inv-action recruiting-transition-action" onclick="fermerModal('recruiting-transition-modal')">Got it!</button>
     </div>
   </div>
 
@@ -246,13 +258,15 @@
     <div class="zone-sequence">
       <button id="bouton-vitesse" onclick="cyclerVitesse()">1×</button>
       <div class="stats-attrapage-wrapper" id="stats-attrapage-wrapper">
-        <button id="bouton-stats-attrapage" class="bouton-stats" onclick="toggleStatsAttrapage()" title="Catching stats" aria-label="Show catching stats" aria-expanded="false" aria-controls="popover-stats-attrapage">?</button>
-        <div id="popover-stats-attrapage" class="popover-stats" role="region" aria-label="Catching stats" aria-hidden="true" style="display:none">
-          <div class="popover-ligne"><span>Raw catching time for this cat</span><span id="stat-raw"></span></div>
-          <div class="popover-ligne"><span>Catching time per second from Houses</span><span id="stat-taux"></span></div>
+        <button id="bouton-stats-attrapage" class="bouton-stats" onclick="toggleStatsAttrapage()" title="Recruiting stats" aria-label="Show recruiting stats" aria-expanded="false" aria-controls="popover-stats-attrapage">?</button>
+        <div id="popover-stats-attrapage" class="popover-stats" role="region" aria-label="Recruiting stats" aria-hidden="true" style="display:none">
+          <div class="popover-ligne"><span>Raw recruiting time for this cat</span><span id="stat-raw"></span></div>
+          <div class="popover-ligne"><span>Base time per second</span><span>1s/s</span></div>
+          <div class="popover-ligne"><span>Recruiting time per second from WOOD Houses</span><span id="stat-wood"></span></div>
+          <div class="popover-ligne"><span>Recruiting time increase from STONE Houses</span><span id="stat-stone"></span></div>
           <div class="popover-ligne" id="stat-gl-row" style="display:none"><span>Bernardo Recruit speed bonus</span><span id="stat-gl-bonus"></span></div>
-          <div class="popover-ligne"><span>Catching time per second TOTAL</span><span id="stat-taux-total"></span></div>
-          <div class="popover-ligne"><span>Adjusted catching time for this cat</span><span id="stat-adjusted"></span></div>
+          <div class="popover-ligne"><span>Recruiting time per second TOTAL</span><span id="stat-taux-total"></span></div>
+          <div class="popover-ligne"><span>Adjusted recruiting time for this cat</span><span id="stat-adjusted"></span></div>
         </div>
       </div>
       <button id="bouton-sequence">Catch a cat 🐾</button>
@@ -391,8 +405,9 @@
     <div id="gang-leader-banner" style="display:none"></div>
     <div class="work-filtres">
       <div class="work-subnav">
-        <div class="work-filtres-btns" role="group" aria-label="Resource family">
-          <button class="btn-filtre-work btn-filtre-work-actif" id="filtre-work-wood" aria-pressed="true" onclick="filtrerWork('wood')"><span>Wood</span><span class="work-family-warning" id="work-warning-wood" hidden></span></button>
+        <div class="work-filtres-btns" role="group" aria-label="Work views">
+          <button class="btn-filtre-work btn-filtre-work-actif" id="filtre-work-all" aria-pressed="true" onclick="filtrerWork('all')"><span>All</span></button>
+          <button class="btn-filtre-work" id="filtre-work-wood" aria-pressed="false" onclick="filtrerWork('wood')"><span>Wood</span><span class="work-family-warning" id="work-warning-wood" hidden></span></button>
           <button class="btn-filtre-work" id="filtre-work-food" aria-pressed="false" onclick="filtrerWork('food')"><span>Food</span><span class="work-family-warning" id="work-warning-food" hidden></span></button>
           <button class="btn-filtre-work" id="filtre-work-rock" aria-pressed="false" onclick="filtrerWork('rock')"><span>Rocks</span><span class="work-family-warning" id="work-warning-rock" hidden></span></button>
         </div>
@@ -402,7 +417,7 @@
     <div id="work-discovery-hint" class="work-discovery-hint" role="note">
       <div class="work-discovery-hint-copy">
         <strong>How Work works</strong>
-        <span>Choose a family, select a recipe, then assign a Cat. The Cat gathers the private ingredients first and processes the finished resource afterwards.</span>
+        <span>Use All to monitor current production. To manage it, choose a family, select a recipe, then assign a Cat. The Cat gathers the ingredients first and processes the finished resource afterwards.</span>
       </div>
       <button class="work-discovery-hint-close" type="button" onclick="fermerWorkDiscoveryHint()" aria-label="Dismiss Work help" title="Dismiss">×</button>
     </div>
@@ -579,25 +594,6 @@
     </div>
   </div>
 
-  <!-- OBJECTIVES -->
-  <div id="panneau-objectifs" role="region" aria-labelledby="objectifs-titre">
-    <div id="objectifs-entete">
-      <h2 id="objectifs-titre">Next step</h2>
-      <button id="objectifs-toggle" type="button" aria-expanded="true" aria-controls="objectifs-corps" onclick="toggleObjectifs()" title="Collapse guide">−</button>
-    </div>
-    <div id="objectifs-corps">
-      <div id="objectifs-actifs">
-        <div id="objectif-guide-navigation" class="obj-guide-navigation" aria-label="Choose an active objective">
-          <button id="objectif-guide-precedent" class="obj-guide-fleche" type="button" onclick="changerObjectifGuide(-1)" aria-label="Previous objective">‹</button>
-          <span id="objectif-guide-compteur" class="obj-guide-compteur">1 / 1</span>
-          <button id="objectif-guide-suivant" class="obj-guide-fleche" type="button" onclick="changerObjectifGuide(1)" aria-label="Next objective">›</button>
-        </div>
-        <div id="objectif-guide-liste" class="obj-guide-liste"></div>
-        <div id="objectif-guide-secondaires" class="obj-guide-secondaires"></div>
-      </div>
-    </div>
-  </div>
-
   <!-- CONTENU LOGS -->
   <div id="contenu-logs" role="tabpanel" aria-labelledby="onglet-logs" aria-hidden="true" style="display:none">
     <div class="logs-heading">
@@ -622,6 +618,25 @@
   </div> <!-- /contenu-logs -->
 
   </main> <!-- /contenu-principal -->
+
+  <!-- OBJECTIVES: a dedicated mobile dock when collapsed -->
+  <div id="panneau-objectifs" role="region" aria-labelledby="objectifs-titre">
+    <div id="objectifs-entete">
+      <h2 id="objectifs-titre" tabindex="0" role="button" data-clavier-clic="true" aria-label="Toggle tutorial guide" aria-expanded="true" aria-controls="objectifs-corps" onclick="toggleObjectifs()">Next step</h2>
+      <button id="objectifs-toggle" type="button" aria-expanded="true" aria-controls="objectifs-corps" onclick="event.stopPropagation(); toggleObjectifs()" title="Collapse guide">−</button>
+    </div>
+    <div id="objectifs-corps">
+      <div id="objectifs-actifs">
+        <div id="objectif-guide-navigation" class="obj-guide-navigation" aria-label="Choose an active objective">
+          <button id="objectif-guide-precedent" class="obj-guide-fleche" type="button" onclick="changerObjectifGuide(-1)" aria-label="Previous objective">‹</button>
+          <span id="objectif-guide-compteur" class="obj-guide-compteur">1 / 1</span>
+          <button id="objectif-guide-suivant" class="obj-guide-fleche" type="button" onclick="changerObjectifGuide(1)" aria-label="Next objective">›</button>
+        </div>
+        <div id="objectif-guide-liste" class="obj-guide-liste"></div>
+        <div id="objectif-guide-secondaires" class="obj-guide-secondaires"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL SETTINGS -->
   <div id="settings-modal" class="explo-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="settings-modal-titre" style="display:none">
@@ -656,6 +671,7 @@
           <span class="settings-toggle-switch"></span>
         </label>
         <div class="settings-separateur"></div>
+        <div class="settings-version" aria-label="Game version">Version <strong>v0.0028</strong></div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
       </div>
     </div>
@@ -694,6 +710,22 @@
         <button class="explo-modal-close" aria-label="Close recipe selection" onclick="fermerModalRecette()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>
       </div>
       <div id="recipe-modal-list" class="recipe-modal-list"></div>
+    </div>
+  </div>
+
+  <!-- MODAL WORK CONFIRMATION -->
+  <div id="work-confirm-modal" class="explo-modal work-confirm-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="work-confirm-title" aria-describedby="work-confirm-copy" style="display:none">
+    <div class="explo-modal-overlay" aria-hidden="true" onclick="annulerConfirmationTravail()"></div>
+    <div class="explo-modal-panneau" role="document" tabindex="-1">
+      <div class="explo-modal-header">
+        <span class="explo-modal-titre" id="work-confirm-title">Confirm action</span>
+        <button class="explo-modal-close" aria-label="Close confirmation" onclick="annulerConfirmationTravail()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button>
+      </div>
+      <p class="work-confirm-copy" id="work-confirm-copy"></p>
+      <div class="work-confirm-actions">
+        <button id="work-confirm-cancel" class="work-confirm-cancel" type="button" onclick="annulerConfirmationTravail()">Cancel</button>
+        <button id="work-confirm-accept" class="btn-inv-action work-confirm-accept" type="button" onclick="confirmerActionTravail()">Continue</button>
+      </div>
     </div>
   </div>
 
@@ -810,7 +842,7 @@
   <script src="js/core/production.js?v=0.0035"></script>
   <script src="js/ui/dom.js?v=0.0031"></script>
   <script src="js/ui/audio.js?v=0.0001"></script>
-  <script src="jeu.js?v=0.0104"></script>
+  <script src="jeu.js?v=0.0111"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

@@ -93,6 +93,7 @@
       slot.outputCarry = Math.max(0, slot.outputCarry - wholeOutput);
       if (wholeOutput > 0) {
         state[pair.outputRes] = (Number(state[pair.outputRes]) || 0) + wholeOutput;
+        if (pair.procTotalKey) state[pair.procTotalKey] = (Number(state[pair.procTotalKey]) || 0) + wholeOutput;
         result.produced += wholeOutput;
         if (result.firstProducerIndex === null) result.firstProducerIndex = slot.kittyIndex;
       }

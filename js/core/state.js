@@ -30,7 +30,7 @@ function creerEtatInitial() {
   catnip:               0,  catnipTotalRecolte:    0,
   pebbles:              0,  pebblesTotalRecolte:   0,
   rocks:                0,  rocksTotalRecolte:     0,
-  cardboardPlanks:      0,
+  cardboardPlanks:      0,  cardboardPlanksTotalProduit: 0,
   basicWoodPlanks:      0,
   pebbleBricks:         0,
   rockBricks:           0,
@@ -47,6 +47,12 @@ function creerEtatInitial() {
   sequenceEnCours:         false,
   sequenceDebutTs:         0,
   sequenceDuree:           0,
+  // Raw catch-time already consumed by the active cycle. The last two fields
+  // let the browser integrate speed changes as segments instead of applying
+  // a newly-built house to time that was consumed before it existed.
+  sequenceProgressBrute:    0,
+  sequenceDerniereMajTs:   0,
+  sequenceVitesseDerniere: 1,
   prochainVisageChaton:    null,
   clicCount:               0,
   reductionAuMomentDuClic: 0,
@@ -54,6 +60,11 @@ function creerEtatInitial() {
   volumeEffetsSonores:     0.3,
   volumeMusique:           0.5,
   autoBuildWoodHouses:       false,
+
+  // Bird event progression. The first event is deliberately fixed at five
+  // minutes; later events return to the normal random schedule.
+  birdPremierSpawnTs:      Date.now() + 5 * 60 * 1000,
+  birdPremiereReussie:     false,
 
   // First-production story state
   premiereSaladeFaite:        false,

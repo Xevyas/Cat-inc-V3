@@ -82,9 +82,10 @@ const OBJECTIFS = [
     accompli: function(e) { return e.chatons >= 6; }
   },
   {
-    id: "sevenKitties", label: "Recruit 7 cats to unlock Pebble Gathering",
-    visible:  function(e) { return e.chatons >= 6; },
-    accompli: function(e) { return e.chatons >= 7; }
+    // Keep the legacy id so existing saves retain their completion state.
+    id: "sevenKitties", label: "Recruit 5 cats to unlock Pebble Gathering",
+    visible:  function(e) { return e.chatons >= 5; },
+    accompli: function(e) { return e.chatons >= 5; }
   },
 
   // ── Cardboard & Buildings
@@ -113,7 +114,7 @@ const OBJECTIFS = [
   {
     id: "tenPlanks", label: "Produce 10 Cardboard Planks to unlock Basic Wood",
     visible:  function(e) { return e.cardboardPlanks >= 1 || e.objectifsComplis.includes("firstPlank"); },
-    accompli: function(e) { return e.cardboardPlanks >= 10 || storyEstVue("storyBasicWoodVue"); }
+    accompli: function(e) { return e.cardboardPlanksTotalProduit >= 10 || storyEstVue("storyBasicWoodVue"); }
   },
 
   // ── Catnip & Catchen
@@ -143,7 +144,7 @@ const OBJECTIFS = [
   // ── Pebbles & Pawsonry
   {
     id: "firstPebbleGatherer", label: "Choose the Pebble Bricks recipe",
-    visible:  function(e) { return e.chatons >= 7; },
+    visible:  function(e) { return e.chatons >= 5; },
     accompli: function() { return recetteChoisieCount("pebbleBricks") >= 1; }
   },
   {
@@ -238,9 +239,9 @@ const OBJECTIF_GUIDE = Object.freeze({
     const ecoule = Math.min(lecture.duree / 1000, Math.max(0, (Date.now() - lecture.startTs) / 1000));
     return { actuel: ecoule, cible: lecture.duree / 1000, texte: formaterTemps(Math.ceil(ecoule)) + " / " + formaterTemps(lecture.duree / 1000) };
   } },
-  tenPlanks:                { ordre: 180, onglet: "work",         cible: "#work-recipe-slots-wood", filtre: "wood", progression: function(e) { return { actuel: e.cardboardPlanks, cible: 10 }; } },
+  tenPlanks:                { ordre: 180, onglet: "work",         cible: "#work-recipe-slots-wood", filtre: "wood", progression: function(e) { return { actuel: Math.min(10, e.cardboardPlanksTotalProduit), cible: 10 }; } },
   firstBasicWoodGatherer:   { ordre: 190, onglet: "work",         cible: "#work-recipe-slots-wood", filtre: "wood", progression: function() { return { actuel: recetteChoisieCount("basicWoodPlanks"), cible: 1 }; } },
-  sevenKitties:             { ordre: 200, onglet: "gang",         cible: "#bouton-sequence",       action: "Recruit ↑",        progression: function(e) { return { actuel: e.chatons, cible: 7 }; } },
+  sevenKitties:             { ordre: 200, onglet: "gang",         cible: "#bouton-sequence",       action: "Recruit ↑",        progression: function(e) { return { actuel: e.chatons, cible: 5 }; } },
   firstPebbleGatherer:      { ordre: 210, onglet: "work",         cible: "#recipe-slot-rock-0",    filtre: "rock", progression: function() { return { actuel: recetteChoisieCount("pebbleBricks"), cible: 1 }; } },
   firstPawsonryWorker:      { ordre: 230, onglet: "work",         cible: "#recipe-slot-rock-0",    filtre: "rock", progression: function() { return { actuel: allocationCount("pebbleBricks"), cible: 1 }; } },
   firstBrick:               { ordre: 240, onglet: "work",         cible: "#work-recipe-slots-rock", filtre: "rock", progression: function(e) { return { actuel: e.pebbleBricks, cible: 1 }; } },
@@ -627,15 +628,22 @@ function assignerKittyScouting(scoutingId, kittyIndex) {
   var def = CONFIG.scoutings[scoutingId];
   var duree = def ? (scoutingHalveTime(kittyIndex) ? def.duree / 2 : def.duree) : 120;
   etat.scoutingsEnCours[scoutingId] = { kittyIndex: kittyIndex, power: kittyEP(kittyIndex), startTs: Date.now(), duree: duree };
+  // The map badge is derived from the persisted running-scouting state. Mark
+  // the map dirty and refresh it immediately so the zone turns green without
+  // waiting for a reload or the next game tick.
+  carteDirty = true;
   exploTabDirty = true;
   sauvegarder();
+  renduCarte(unlocks());
   renderCampaignCards();
 }
 
 function retirerKittyScouting(scoutingId) {
   delete etat.scoutingsEnCours[scoutingId];
+  carteDirty = true;
   exploTabDirty = true;
   sauvegarder();
+  renduCarte(unlocks());
   renderCampaignCards();
 }
 
@@ -671,14 +679,22 @@ function gangLeaderBonus() {
   return 1 + catBonus * (1 + gl.niveau * 0.12);
 }
 
-function vitesseAttrapage() {
+function bonusMaisonsAttrapage() {
   const builderBonus = builderManagerBonus();
   const fromWoodHouses = etat.cathouses.length * CONFIG.cathouse.reductionParSeconde
                        + etat.cathouseCount * CONFIG.realCathouse.reductionParSeconde;
   const stoneBonus = etat.stoneCathouseCount * CONFIG.stoneCathouse.speedBonus;
+  return {
+    woodPerSecond: fromWoodHouses * builderBonus,
+    stonePercent: stoneBonus
+  };
+}
+
+function vitesseAttrapage() {
+  const maisons = bonusMaisonsAttrapage();
   const recruitPerk = etat.spherePerks && etat.spherePerks['gl-rec'] === 'learned';
   const glBonus = recruitPerk ? gangLeaderBonus() : 1;
-  return (1 + fromWoodHouses * builderBonus) * (1 + stoneBonus) * glBonus;
+  return (1 + maisons.woodPerSecond) * (1 + maisons.stonePercent) * glBonus;
 }
 
 // XP / leveling
@@ -726,7 +742,7 @@ function spherePerkLearned(perkId) {
 }
 
 function managerSpeedMultiplier(kitty, famille) {
-  const base = (kitty.managerMult || 2) * jobLevelMultiplier(kitty);
+  const base = (kitty.managerMult || 1.5) * jobLevelMultiplier(kitty);
   const perks = MANAGER_SPHERE_PERKS[famille];
   return perks && spherePerkLearned(perks.speed) ? base * 1.5 : base;
 }
@@ -805,16 +821,58 @@ function dureeBrute() {
 }
 function dureeEffective() { return Math.max(1, dureeBrute() / vitesseAttrapage()); }
 
+// Integrate the catch/recruit cooldown as a sequence of speed segments. This
+// is important when a house or manager is added during an active cycle: the
+// speed that was active before the change consumes only the elapsed time up
+// to the change, while the new speed consumes the remaining raw time.
+function vitesseSequenceEffective() {
+  const devSpeed = (typeof vitesse === "number" && Number.isFinite(vitesse) && vitesse > 0) ? vitesse : 1;
+  return Math.max(0.000001, vitesseAttrapage() * devSpeed);
+}
+
+function actualiserProgressionSequence(maintenant) {
+  if (!etat.sequenceEnCours) return;
+  const maintenantTs = Number.isFinite(maintenant) ? maintenant : Date.now();
+  const duree = Math.max(0, Number(etat.sequenceDuree) || 0);
+
+  // Saves created before segmented progress existed only have a start time.
+  // Preserve their current visible progress once, then continue with the new
+  // non-retroactive model from this point onward.
+  if (!Number.isFinite(etat.sequenceDerniereMajTs) || etat.sequenceDerniereMajTs <= 0) {
+    const debut = Number.isFinite(etat.sequenceDebutTs) && etat.sequenceDebutTs > 0
+      ? etat.sequenceDebutTs
+      : maintenantTs;
+    const elapsed = Math.max(0, (maintenantTs - debut) / 1000);
+    const currentSpeed = vitesseSequenceEffective();
+    etat.sequenceProgressBrute = Math.min(duree, Math.max(0, elapsed * currentSpeed));
+    etat.sequenceDerniereMajTs = maintenantTs;
+    etat.sequenceVitesseDerniere = currentSpeed;
+    return;
+  }
+
+  const dernierTs = etat.sequenceDerniereMajTs;
+  const elapsed = Math.max(0, (maintenantTs - dernierTs) / 1000);
+  const previousSpeed = Number.isFinite(etat.sequenceVitesseDerniere) && etat.sequenceVitesseDerniere > 0
+    ? etat.sequenceVitesseDerniere
+    : vitesseSequenceEffective();
+  const progress = Number.isFinite(etat.sequenceProgressBrute) ? etat.sequenceProgressBrute : 0;
+  etat.sequenceProgressBrute = Math.min(duree, Math.max(0, progress) + elapsed * previousSpeed);
+  etat.sequenceDerniereMajTs = maintenantTs;
+  etat.sequenceVitesseDerniere = vitesseSequenceEffective();
+}
+
 function tempsRestantSequence() {
   if (!etat.sequenceEnCours) return 0;
-  const ecouleBrut = (Date.now() - etat.sequenceDebutTs) / 1000;
-  return Math.max(0, etat.sequenceDuree - ecouleBrut * vitesseAttrapage());
+  actualiserProgressionSequence();
+  return Math.max(0, etat.sequenceDuree - etat.sequenceProgressBrute);
 }
 
 function progressionSequence() {
   if (!etat.sequenceEnCours) return 1;
-  const ecouleBrut = (Date.now() - etat.sequenceDebutTs) / 1000;
-  return Math.min(1, (ecouleBrut * vitesseAttrapage()) / etat.sequenceDuree);
+  actualiserProgressionSequence();
+  return etat.sequenceDuree > 0
+    ? Math.min(1, Math.max(0, etat.sequenceProgressBrute) / etat.sequenceDuree)
+    : 1;
 }
 
 function recupererButinScouting(scoutingId) {
@@ -852,6 +910,9 @@ function demarrerRechargeCatch() {
   etat.sequenceEnCours = true;
   etat.sequenceDebutTs = Date.now();
   etat.sequenceDuree = dureeBrute();
+  etat.sequenceProgressBrute = 0;
+  etat.sequenceDerniereMajTs = etat.sequenceDebutTs;
+  etat.sequenceVitesseDerniere = vitesseSequenceEffective();
 }
 
 function marquerSequencePrete() {
@@ -918,7 +979,7 @@ function grasscattingDebloquee()    { return etat.chatons >= 5; }
 function pebblegatheringDebloquee() { return etat.chatons >= CONFIG.pebblegathering.deblocageA; }
 function rockgatheringDebloquee()   { return etat.itemsAppris.includes("stoneGuide"); }
 function rockfactoryDebloquee()     { return etat.itemsAppris.includes("stoneGuide"); }
-function basicWoodDebloquee()       { return etat.cardboardPlanks >= 10 || etat.objectifsComplis.includes("tenPlanks") || storyEstVue("storyBasicWoodVue") || etat.basicWoodTotalRecolte >= 1; }
+function basicWoodDebloquee()       { return etat.cardboardPlanksTotalProduit >= 10 || etat.cardboardPlanks >= 10 || etat.objectifsComplis.includes("tenPlanks") || storyEstVue("storyBasicWoodVue") || etat.basicWoodTotalRecolte >= 1; }
 function basicSawmillDebloquee()    { return basicWoodDebloquee(); }
 function catHouseDebloquee()        { return etat.basicWoodTotalRecolte >= 1 || etat.cathouseCount > 0; }
 function stoneHousesDebloques()     { return etat.pebbleBricks >= 1 || etat.stoneCathouseCount > 0 || etat.objectifsComplis.includes("firstBrick"); }
@@ -1773,6 +1834,9 @@ function renduSequence() {
   const prochainNom = nomProchainChat();
   const prochainVisage = assurerVisageProchainChat();
   ecrirePropriete(btnSeq, "disabled", false);
+  const statsWrapper = domParId("stats-attrapage-wrapper");
+  ecrireStyle(statsWrapper, "display", recruit ? "" : "none");
+  if (!recruit && statsAttrapageOuvert) definirStatsAttrapageOuvert(false);
   ecrireStyle(btnSeq, "display", pret && !tentativeOuverte ? "" : "none");
   basculerClasse(btnSeq, "recruit", recruit);
   ecrireTexte(btnSeq, recruit ? "Recruit the Cat" : "Catch the Cat");
@@ -1785,7 +1849,7 @@ function renduSequence() {
   renduStatsAttrapage();
 }
 
-// ── 9b-bis. Catching stats popover
+// ── 9b-bis. Recruiting stats popover
 let statsAttrapageOuvert = false;
 
 function positionnerStatsAttrapagePopover() {
@@ -1814,7 +1878,7 @@ function definirStatsAttrapageOuvert(ouvert) {
   popover.style.display = statsAttrapageOuvert ? "flex" : "none";
   popover.setAttribute("aria-hidden", statsAttrapageOuvert ? "false" : "true");
   bouton.setAttribute("aria-expanded", statsAttrapageOuvert ? "true" : "false");
-  bouton.setAttribute("aria-label", statsAttrapageOuvert ? "Hide catching stats" : "Show catching stats");
+  bouton.setAttribute("aria-label", statsAttrapageOuvert ? "Hide recruiting stats" : "Show recruiting stats");
   if (statsAttrapageOuvert) renduStatsAttrapage();
   positionnerStatsAttrapagePopover();
 }
@@ -1832,12 +1896,13 @@ function renduStatsAttrapage() {
 
   const raw         = dureeBrute();
   const taux        = vitesseAttrapage();
+  const maisons     = bonusMaisonsAttrapage();
   const recruitPerk = etat.spherePerks && etat.spherePerks['gl-rec'] === 'learned';
-  const tauxHouses  = recruitPerk ? taux / gangLeaderBonus() : taux;
   const restant     = sequenceEstPrete() ? 0 : tempsRestantSequence() / taux;
 
   document.getElementById("stat-raw").textContent     = formaterTempsStat(raw);
-  document.getElementById("stat-taux").textContent    = tauxHouses.toFixed(2) + "s/s";
+  document.getElementById("stat-wood").textContent    = "+" + maisons.woodPerSecond.toFixed(2) + "s/s";
+  document.getElementById("stat-stone").textContent   = "+" + (maisons.stonePercent * 100).toFixed(0) + "%";
   const glRow = document.getElementById("stat-gl-row");
   if (glRow) {
     glRow.style.display = recruitPerk ? "" : "none";
@@ -1867,7 +1932,7 @@ document.addEventListener("scroll", positionnerStatsAttrapagePopover, true);
 // ── 9c. Work resources (separate Gathering and Processing views)
 const RESOURCE_PAIRS = [
   {
-    recipeId: "cardboardPlanks", family: "wood", tier: 1, rawTotalKey: "cardboardPiecesTotalRecolte",
+    recipeId: "cardboardPlanks", family: "wood", tier: 1, rawTotalKey: "cardboardPiecesTotalRecolte", procTotalKey: "cardboardPlanksTotalProduit",
     rawAction: "woodcatting", rawRes: "cardboardPieces", rawCfg: CONFIG.woodcatting,
     rawLabel: "Cardboard Pieces", rawIcon: "img/resources/Cardboard Pieces_Final.png",
     rawUnlocked: function(u) { return u.cathering; },
@@ -1952,13 +2017,13 @@ function initialiserWorkStructure() {
   if (workStructureInitialisee) return;
   const section = domParId("section-work-pairs");
   if (!section) return;
-  const html = Object.keys(WORK_FAMILIES).map(function(familyId) {
+  const familyHtml = Object.keys(WORK_FAMILIES).map(function(familyId) {
     const family = WORK_FAMILIES[familyId];
     return '<div id="famille-' + familyId + '" class="work-recipe-family">'
       + '<header class="work-recipe-family-header">'
-      +   '<div><span class="pair-family-kicker">Production family</span><h2>' + family.label + '</h2><p>Select what each Cat should produce.</p></div>'
+      +   '<div><span class="pair-family-kicker">Production family</span><h2>' + family.label + '</h2></div>'
       +   '<section id="work-managers-' + familyId + '" class="work-recipe-managers" aria-label="' + family.label + ' managers" style="display:none">'
-      +     '<div class="work-recipe-manager-card"><div class="pair-manager-copy"><span class="pair-manager-role">Gathering Manager</span><span class="pair-manager-scope">Private simple resources</span></div><div id="manager-slot-' + family.gatheringManager + '" class="manager-slot-conteneur"></div></div>'
+      +     '<div class="work-recipe-manager-card"><div class="pair-manager-copy"><span class="pair-manager-role">Gathering Manager</span><span class="pair-manager-scope">Basic resources to gather</span></div><div id="manager-slot-' + family.gatheringManager + '" class="manager-slot-conteneur"></div></div>'
       +     '<div class="work-recipe-manager-card"><div class="pair-manager-copy"><span class="pair-manager-role">Processing Manager</span><span class="pair-manager-scope">Finished ' + family.label.toLowerCase() + ' resources</span></div><div id="manager-slot-' + family.processingManager + '" class="manager-slot-conteneur"></div></div>'
       +   '</section>'
       + '</header>'
@@ -1968,7 +2033,7 @@ function initialiserWorkStructure() {
       + '</div>'
       + '</div>';
   }).join("");
-  section.innerHTML = html;
+  section.innerHTML = '<div id="work-summary-all" class="work-summary-all" aria-label="Current production summary"></div>' + familyHtml;
   workStructureInitialisee = true;
 }
 
@@ -2012,6 +2077,111 @@ function progressionsSlotRecette(slot, pair) {
   };
 }
 
+function workSummaryManagerHtml(label, managerFamily) {
+  const kitty = managerKittyForFamily(managerFamily);
+  const managerValue = kitty
+    ? '<strong>' + echapperAttributHtml(kitty.nom) + '</strong>'
+    : '<strong class="work-summary-manager-empty">None</strong>';
+  return '<span class="work-summary-manager"><small>' + label + '</small>' + managerValue + '</span>';
+}
+
+function renduWorkSummary(unlockedFamilies) {
+  const summary = domParId("work-summary-all");
+  if (!summary) return;
+  const stateParts = [etat.jobCenterConstruit ? 1 : 0];
+  const cards = unlockedFamilies.map(function(familyId) {
+    const family = WORK_FAMILIES[familyId];
+    const slots = etat.workRecipeSlots[familyId] || [];
+    const availableSlotCount = slots.length;
+    const active = [];
+    const waiting = [];
+    // Include the capacity in the render key so unlocking an additional empty
+    // slot immediately refreshes the summary counter.
+    stateParts.push(familyId + "-slots", availableSlotCount);
+
+    slots.forEach(function(slot, slotIdx) {
+      const pair = paireRecette(slot.recipeId);
+      if (!pair) return;
+      const kitty = slot.kittyIndex === null ? null : etat.kittiesData[slot.kittyIndex];
+      if (!kitty) {
+        waiting.push({ pair: pair, slotIdx: slotIdx });
+        stateParts.push(familyId, slotIdx, pair.recipeId, "waiting");
+        return;
+      }
+      const progress = progressionsSlotRecette(slot, pair).overall;
+      const ratePerMinute = tauxProductionSlotRecette(pair, slot) * 60;
+      active.push({ pair: pair, slotIdx: slotIdx, kitty: kitty, progress: progress, ratePerMinute: ratePerMinute });
+      stateParts.push(familyId, slotIdx, pair.recipeId, slot.kittyIndex, kitty.niveau,
+        Math.floor(progress * 100), ratePerMinute.toFixed(3));
+    });
+
+    let managerHtml = "";
+    if (etat.jobCenterConstruit) {
+      const gatherManager = managerKittyForFamily(family.gatheringManager);
+      const processManager = managerKittyForFamily(family.processingManager);
+      stateParts.push(familyId + "-managers",
+        gatherManager ? gatherManager.nom + ":" + managerSpeedMultiplier(gatherManager, family.gatheringManager).toFixed(2) : "none",
+        processManager ? processManager.nom + ":" + managerSpeedMultiplier(processManager, family.processingManager).toFixed(2) : "none");
+      managerHtml = '<div class="work-summary-managers">'
+        + workSummaryManagerHtml("Gathering Manager", family.gatheringManager)
+        + workSummaryManagerHtml("Processing Manager", family.processingManager)
+        + '</div>';
+    }
+
+    const rowsHtml = active.map(function(item) {
+      const progressPct = Math.round(item.progress * 100);
+      const rateLabel = libelleNombreDecimal(item.ratePerMinute, 2) + "/min";
+      return '<button type="button" class="work-summary-row" onclick="ouvrirSlotDepuisResume(\'' + familyId + '\',' + item.slotIdx + ')" aria-label="Open ' + echapperAttributHtml(item.pair.procLabel) + ' produced by ' + echapperAttributHtml(item.kitty.nom) + ', ' + rateLabel + '">'
+        + '<span class="work-summary-recipe"><img src="' + item.pair.procIcon + '" alt=""><strong>' + item.pair.procLabel + '</strong></span>'
+        + '<span class="work-summary-worker">'
+        +   '<span class="work-summary-ring" style="--prog:' + item.progress + '" role="progressbar" aria-label="Full recipe cycle progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + progressPct + '"><span class="work-summary-face">' + kittyIconHtml(item.kitty) + '</span></span>'
+        +   '<span>' + echapperAttributHtml(item.kitty.nom) + ' (lvl ' + item.kitty.niveau + ')</span>'
+        + '</span>'
+        + '<strong class="work-summary-rate">' + rateLabel + '</strong>'
+        + '<span class="work-summary-open" aria-hidden="true">›</span>'
+        + '</button>';
+    }).join("");
+
+    const emptyHtml = active.length === 0
+      ? '<div class="work-summary-empty">No active production</div>'
+      : "";
+    const waitingHtml = waiting.length > 0
+      ? '<button type="button" class="work-summary-waiting" onclick="ouvrirRecetteEnAttenteDepuisResume(\'' + familyId + '\',' + waiting[0].slotIdx + ')">' + waiting.length + ' recipe' + (waiting.length > 1 ? 's' : '') + ' waiting for a Cat</button>'
+      : "";
+
+    return '<section class="work-summary-family work-summary-family-' + familyId + '">'
+      + '<header class="work-summary-header"><div><span>Production family</span><h2>' + family.label + '</h2></div><strong' + (active.length ? '' : ' class="is-empty"') + '>' + active.length + '/' + availableSlotCount + ' ACTIVE</strong></header>'
+      + managerHtml
+      + '<div class="work-summary-list">' + rowsHtml + emptyHtml + waitingHtml + '</div>'
+      + '</section>';
+  }).join("");
+
+  const stateKey = stateParts.join("|");
+  if (summary.dataset.summaryState === stateKey) return;
+  summary.dataset.summaryState = stateKey;
+  summary.innerHTML = cards;
+}
+
+function ouvrirSlotDepuisResume(familyId, slotIdx) {
+  filtrerWork(familyId);
+  setTimeout(function() {
+    const slot = domParId("recipe-slot-" + familyId + "-" + slotIdx);
+    if (!slot) return;
+    slot.scrollIntoView({ behavior: "smooth", block: "center" });
+    slot.classList.remove("objectif-cible-highlight");
+    void slot.offsetWidth;
+    slot.classList.add("objectif-cible-highlight");
+    const focusTarget = slot.querySelector(".work-recipe-selected");
+    if (focusTarget) focusTarget.focus({ preventScroll: true });
+    setTimeout(function() { slot.classList.remove("objectif-cible-highlight"); }, 1700);
+  }, 80);
+}
+
+function ouvrirRecetteEnAttenteDepuisResume(familyId, slotIdx) {
+  filtrerWork(familyId);
+  setTimeout(function() { ouvrirModalWorkerRecette(familyId, slotIdx); }, 80);
+}
+
 function renduSlotRecette(familyId, slotIdx) {
   const el = domParId("recipe-slot-" + familyId + "-" + slotIdx);
   const slot = slotRecette(familyId, slotIdx);
@@ -2035,6 +2205,7 @@ function renduSlotRecette(familyId, slotIdx) {
     el.innerHTML = '<div class="work-recipe-slot-top work-recipe-slot-top-empty"><span class="work-recipe-slot-number">RECIPE SLOT ' + (slotIdx + 1) + '</span></div>'
       + '<button class="work-recipe-choose-empty" onclick="ouvrirModalRecette(\'' + familyId + '\',' + slotIdx + ')">'
       + '<span class="work-recipe-choose-plus">+</span><strong>Choose a recipe</strong><small>Then assign a Cat to produce it</small></button>';
+    if (_workPopupContext && _workPopupContext.familyId === familyId && _workPopupContext.slotIdx === slotIdx) hideResPopup();
     return;
   }
 
@@ -2047,10 +2218,6 @@ function renduSlotRecette(familyId, slotIdx) {
   const outputPerCycle = kitty ? productionProcBonus(kitty) : 1;
   const outputRate = kitty ? tauxProductionSlotRecette(pair, slot) : 0;
   const processingDuration = kitty ? dureeProcessingRecette(pair, kitty) : Infinity;
-  const phaseLabel = !kitty ? "Waiting for a Cat" : (slot.phase === "processing" ? "Processing" : "Gathering");
-  const phaseDetail = !kitty ? "Assign a Cat to start" : (slot.phase === "processing"
-    ? Math.round(progress.processing * 100) + "% of processing complete"
-    : libelleNombreDecimal(gathered, 1) + " / " + libelleNombreDecimal(target, 1) + " " + input.label);
   const catHtml = kitty
     ? '<div class="work-recipe-cat-ring" style="--prog:' + progress.overall + '" role="progressbar" aria-label="Full recipe progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(progress.overall * 100) + '"><div class="work-recipe-cat-face">' + kittyIconHtml(kitty) + '</div>'
       + '<button class="work-recipe-cat-remove" aria-label="Remove ' + echapperAttributHtml(kitty.nom) + ' from this recipe" onclick="retirerWorkerRecette(\'' + familyId + '\',' + slotIdx + ');event.stopPropagation()"><img src="img/interface/Red Cross_Final.png?v=0.0028" alt=""></button></div>'
@@ -2058,16 +2225,25 @@ function renduSlotRecette(familyId, slotIdx) {
       + '<span class="work-recipe-cat-rate">' + libelleNombreDecimal(outputRate * 60, 2) + '/min</span>'
     : '<button class="work-recipe-cat-empty" onclick="ouvrirModalWorkerRecette(\'' + familyId + '\',' + slotIdx + ')" aria-label="Assign a Cat to ' + echapperAttributHtml(pair.procLabel) + '">+</button><strong class="work-recipe-cat-name">Assign a Cat</strong>';
 
+  const gatherTrigger = attributsActivationClavier("Show production details for " + pair.rawLabel)
+    + ' data-work-family="' + familyId + '" data-work-slot="' + slotIdx + '" data-work-phase="gather" aria-controls="inv-res-popup" aria-expanded="false" onclick="toggleWorkResourcePopup(this,event)"';
+  const produceTrigger = attributsActivationClavier("Show production details for " + pair.procLabel)
+    + ' data-work-family="' + familyId + '" data-work-slot="' + slotIdx + '" data-work-phase="process" aria-controls="inv-res-popup" aria-expanded="false" onclick="toggleWorkResourcePopup(this,event)"';
+
   el.innerHTML = '<div class="work-recipe-slot-top">'
     + '<span class="work-recipe-slot-number">RECIPE SLOT ' + (slotIdx + 1) + '</span>'
-    + '<button class="work-recipe-selected" onclick="ouvrirModalRecette(\'' + familyId + '\',' + slotIdx + ')"><img src="' + pair.procIcon + '" alt=""><span><small>RECIPE</small><strong>' + pair.procLabel + '</strong></span><span class="work-recipe-change">Change</span></button>'
+    + '<button type="button" class="work-recipe-selected" aria-label="Change recipe in slot ' + (slotIdx + 1) + ', currently ' + echapperAttributHtml(pair.procLabel) + '" onclick="ouvrirModalRecette(\'' + familyId + '\',' + slotIdx + ')"><img src="' + pair.procIcon + '" alt=""><span><small>RECIPE</small><strong>' + pair.procLabel + '</strong></span><span class="work-recipe-change">Change</span></button>'
     + '</div>'
     + '<div class="work-recipe-flow">'
-    + '<section class="work-recipe-resource work-recipe-resource-input" style="--fill:' + Math.round(progress.gathering * 100) + '%"><span class="work-recipe-node-kicker">GATHER</span><img src="' + pair.rawIcon + '" alt=""><strong>' + pair.rawLabel + '</strong><span>' + libelleNombreDecimal(gathered, 1) + ' / ' + libelleNombreDecimal(target, 1) + '</span><small>' + (kitty ? formaterSecondesBrutes(gatherDuration) + ' (1 every ' + formaterSecondesBrutes(gatherUnitDuration) + ')' : 'Input') + '</small></section>'
+    + '<section class="work-recipe-resource work-recipe-resource-input"' + gatherTrigger + ' style="--fill:' + Math.round(progress.gathering * 100) + '%"><span class="work-recipe-node-kicker">GATHERING</span><img src="' + pair.rawIcon + '" alt=""><strong>' + pair.rawLabel + '</strong><span>' + libelleNombreDecimal(gathered, 1) + ' / ' + libelleNombreDecimal(target, 1) + '</span><small>' + (kitty ? formaterSecondesBrutes(gatherDuration) + ' (1 every ' + formaterSecondesBrutes(gatherUnitDuration) + ')' : 'Input') + '</small></section>'
     + '<section class="work-recipe-cat">' + catHtml + '</section>'
-    + '<section class="work-recipe-resource work-recipe-resource-output" style="--fill:' + Math.round(progress.processing * 100) + '%"><span class="work-recipe-node-kicker">PRODUCE</span><img src="' + pair.procIcon + '" alt=""><strong>' + pair.procLabel + '</strong><span class="work-recipe-output-progress">' + Math.round(progress.processing * 100) + '%</span>' + (kitty ? '<small>' + formaterSecondesBrutes(processingDuration) + ' for ' + libelleNombreDecimal(outputPerCycle, 2) + ' · Stock ' + formaterNombre(etat[pair.procRes]) + '</small>' : '<small>Output</small>') + '</section>'
-    + '</div>'
-    + '<div class="work-recipe-phase"><div class="work-recipe-phase-copy"><strong>' + phaseLabel + '</strong><span>' + phaseDetail + '</span></div><div class="work-recipe-phase-track"><span style="width:' + Math.round(progress.phase * 100) + '%"></span></div></div>';
+    + '<section class="work-recipe-resource work-recipe-resource-output"' + produceTrigger + ' style="--fill:' + Math.round(progress.processing * 100) + '%"><span class="work-recipe-node-kicker">PROCESSING</span><img src="' + pair.procIcon + '" alt=""><strong>' + pair.procLabel + '</strong><span class="work-recipe-output-progress">' + Math.round(progress.processing * 100) + '%</span>' + (kitty ? '<small>' + formaterSecondesBrutes(processingDuration) + ' for ' + libelleNombreDecimal(outputPerCycle, 2) + ' · Stock ' + formaterNombre(etat[pair.procRes]) + '</small>' : '<small>Output</small>') + '</section>'
+    + '</div>';
+  if (_workPopupContext && _workPopupContext.familyId === familyId && _workPopupContext.slotIdx === slotIdx) {
+    const trigger = el.querySelector('[data-work-phase="' + _workPopupContext.phase + '"]');
+    if (trigger) showWorkResourcePopup(trigger);
+    else hideResPopup();
+  }
 }
 
 function actualiserIndicateursExploration() {
@@ -2220,6 +2396,7 @@ function renduWorkPairs(u) {
 
   // Each family button appears only when at least one gathering tier is unlocked.
   const setDisplay = function(id, show) { ecrireStyle(domParId(id), "display", show ? "" : "none"); };
+  setDisplay("filtre-work-all", u.cathering);
   setDisplay("filtre-work-wood", u.cathering);
   setDisplay("filtre-work-food", u.grasscat);
   setDisplay("filtre-work-rock", u.pebblecat || u.rockcat);
@@ -2248,8 +2425,9 @@ function renduWorkPairs(u) {
   const unlockedFamilies = ["wood"];
   if (u.grasscat) unlockedFamilies.push("food");
   if (u.pebblecat || u.rockcat) unlockedFamilies.push("rock");
-  if (!unlockedFamilies.includes(workFiltre)) workFiltre = unlockedFamilies[0];
-  ["wood", "food", "rock"].forEach(function(familyId) {
+  const availableFilters = ["all"].concat(unlockedFamilies);
+  if (!availableFilters.includes(workFiltre)) workFiltre = "all";
+  ["all", "wood", "food", "rock"].forEach(function(familyId) {
     const button = domParId("filtre-work-" + familyId);
     if (!button) return;
     const active = familyId === workFiltre;
@@ -2257,6 +2435,8 @@ function renduWorkPairs(u) {
     button.setAttribute("aria-pressed", active ? "true" : "false");
   });
 
+  const summaryVisible = workFiltre === "all";
+  ecrireStyle(domParId("work-summary-all"), "display", summaryVisible ? "grid" : "none");
   ["wood", "food", "rock"].forEach(function(familyId) {
     const familyEl = domParId("famille-" + familyId);
     const visible = familyId === workFiltre && unlockedFamilies.includes(familyId);
@@ -2264,19 +2444,26 @@ function renduWorkPairs(u) {
     ecrireStyle(domParId("work-managers-" + familyId), "display", visible && etat.jobCenterConstruit ? "grid" : "none");
   });
 
-  const currentFamily = WORK_FAMILIES[workFiltre];
-  if (currentFamily && etat.jobCenterConstruit) {
-    renderManagerSlot(currentFamily.gatheringManager);
-    renderManagerSlot(currentFamily.processingManager);
-  }
-  const available = recettesDisponiblesFamille(workFiltre, u);
-  (etat.workRecipeSlots[workFiltre] || []).forEach(function(slot) {
-    if (slot.recipeId && !available.some(function(pair) { return pair.recipeId === slot.recipeId; })) {
-      reinitialiserProgressionRecette(slot, true);
-    }
+  unlockedFamilies.forEach(function(familyId) {
+    const available = recettesDisponiblesFamille(familyId, u);
+    (etat.workRecipeSlots[familyId] || []).forEach(function(slot) {
+      if (slot.recipeId && !available.some(function(pair) { return pair.recipeId === slot.recipeId; })) {
+        reinitialiserProgressionRecette(slot, true);
+      }
+    });
   });
-  renduSlotRecette(workFiltre, 0);
-  renduSlotRecette(workFiltre, 1);
+
+  if (summaryVisible) {
+    renduWorkSummary(unlockedFamilies);
+  } else {
+    const currentFamily = WORK_FAMILIES[workFiltre];
+    if (currentFamily && etat.jobCenterConstruit) {
+      renderManagerSlot(currentFamily.gatheringManager);
+      renderManagerSlot(currentFamily.processingManager);
+    }
+    renduSlotRecette(workFiltre, 0);
+    renduSlotRecette(workFiltre, 1);
+  }
 
   ["wood", "food", "rock"].forEach(function(familyId) {
     const badge = domParId("work-warning-" + familyId);
@@ -2284,6 +2471,8 @@ function renduWorkPairs(u) {
     const button = domParId("filtre-work-" + familyId);
     if (button) button.setAttribute("aria-label", WORK_FAMILIES[familyId].label + " recipes");
   });
+  const allButton = domParId("filtre-work-all");
+  if (allButton) allButton.setAttribute("aria-label", "All active production");
 }
 
 function fermerWorkDiscoveryHint() {
@@ -2708,6 +2897,39 @@ function jobLevelInfo(metier) {
 // ── 9g. Management tab
 let kittySelectionnee = null;
 let detailKittyMobileOuvert = false;
+let experienceHelpOuvert = false;
+
+function fermerExperienceHelp() {
+  experienceHelpOuvert = false;
+  const popup = document.getElementById("experience-bonus-help");
+  const button = document.getElementById("experience-bonus-help-button");
+  if (popup) {
+    popup.style.display = "none";
+    popup.setAttribute("aria-hidden", "true");
+  }
+  if (button) button.setAttribute("aria-expanded", "false");
+}
+
+function toggleExperienceHelp(event) {
+  if (event) event.stopPropagation();
+  const popup = document.getElementById("experience-bonus-help");
+  const button = document.getElementById("experience-bonus-help-button");
+  if (!popup || !button) return;
+  experienceHelpOuvert = !experienceHelpOuvert;
+  popup.style.display = experienceHelpOuvert ? "block" : "none";
+  popup.setAttribute("aria-hidden", experienceHelpOuvert ? "false" : "true");
+  button.setAttribute("aria-expanded", experienceHelpOuvert ? "true" : "false");
+}
+
+document.addEventListener("click", function(event) {
+  if (!experienceHelpOuvert) return;
+  const wrapper = document.getElementById("experience-help-wrap");
+  if (wrapper && !wrapper.contains(event.target)) fermerExperienceHelp();
+});
+
+document.addEventListener("keydown", function(event) {
+  if (event.key === "Escape" && experienceHelpOuvert) fermerExperienceHelp();
+});
 
 function selectionnerKitty(index) {
   const conserverFocus = document.activeElement && document.activeElement.dataset.kittyIndex === String(index);
@@ -3001,9 +3223,7 @@ function renduManagement() {
   gauche.className = "detail-gauche";
   gauche.innerHTML =
     "<div class=\"kitty-photo detail-photo kitty-photo-tier-" + tierIdx + "\">" + kittyIconHtml(k) + "</div>" +
-    "<div class=\"detail-nom\">" + k.nom + "</div>" +
-    "<div class=\"detail-catch-info\">" + formaterCatchTime(k.catchTs) + "</div>" +
-    "<div class=\"kitty-tier kitty-tier-" + tierIdx + " detail-tier-badge\">T" + tierIdx + " · " + TIERS_KITTIES[tierIdx] + "</div>";
+    "<div class=\"detail-nom\">" + k.nom + "</div>";
 
   // Right: conditional sections
   const droite = document.createElement("div");
@@ -3029,18 +3249,37 @@ function renduManagement() {
     const xpManquant   = xpNext - k.xp;
     const xpDisponible = Object.keys(FOOD_XP).reduce(function(s, f) { return s + etat[f] * FOOD_XP[f]; }, 0);
     const autoBtnDisabled = xpDisponible < xpManquant;
-    const autoLevelBtn = "<button class='btn-xp-auto'" + (autoBtnDisabled ? " disabled" : "") + " onclick='nourrirAutoNiveau(" + kittySelectionnee + ")'>Auto-feed to next level <span class='xp-gain'>-" + xpManquant + " XP needed</span></button>";
+    const autoLevelBtn = "<button class='btn-xp-auto'" + (autoBtnDisabled ? " disabled" : "") + " onclick='nourrirAutoNiveau(" + kittySelectionnee + ")'>Auto-feed to next level (<span class='xp-gain'>" + xpManquant + " XP needed</span>)</button>";
+    // Keep these derived values aligned with the level multipliers used by
+    // Gathering, Processing and manager speed calculations below.
+    const gatherLevelPercent = Math.round((Math.pow(1.1, 1) - 1) * 100);
+    const processLevelPercent = Math.round((Math.pow(1.05, 1) - 1) * 100);
+    const managerLevelPercent = Math.round((jobLevelMultiplier({ niveau: 1 }) - 1) * 100);
+    const experienceHelp =
+      "<span class='detail-section-titre-label'>Experience</span>" +
+      "<span id='experience-help-wrap' class='detail-help-wrap'>" +
+      "<button type='button' id='experience-bonus-help-button' class='detail-help-btn' aria-label='Explain experience bonuses' aria-expanded='" + (experienceHelpOuvert ? "true" : "false") + "' aria-controls='experience-bonus-help' onclick='toggleExperienceHelp(event)'>?</button>" +
+      "<span id='experience-bonus-help' class='detail-help-popover' role='note' aria-hidden='" + (experienceHelpOuvert ? "false" : "true") + "' style='display:" + (experienceHelpOuvert ? "block" : "none") + "'>" +
+      "<strong>Each additional level increases these bonuses:</strong>" +
+      "<span>Gather Production Bonus by " + gatherLevelPercent + "%</span>" +
+      "<span>Process Production Bonus by " + processLevelPercent + "%</span>" +
+      "<span>Exploration Power by 1</span>" +
+      "<span>(If applicable) Manager Speed Bonus by " + managerLevelPercent + "%</span>" +
+      "</span></span>";
+    const managerSpeedBonusLine = k.metier
+      ? "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + managerSpeedMultiplier(k, METIERS[k.metier] ? METIERS[k.metier].famille : null).toFixed(2) + "</span> Manager Speed Bonus</span>"
+      : "";
     const levelBonuses = k.niveau > 0
       ? "<div class='xp-bonus-actifs'>" +
-        "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + Math.pow(1.1, k.niveau).toFixed(2) + "</span> Basic Production Bonus</span>" +
-        "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + Math.pow(1.05, k.niveau).toFixed(2) + "</span> Complex Production Bonus</span>" +
-        "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + managerSpeedMultiplier(k, METIERS[k.metier] ? METIERS[k.metier].famille : null).toFixed(2) + "</span> Manager Speed Bonus</span>" +
+        "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + Math.pow(1.1, k.niveau).toFixed(2) + "</span> Gather Production Bonus</span>" +
+        "<span class='xp-bonus-ligne'><span class='bonus-var'>x" + Math.pow(1.05, k.niveau).toFixed(2) + "</span> Process Production Bonus</span>" +
+        managerSpeedBonusLine +
         "<span class='xp-bonus-ligne'><span class='bonus-var'>+" + k.niveau + "</span> Exploration Power</span>" +
         "</div>"
       : "";
     droite.innerHTML +=
       "<div class='detail-section' id='detail-experience'>" +
-      "<div class='detail-section-titre'>Experience</div>" +
+      "<div class='detail-section-titre detail-section-titre-with-help'>" + experienceHelp + "</div>" +
       "<div class='detail-level-row'><span class='detail-level-num'>Level " + k.niveau + "</span><span class='detail-xp-counter'>" + k.xp + " / " + xpNext + " XP</span></div>" +
       "<div class='conteneur-barre'><div class='barre barre-verte' style='width:" + xpPct + "%'></div></div>" +
       levelBonuses +
@@ -3049,35 +3288,40 @@ function renduManagement() {
       "</div>";
   }
 
-  // Job section — only shown after Job Center is built
+  // Job section — shown under the kitty identity once the Job Center is built.
+  // Tier and acquisition date stay hidden here until their future dedicated UI.
   if (etat.jobCenterDebloque) {
     hasContent = true;
-    const jobName = k.metier ? (METIERS[k.metier] ? (TIERS_KITTIES[k.tier || 0] || "") + " " + METIERS[k.metier].nom : k.metier) : "Stray Cat";
-    const jobBonus = k.metier ? (
-      k.metier === "gang-leader"
-        ? "<div class='detail-job-bonus'><span class='bonus-var'>×" + gangLeaderBonus().toFixed(2) + "</span> Work speed for all workers<div class='bonus-sub'>Scales with gang size · own level amplifies</div></div>"
-          + (etat.spherePerks && etat.spherePerks['gl-rec'] === 'learned' ? "<div class='detail-job-bonus'><span class='bonus-var'>×" + gangLeaderBonus().toFixed(2) + "</span> Recruit speed (perk)</div>" : "")
-          + (etat.spherePerks && etat.spherePerks['gl-explo'] === 'learned' ? "<div class='detail-job-bonus'>Halves scouting mission time (perk)</div>" : "")
-        : k.metier === "explorator"
-          ? "<div class='detail-job-bonus'>Halves scouting mission time</div>"
-            + (etat.spherePerks && etat.spherePerks['ex-power'] === 'learned' ? "<div class='detail-job-bonus'><span class='bonus-var'>×1.5</span> Exploration Power (perk)</div>" : "")
-            + (etat.spherePerks && etat.spherePerks['ex-food'] === 'learned' ? "<div class='detail-job-bonus'><span class='bonus-var'>×2</span> Canned Cat Food chance in scoutings (perk)</div>" : "")
-            + (etat.spherePerks && etat.spherePerks['ex-luck'] === 'learned' ? "<div class='detail-job-bonus'><span class='bonus-var'>25%</span> chance to double scouting reward (perk)</div>" : "")
-          : (METIERS[k.metier] ? "<div class='detail-job-bonus'><span class='bonus-var'>×" + managerSpeedMultiplier(k, METIERS[k.metier].famille).toFixed(2) + "</span> production speed on " + METIERS[k.metier].familleNom + " when assigned as manager</div>" + managerPerksHtml(METIERS[k.metier].famille, "detail-job-perk") : "")
-    ) : "";
-    const _jlvl = jobLevelInfo(k.metier);
-    const tcJobLvl = etat.trainingCenterConstruit && k.metier
-      ? "<div class='detail-level-row'><span class='detail-level-num'>Level " + _jlvl.cur + " / " + _jlvl.max + "</span></div>"
-      : "";
-    droite.innerHTML +=
-      "<div class='detail-section' id='detail-job'>" +
-      "<div class='detail-job-header'>" +
-      "<span class='detail-section-titre'>Job</span>" +
-      "<span class='detail-job-nom" + (k.metier ? "" : " kitty-vagabond") + "'>" + jobName + "</span>" +
-      "</div>" +
-      tcJobLvl +
-      (jobBonus ? "<div>" + jobBonus + "</div>" : "") +
-      "</div>";
+    if (!k.metier) {
+      gauche.innerHTML += "<div class='detail-stray-cat kitty-vagabond'>STRAY CAT</div>";
+    } else {
+      const jobName = METIERS[k.metier] ? METIERS[k.metier].nom : k.metier;
+      const jobBonus = k.metier ? (
+        k.metier === "gang-leader"
+          ? "<div class='detail-job-bonus'><span class='bonus-var'>×" + gangLeaderBonus().toFixed(2) + "</span> Work speed for all workers<div class='bonus-sub'>Scales with gang size · own level amplifies</div></div>"
+            + (etat.spherePerks && etat.spherePerks['gl-rec'] === 'learned' ? "<div class='detail-job-bonus'><span class='bonus-var'>×" + gangLeaderBonus().toFixed(2) + "</span> Recruit speed (perk)</div>" : "")
+            + (etat.spherePerks && etat.spherePerks['gl-explo'] === 'learned' ? "<div class='detail-job-bonus'>Halves scouting mission time (perk)</div>" : "")
+          : k.metier === "explorator"
+            ? "<div class='detail-job-bonus'>Halves all missions type times in Exploration</div>"
+              + (etat.spherePerks && etat.spherePerks['ex-power'] === 'learned' ? "<div class='detail-job-bonus'><span class='bonus-var'>×1.5</span> Exploration Power (perk)</div>" : "")
+              + (etat.spherePerks && etat.spherePerks['ex-food'] === 'learned' ? "<div class='detail-job-bonus'><span class='bonus-var'>×2</span> Canned Cat Food chance in scoutings (perk)</div>" : "")
+              + (etat.spherePerks && etat.spherePerks['ex-luck'] === 'learned' ? "<div class='detail-job-bonus'><span class='bonus-var'>25%</span> chance to double scouting reward (perk)</div>" : "")
+            : (METIERS[k.metier] ? "<div class='detail-job-bonus'><span class='bonus-var'>×" + managerSpeedMultiplier(k, METIERS[k.metier].famille).toFixed(2) + "</span> production speed on " + METIERS[k.metier].familleNom + " when assigned as manager</div>" + managerPerksHtml(METIERS[k.metier].famille, "detail-job-perk") : "")
+      ) : "";
+      const _jlvl = jobLevelInfo(k.metier);
+      const tcJobLvl = etat.trainingCenterConstruit && k.metier
+        ? "<div class='detail-level-row'><span class='detail-level-num'>Level " + _jlvl.cur + " / " + _jlvl.max + "</span></div>"
+        : "";
+      gauche.innerHTML +=
+        "<div class='detail-section detail-job-left' id='detail-job'>" +
+        "<div class='detail-job-header'>" +
+        "<span class='detail-section-titre'>Job</span>" +
+        "<span class='detail-job-nom'>" + jobName + "</span>" +
+        "</div>" +
+        tcJobLvl +
+        (jobBonus ? "<div>" + jobBonus + "</div>" : "") +
+        "</div>";
+    }
   }
 
   const corps = document.createElement("div");
@@ -3105,11 +3349,11 @@ function rendu() {
 // 9b. EXPLORATIONS RENDER
 // ════════════════════════════════════════════════════════════
 
-let workFiltre = "wood";  // "wood" | "food" | "rock"
+let workFiltre = "all";  // "all" | "wood" | "food" | "rock"
 
 function filtrerWork(filtre) {
-  workFiltre = filtre || "wood";
-  ["wood", "food", "rock"].forEach(function(f) {
+  workFiltre = filtre || "all";
+  ["all", "wood", "food", "rock"].forEach(function(f) {
     const el = document.getElementById("filtre-work-" + f);
     if (el) {
       el.classList.toggle("btn-filtre-work-actif", f === workFiltre);
@@ -3168,6 +3412,31 @@ const RESOURCE_DISPLAY_NAMES = {
   cannedCatFood:    "Canned Cat Food",
   humanWorkersFood: "Workers Food",
 };
+
+function renduRecompensesLuckScouting(sc, kittyIndex) {
+  var entries;
+  if (sc.recompenseTable) {
+    entries = applyPerkCatFood(sc.recompenseTable, kittyIndex);
+  } else if (sc.recompenseRange) {
+    entries = sc.recompenseRange.map(function(entry) {
+      return Object.assign({ recompense: sc.recompense }, entry);
+    });
+  } else if (sc.dropChance) {
+    entries = [{ recompense: sc.recompense, qty: (sc.recompenseRange && sc.recompenseRange[0] ? sc.recompenseRange[0].qty : 1), weight: sc.dropChance * 100 }];
+  } else {
+    entries = [];
+  }
+  if (!entries.length) return '<div class="scouting-reward-table"><div class="scouting-reward-option scouting-reward-regular">Reward details unavailable</div></div>';
+  var total = entries.reduce(function(sum, entry) { return sum + Number(entry.weight || 0); }, 0) || 100;
+  var ordered = entries.slice().sort(function(a, b) { return b.weight - a.weight; });
+  return '<div class="scouting-reward-table" aria-label="Scouting reward chances">' + ordered.map(function(entry, index) {
+    var category = index === 0 ? "regular" : (index === ordered.length - 1 ? "super-lucky" : "lucky");
+    var categoryLabel = category === "regular" ? "Regular Reward" : (category === "lucky" ? "Lucky Reward" : "Super Lucky Reward");
+    var chance = Math.round(Number(entry.weight || 0) / total * 100);
+    var rewardName = RESOURCE_DISPLAY_NAMES[entry.recompense] || entry.recompense;
+    return '<div class="scouting-reward-option scouting-reward-' + category + '"><div class="scouting-reward-heading"><strong>' + categoryLabel + '</strong><span>' + chance + '%</span></div><span class="scouting-reward-quantity">' + entry.qty + ' ' + rewardName + '</span></div>';
+  }).join('') + '</div>';
+}
 
 function recompenseLabel(camp) {
   if (camp.recompenses) {
@@ -3391,35 +3660,16 @@ function renderCampaignCards() {
       var scoutHtml = "";
       scoutDefs.forEach(function(sc) {
         var running = etat.scoutingsEnCours[sc.id];
-        var SCOUTING_REWARD_NOMS = { humanLeftovers: "Human leftovers", humanWorkersFood: "Workers Food", cannedCatFood: "Canned Cat Food" };
         var scKiDisp = running ? running.kittyIndex : scoutingsStagingKitty[sc.id];
-        var rewardLabel;
-        if (sc.recompenseTable) {
-          var dispTable = (scKiDisp !== undefined)
-            ? applyPerkCatFood(sc.recompenseTable, scKiDisp)
-            : sc.recompenseTable;
-          var dispTotal = dispTable.reduce(function(s, e) { return s + e.weight; }, 0);
-          rewardLabel = dispTable.map(function(e) {
-            return Math.round(e.weight / dispTotal * 100) + '% ' + (RESOURCE_DISPLAY_NAMES[e.recompense] || e.recompense);
-          }).join(' / ');
-        } else if (sc.dropChance) {
-          var rewardNom = SCOUTING_REWARD_NOMS[sc.recompense] || sc.recompense;
-          var dropPct = Math.round(sc.dropChance * 100);
-          var qty = sc.recompenseRange[0] ? sc.recompenseRange[0].qty : 1;
-          rewardLabel = rewardNom + ' &#xd7;' + qty + ' &mdash; ' + dropPct + '% drop chance';
-        } else {
-          var rewardNom = SCOUTING_REWARD_NOMS[sc.recompense] || sc.recompense;
-          var rangeLabel = sc.recompenseRange.map(function(r) { return r.qty + "&#xd7;" + r.weight + "%" ; }).join(" / ");
-          rewardLabel = rewardNom + ' (' + rangeLabel + ')';
-        }
-        if (scKiDisp !== undefined && etat.spherePerks && etat.spherePerks['ex-luck'] === 'learned') {
-          var kDisp = etat.kittiesData[scKiDisp];
-          if (kDisp && kDisp.metier === 'explorator') rewardLabel += ' &nbsp;&middot;&nbsp; 25% double';
-        }
         scoutHtml += '<div class="explo-card">';
         scoutHtml += '<div class="explo-nom">' + sc.nom + '</div>';
         scoutHtml += '<div class="explo-description">' + sc.description + '</div>';
-        scoutHtml += '<div class="explo-meta">&#x2694;&#xFE0F; Difficulty ' + sc.difficulte + ' &nbsp;&middot;&nbsp; &#x23F1; ' + formaterTempsStat(sc.duree) + ' &nbsp;&middot;&nbsp; &#x1F381; ' + rewardLabel + '</div>';
+        scoutHtml += '<div class="explo-meta">&#x2694;&#xFE0F; Difficulty ' + sc.difficulte + ' &nbsp;&middot;&nbsp; &#x23F1; ' + formaterTempsStat(sc.duree) + '</div>';
+        scoutHtml += renduRecompensesLuckScouting(sc, scKiDisp);
+        if (scKiDisp !== undefined && etat.spherePerks && etat.spherePerks['ex-luck'] === 'learned') {
+          var kDisp = etat.kittiesData[scKiDisp];
+          if (kDisp && kDisp.metier === 'explorator') scoutHtml += '<div class="scouting-reward-perk">Explorator perk: 25% chance to double the reward</div>';
+        }
         if (running) {
           var effectiveDuree = (running.duree !== undefined) ? running.duree : sc.duree;
           var elapsed   = (Date.now() - running.startTs) / 1000;
@@ -4379,6 +4629,147 @@ let resCategorieFiltree  = "all";
 
 // ── Resource info popup ───────────────────────────────────────
 let _resPopupTarget = null;
+let _workPopupContext = null;
+
+function workResourcePair(resource, phase) {
+  return RESOURCE_PAIRS.find(function(pair) {
+    return phase === "gather" ? pair.rawRes === resource : pair.procRes === resource;
+  }) || null;
+}
+
+function workMultiplierLabel(value) {
+  return "×" + Number(value).toFixed(2);
+}
+
+function workResourceDetails(pair, slot, phase) {
+  const gather = phase === "gather";
+  const kitty = slot && slot.kittyIndex !== null ? etat.kittiesData[slot.kittyIndex] : null;
+  const managerFamily = MAP_FAMILLE[gather ? pair.rawAction : pair.procMultAction];
+  const manager = managerKittyForFamily(managerFamily);
+  const gangLeader = etat.kittiesData.find(function(k) { return k.metier === "gang-leader"; });
+  const speedBonuses = [];
+  const productionBonuses = [];
+  let speedMultiplier = 1;
+  let productionMultiplier = 1;
+  const gangSpeed = gangLeaderBonus();
+
+  if (gangLeader && gangSpeed > 1) {
+    speedBonuses.push({ label: gangLeader.nom + " Gang Leader", value: gangSpeed });
+    speedMultiplier *= gangSpeed;
+  }
+  if (manager) {
+    const managerSpeed = managerSpeedMultiplier(manager, managerFamily);
+    speedBonuses.push({ label: manager.nom + " Manager", value: managerSpeed });
+    speedMultiplier *= managerSpeed;
+  }
+  const devWorkSpeed = workBoostMult();
+  if (devWorkSpeed > 1) {
+    speedBonuses.push({ label: "Dev Work Boost", value: devWorkSpeed });
+    speedMultiplier *= devWorkSpeed;
+  }
+
+  if (kitty && kitty.niveau > 0) {
+    const workerProduction = gather ? Math.pow(1.1, kitty.niveau) : productionProcBonus(kitty);
+    productionBonuses.push({ label: kitty.nom + " worker", value: workerProduction });
+    productionMultiplier *= workerProduction;
+  }
+  if (gather && manager && managerProductionMultiplier(managerFamily) > 1) {
+    const managerProduction = managerProductionMultiplier(managerFamily);
+    productionBonuses.push({ label: manager.nom + " Manager (perk)", value: managerProduction });
+    productionMultiplier *= managerProduction;
+  }
+
+  const rawTime = gather ? Number(pair.rawCfg.secondesParUnite) : Number(pair.procCfg[pair.procSecUnite]);
+  const adjustedTime = rawTime / (speedMultiplier * (gather ? productionMultiplier : 1));
+  const target = quantiteInputEffective(pair, pair.inputs[0]);
+  const outputPerCycle = kitty ? productionProcBonus(kitty) : 1;
+  return {
+    pair: pair,
+    kitty: kitty,
+    gather: gather,
+    rawTime: rawTime,
+    adjustedTime: adjustedTime,
+    target: target,
+    speedBonuses: speedBonuses,
+    productionBonuses: productionBonuses,
+    outputPerCycle: outputPerCycle
+  };
+}
+
+function workResourceDetailsHtml(details, spriteSrc) {
+  const pair = details.pair;
+  let html = '<div class="irp-header">';
+  if (spriteSrc) html += '<img class="irp-icon" src="' + spriteSrc + '" alt="">';
+  html += '<div class="irp-header-text"><div class="irp-nom">' + echapperAttributHtml(details.gather ? pair.rawLabel : pair.procLabel) + '</div><div class="irp-tier">' + (details.gather ? "Gathering" : "Processing") + '</div></div></div>';
+  html += '<div class="irp-production-details">';
+  html += '<div class="irp-detail-line"><span class="irp-detail-label">' + (details.gather ? "Raw time for one" : "Raw time for one cycle") + '</span><strong>' + formaterSecondesBrutes(details.rawTime) + '</strong></div>';
+  if (details.speedBonuses.length) {
+    html += '<div class="irp-detail-section"><span class="irp-detail-section-title">Current speed bonus</span>';
+    details.speedBonuses.forEach(function(bonus) {
+      html += '<div class="irp-detail-line"><span>' + echapperAttributHtml(bonus.label) + '</span><strong>' + workMultiplierLabel(bonus.value) + '</strong></div>';
+    });
+    html += '</div>';
+  }
+  if (details.productionBonuses.length) {
+    html += '<div class="irp-detail-section"><span class="irp-detail-section-title">Current production bonus</span>';
+    details.productionBonuses.forEach(function(bonus) {
+      html += '<div class="irp-detail-line"><span>' + echapperAttributHtml(bonus.label) + '</span><strong>' + workMultiplierLabel(bonus.value) + '</strong></div>';
+    });
+    html += '</div>';
+  }
+  if (details.gather) {
+    html += '<div class="irp-detail-line irp-detail-result"><span class="irp-detail-label">Adjusted time for 1</span><strong>' + formaterSecondesBrutes(details.adjustedTime) + '</strong></div>';
+    html += '<div class="irp-detail-line irp-detail-result"><span class="irp-detail-label">Adjusted time for ' + libelleNombreDecimal(details.target, 1) + '</span><strong>' + formaterSecondesBrutes(details.adjustedTime * details.target) + '</strong></div>';
+  } else {
+    html += '<div class="irp-detail-line irp-detail-result"><span class="irp-detail-label">Adjusted time for one cycle</span><strong>' + formaterSecondesBrutes(details.adjustedTime) + '</strong></div>';
+    if (details.kitty) {
+      html += '<div class="irp-detail-line"><span class="irp-detail-label">Output per cycle</span><strong>' + libelleNombreDecimal(details.outputPerCycle, 2) + '</strong></div>';
+    }
+  }
+  return html + '</div>';
+}
+
+function positionnerWorkResourcePopup(el, popup) {
+  const rect = el.getBoundingClientRect();
+  const pw = popup.offsetWidth || 300;
+  const ph = popup.offsetHeight || 220;
+  const mg = 8;
+  let left = rect.left;
+  let top = rect.bottom + mg;
+  if (left + pw > window.innerWidth - mg) left = window.innerWidth - pw - mg;
+  if (left < mg) left = mg;
+  if (top + ph > window.innerHeight - mg) top = rect.top - ph - mg;
+  if (top < mg) top = mg;
+  popup.style.left = left + "px";
+  popup.style.top = top + "px";
+}
+
+function showWorkResourcePopup(el) {
+  const familyId = el.dataset.workFamily;
+  const slotIdx = Number(el.dataset.workSlot);
+  const phase = el.dataset.workPhase;
+  const slot = slotRecette(familyId, slotIdx);
+  const pair = slot && paireRecette(slot.recipeId);
+  if (!pair || !phase) return;
+  const details = workResourceDetails(pair, slot, phase);
+  if (_resPopupTarget && _resPopupTarget !== el) _resPopupTarget.setAttribute("aria-expanded", "false");
+  _resPopupTarget = el;
+  _workPopupContext = { familyId: familyId, slotIdx: slotIdx, phase: phase };
+  el.setAttribute("aria-expanded", "true");
+  const popup = document.getElementById("inv-res-popup");
+  popup.classList.add("work-production-popup");
+  popup.setAttribute("aria-hidden", "false");
+  const sprite = el.querySelector("img");
+  popup.innerHTML = workResourceDetailsHtml(details, sprite && sprite.src);
+  popup.style.display = "block";
+  positionnerWorkResourcePopup(el, popup);
+}
+
+function toggleWorkResourcePopup(el, evt) {
+  if (evt) evt.stopPropagation();
+  if (_resPopupTarget === el) { hideResPopup(); return; }
+  showWorkResourcePopup(el);
+}
 
 function showResPopup(el) {
   var id   = el.dataset.resId;
@@ -4386,8 +4777,10 @@ function showResPopup(el) {
   if (!info) return;
   if (_resPopupTarget && _resPopupTarget !== el) _resPopupTarget.setAttribute("aria-expanded", "false");
   _resPopupTarget = el;
+  _workPopupContext = null;
   el.setAttribute("aria-expanded", "true");
   var popup  = document.getElementById("inv-res-popup");
+  popup.classList.remove("work-production-popup");
   popup.setAttribute("aria-hidden", "false");
   var sprite = el.querySelector("img");
   var html   = '<div class="irp-header">';
@@ -4417,9 +4810,11 @@ function showResPopup(el) {
 function hideResPopup() {
   const popup = document.getElementById("inv-res-popup");
   popup.style.display = "none";
+  popup.classList.remove("work-production-popup");
   popup.setAttribute("aria-hidden", "true");
   if (_resPopupTarget) _resPopupTarget.setAttribute("aria-expanded", "false");
   _resPopupTarget = null;
+  _workPopupContext = null;
 }
 
 function toggleResPopup(el, evt) {
@@ -4433,8 +4828,10 @@ function showUniqueItemPopup(el) {
   if (!item) return;
   if (_resPopupTarget && _resPopupTarget !== el) _resPopupTarget.setAttribute("aria-expanded", "false");
   _resPopupTarget = el;
+  _workPopupContext = null;
   el.setAttribute("aria-expanded", "true");
   var popup = document.getElementById("inv-res-popup");
+  popup.classList.remove("work-production-popup");
   popup.setAttribute("aria-hidden", "false");
   popup.innerHTML = '<div class="irp-header"><span class="irp-icon irp-icon-html">' + item.emoji + '</span><div class="irp-header-text"><div class="irp-nom">' + item.nom + '</div><div class="irp-tier">Unique item</div></div></div>' +
     '<p class="irp-desc">' + item.description + '</p>' +
@@ -5278,16 +5675,22 @@ function renderManagerSlot(famille) {
 // Recipe selection keeps the chosen recipe in the slot. Changing it only
 // discards that slot's private inputs and current cycle.
 let recipeModalOuvert = null; // { familyId, slotIdx }
+let travailConfirmationEnAttente = null;
 
-function ouvrirModalRecette(familyId, slotIdx) {
-  recipeModalOuvert = { familyId: familyId, slotIdx: slotIdx };
-  renduModalRecette();
+function afficherDialogueRecette() {
+  if (!recipeModalOuvert) return;
   ouvrirDialogueModal("recipe-modal", {
     dismissible: true,
     fermer: fermerModalRecette,
     focusSelector: ".recipe-modal-choice",
-    returnFocusSelector: "#recipe-slot-" + familyId + "-" + slotIdx + " button"
+    returnFocusSelector: "#recipe-slot-" + recipeModalOuvert.familyId + "-" + recipeModalOuvert.slotIdx + " .work-recipe-selected"
   });
+}
+
+function ouvrirModalRecette(familyId, slotIdx) {
+  recipeModalOuvert = { familyId: familyId, slotIdx: slotIdx };
+  renduModalRecette();
+  afficherDialogueRecette();
 }
 
 function fermerModalRecette() {
@@ -5305,33 +5708,103 @@ function renduModalRecette() {
   let html = choices.map(function(pair) {
     const selected = slot && slot.recipeId === pair.recipeId;
     const cost = quantiteInputEffective(pair, pair.inputs[0]);
-    return '<button class="recipe-modal-choice' + (selected ? ' is-selected' : '') + '" onclick="selectionnerRecette(\'' + pair.recipeId + '\')"' + (selected ? ' aria-current="true"' : '') + '>'
+    return '<button type="button" class="recipe-modal-choice' + (selected ? ' is-selected' : '') + '" onclick="selectionnerRecette(\'' + pair.recipeId + '\')"' + (selected ? ' aria-current="true"' : '') + '>'
       + '<span class="work-tier-badge work-tier-badge-tier-' + pair.tier + '">Tier ' + pair.tier + '</span>'
       + '<span class="recipe-modal-formula"><span><img src="' + pair.rawIcon + '" alt=""><strong>' + libelleNombreDecimal(cost, 1) + ' ' + pair.rawLabel + '</strong></span><b>→</b><span><img src="' + pair.procIcon + '" alt=""><strong>' + pair.procLabel + '</strong></span></span>'
-      + '<small>The assigned Cat gathers the private input, then processes the result.</small></button>';
+      + '<small>The assigned Cat gathers the input, then processes the result.</small></button>';
   }).join("");
-  if (slot && slot.recipeId) html += '<button class="recipe-modal-clear" onclick="retirerRecetteSelectionnee()">Clear this recipe slot</button>';
+  if (slot && slot.recipeId) html += '<button type="button" class="recipe-modal-clear" onclick="retirerRecetteSelectionnee()">Clear this recipe slot</button>';
   conteneur.innerHTML = html || '<p class="worker-modal-vide">No recipe available in this family yet.</p>';
+}
+
+function ouvrirConfirmationTravail(titre, message, action, libelleAction) {
+  const recetteSuspendue = !!recipeModalOuvert;
+  travailConfirmationEnAttente = { action: action, restaurerRecette: recetteSuspendue };
+  ecrireTexte(domParId("work-confirm-title"), titre);
+  ecrireTexte(domParId("work-confirm-copy"), message);
+  ecrireTexte(domParId("work-confirm-accept"), libelleAction || "Continue");
+  // Avoid stacking two aria-modal dialogs. Some mobile browsers leave the
+  // first dialog's overlay above the confirmation and swallow every tap.
+  if (recetteSuspendue) fermerDialogueModal("recipe-modal");
+  ouvrirDialogueModal("work-confirm-modal", {
+    dismissible: true,
+    fermer: annulerConfirmationTravail,
+    focusSelector: "#work-confirm-cancel"
+  });
+}
+
+function annulerConfirmationTravail() {
+  const confirmation = travailConfirmationEnAttente;
+  travailConfirmationEnAttente = null;
+  fermerDialogueModal("work-confirm-modal");
+  if (confirmation && confirmation.restaurerRecette && recipeModalOuvert) {
+    requestAnimationFrame(afficherDialogueRecette);
+  }
+}
+
+function confirmerActionTravail() {
+  const confirmation = travailConfirmationEnAttente;
+  travailConfirmationEnAttente = null;
+  fermerDialogueModal("work-confirm-modal");
+  if (confirmation && typeof confirmation.action === "function") confirmation.action();
 }
 
 function selectionnerRecette(recipeId) {
   if (!recipeModalOuvert) return;
-  const slot = slotRecette(recipeModalOuvert.familyId, recipeModalOuvert.slotIdx);
+  const familyId = recipeModalOuvert.familyId;
+  const slotIdx = recipeModalOuvert.slotIdx;
+  const slot = slotRecette(familyId, slotIdx);
   const pair = paireRecette(recipeId);
-  if (!slot || !pair || pair.family !== recipeModalOuvert.familyId) return;
+  if (!slot || !pair || pair.family !== familyId) return;
   if (slot.recipeId === recipeId) { fermerModalRecette(); return; }
-  if (slot.recipeId && slot.kittyIndex !== null && !confirm("Changing this recipe will discard its private ingredients and current progress. Continue?")) return;
+  if (slot.recipeId && slot.kittyIndex !== null) {
+    ouvrirConfirmationTravail(
+      "Change recipe?",
+      "Changing this recipe will discard its gathered input and current progress.",
+      function() { appliquerSelectionRecette(familyId, slotIdx, recipeId); },
+      "Change recipe"
+    );
+    return;
+  }
+  appliquerSelectionRecette(familyId, slotIdx, recipeId);
+}
+
+function appliquerSelectionRecette(familyId, slotIdx, recipeId) {
+  const slot = slotRecette(familyId, slotIdx);
+  const pair = paireRecette(recipeId);
+  if (!slot || !pair || pair.family !== familyId) return;
+  if (slot.recipeId === recipeId) { fermerModalRecette(); return; }
+  const proposeWorker = slot.kittyIndex === null;
   viderProgressionRecette(slot);
   slot.recipeId = recipeId;
   fermerModalRecette();
   verifierObjectifs(); sauvegarder(); rendu();
+  // A newly chosen recipe is not useful until a Cat is assigned. Keep the
+  // existing selection flow for occupied slots, but chain directly to the
+  // Cat picker when this slot had no Cat yet.
+  if (proposeWorker) ouvrirModalWorkerRecette(familyId, slotIdx);
 }
 
 function retirerRecetteSelectionnee() {
   if (!recipeModalOuvert) return;
   const slot = slotRecette(recipeModalOuvert.familyId, recipeModalOuvert.slotIdx);
   if (!slot) return;
-  if (slot.kittyIndex !== null && !confirm("Clearing this slot removes its Cat and discards all private ingredients and progress. Continue?")) return;
+  if (slot.kittyIndex !== null) {
+    ouvrirConfirmationTravail(
+      "Clear recipe slot?",
+      "Clearing this slot removes its Cat and discards all gathered input and progress.",
+      retirerRecetteSelectionneeConfirme,
+      "Clear slot"
+    );
+    return;
+  }
+  retirerRecetteSelectionneeConfirme();
+}
+
+function retirerRecetteSelectionneeConfirme() {
+  if (!recipeModalOuvert) return;
+  const slot = slotRecette(recipeModalOuvert.familyId, recipeModalOuvert.slotIdx);
+  if (!slot) return;
   reinitialiserProgressionRecette(slot, true);
   fermerModalRecette();
   sauvegarder(); rendu();
@@ -5388,7 +5861,7 @@ function renduModalWorker() {
     if (status) html += '<span class="worker-modal-kitty-status">' + status + '</span>';
     html += '</div>';
     html += '<div class="worker-modal-kitty-bonus">';
-    html += '<div class="worker-modal-kitty-bonus-ligne"><span>×' + Math.pow(1.1, k.niveau).toFixed(2) + ' <span class="worker-modal-kitty-bonus-label">Basic Prod</span></span><span>×' + Math.pow(1.05, k.niveau).toFixed(2) + ' <span class="worker-modal-kitty-bonus-label">Complex Prod</span></span></div>';
+    html += '<div class="worker-modal-kitty-bonus-ligne"><span>×' + Math.pow(1.1, k.niveau).toFixed(2) + ' <span class="worker-modal-kitty-bonus-label">Gather Prod</span></span><span>×' + Math.pow(1.05, k.niveau).toFixed(2) + ' <span class="worker-modal-kitty-bonus-label">Process Prod</span></span></div>';
     html += '</div>';
     if (forcable) html += '<button class="btn-forcer" aria-label="Force assign ' + echapperAttributHtml(k.nom) + '" onclick="forcerWorkerRecette(' + i + ',\'' + workerModalOuvert.familyId + '\',' + workerModalOuvert.slotIdx + ');event.stopPropagation()">Force</button>';
     else html += '<div></div>';
@@ -5527,7 +6000,7 @@ function terminerSequence() {
   etat.chatons        += 1;
   etat.clicCount      += 1;
   const nom = nomProchainChat();
-  etat.kittiesData.push({ nom: nom, metier: null, niveau: 0, xp: 0, tier: 0, managerMult: 2, catchTs: Date.now(), visage: visage, jobNiveau: 0 });
+  etat.kittiesData.push({ nom: nom, metier: null, niveau: 0, xp: 0, tier: 0, managerMult: 1.5, catchTs: Date.now(), visage: visage, jobNiveau: 0 });
   etat.prochainVisageChaton = null;
   if (!etaitRecruit) afficherNotification("🐱 " + nom + " joined the gang!");
   ajouterLog("event", nom + (etaitRecruit ? " recruited!" : " caught!"));
@@ -5536,6 +6009,9 @@ function terminerSequence() {
   if (etat.chatons === 3) {
     afficherNotification("🐾 Work unlocked! Choose a Cardboard Planks recipe and assign a Cat.");
     ajouterLog("unlock", "Work unlocked. Cardboard Planks can now be produced from a recipe slot.");
+    // Bird events are unavailable before Work exists. Start its persisted
+    // first-event timer as soon as the Work tab becomes usable.
+    planifierOiseau();
   }
   if (etat.chatons === 5) {
     afficherNotification("🌿 Food recipes unlocked! Catnip Salads can now be produced in Work.");
@@ -5689,6 +6165,7 @@ function definitionMoteurRecette(pair) {
   return {
     rawRes: pair.rawRes,
     rawTotalKey: pair.rawTotalKey,
+    procTotalKey: pair.procTotalKey,
     rawSeconds: pair.rawCfg.secondesParUnite,
     rawQuantity: input && Number.isFinite(input.baseQuantity)
       ? input.baseQuantity
@@ -5743,12 +6220,11 @@ function tick() {
   if (etat.cathouses.length > 0) {
   }
 
-  // Speed-up: advance timestamps so timers consume real-time faster
+  // Speed-up: advance timestamps so exploration timers consume real-time faster.
+  // The catch/recruit sequence integrates its own effective speed segments in
+  // actualiserProgressionSequence(), so it must not also be shifted here.
   if (vitesse > 1) {
     const avance = (vitesse - 1) * 100;
-    if (etat.sequenceEnCours) {
-      etat.sequenceDebutTs -= avance;
-    }
     etat.exploEnCours.forEach(function(explo) {
       explo.startTs -= avance;
     });
@@ -5821,8 +6297,9 @@ function tick() {
 
   // Every assigned cat now runs a complete private Gathering then Processing cycle.
   const cardboardPlanksAvant = etat.cardboardPlanks;
+  const cardboardPlanksTotalAvant = etat.cardboardPlanksTotalProduit;
   const resultatsRecettes = tickWorkRecipes(vitesse * TICK_DT * workBoostMult());
-  if (cardboardPlanksAvant < 10 && etat.cardboardPlanks >= 10 && !storyEstVue("storyBasicWoodVue")) {
+  if (cardboardPlanksTotalAvant < 10 && etat.cardboardPlanksTotalProduit >= 10 && !storyEstVue("storyBasicWoodVue")) {
     marquerStoryVue("storyBasicWoodVue");
     afficherModal("ecran-story-basic-wood");
     renduStories();
@@ -5870,8 +6347,48 @@ setInterval(sauvegarder, 30000);
 // 11b. OFFLINE PROGRESS
 // ════════════════════════════════════════════════════════════
 
-const VITESSE_HORS_LIGNE  = 0.1;  // production catches up at 10% of real elapsed time
+// Offline progression is deliberately centralised here so the balance can be
+// tuned later without changing each individual timer. The cap applies to
+// real time away from the game; only the configured ratio is simulated.
+const VITESSE_HORS_LIGNE  = 0.1;
+const MAX_AFK_SECONDS     = 10 * 60 * 60;
 const ABSENCE_MIN_MS      = 60000; // ignore gaps shorter than 1 minute
+
+function tempsSimuleHorsLigne(ecouleReelMs) {
+  const secondesReelles = Math.min(
+    MAX_AFK_SECONDS,
+    Math.max(0, Number(ecouleReelMs) || 0) / 1000
+  );
+  return secondesReelles * VITESSE_HORS_LIGNE;
+}
+
+// Timers use wall-clock timestamps while the game is open. During an AFK
+// period, move every active timer forward by the discarded part of the gap;
+// the remaining elapsed time is therefore exactly the reduced simulated time.
+function appliquerDecalageTimersHorsLigne(decalageMs) {
+  if (!Number.isFinite(decalageMs) || decalageMs === 0) return;
+  etat.exploEnCours.forEach(function(explo) { explo.startTs += decalageMs; });
+  if (etat.exploZoneEnCours) etat.exploZoneEnCours.startTs += decalageMs;
+  Object.values(etat.scoutingsEnCours || {}).forEach(function(sc) {
+    if (sc) sc.startTs += decalageMs;
+  });
+  if (etat.formationEnCours) etat.formationEnCours.startTs += decalageMs;
+  if (etat.learningEnCours) etat.learningEnCours.startTs += decalageMs;
+}
+
+// The catch/recruit sequence has segmented speed bonuses, so advance it in
+// the same chunks as Work. This lets an auto-built house change only the
+// remaining simulated time, just like it does during normal play.
+function simulerSequenceHorsLigne(dt) {
+  if (!etat.sequenceEnCours || !(dt > 0)) return;
+  const duree = Math.max(0, Number(etat.sequenceDuree) || 0);
+  const vitesseSegment = Number.isFinite(etat.sequenceVitesseDerniere) && etat.sequenceVitesseDerniere > 0
+    ? etat.sequenceVitesseDerniere
+    : vitesseSequenceEffective();
+  const progress = Number.isFinite(etat.sequenceProgressBrute) ? etat.sequenceProgressBrute : 0;
+  etat.sequenceProgressBrute = Math.min(duree, Math.max(0, progress) + dt * vitesseSegment);
+  etat.sequenceVitesseDerniere = vitesseSequenceEffective();
+}
 
 // One simulated step of gathering/processing, no notifications/logs (used for offline catch-up)
 function simulerTickHorsLigne(dt) {
@@ -5885,7 +6402,8 @@ function simulerTickHorsLigne(dt) {
 // Applies offline progress since the last save. Returns a summary object, or null if nothing to report.
 function appliquerProgressionHorsLigne() {
   const maintenant   = Date.now();
-  const ecouleReelMs = maintenant - (etat.dernierTimestamp || maintenant);
+  const dernierTimestamp = Number.isFinite(etat.dernierTimestamp) ? etat.dernierTimestamp : maintenant;
+  const ecouleReelMs = Math.max(0, maintenant - dernierTimestamp);
   if (ecouleReelMs < ABSENCE_MIN_MS) {
     etat.dernierTimestamp = maintenant;
     return null;
@@ -5900,14 +6418,64 @@ function appliquerProgressionHorsLigne() {
     grilledAnchovy: etat.grilledAnchovy
   };
 
-  const dtSimTotal = (ecouleReelMs / 1000) * VITESSE_HORS_LIGNE;
+  const dtSimTotal = tempsSimuleHorsLigne(ecouleReelMs);
+  const ecouleReelPrisEnCompteMs = Math.min(ecouleReelMs, MAX_AFK_SECONDS * 1000);
+  const decalageMs = ecouleReelPrisEnCompteMs - (dtSimTotal * 1000);
+
+  // Work is advanced directly through its shared engine. All other systems
+  // retain their own timestamps, so shift them before checking completions.
+  appliquerDecalageTimersHorsLigne(decalageMs);
+  // Include the small interval between the last sequence update and the save
+  // at full active speed, then apply the reduced AFK interval in chunks.
+  if (etat.sequenceEnCours) {
+    const sauvegardeTs = Number(etat.dernierTimestamp) || maintenant;
+    actualiserProgressionSequence(sauvegardeTs);
+    etat.sequenceDerniereMajTs = sauvegardeTs;
+    etat.sequenceVitesseDerniere = vitesseSequenceEffective();
+  }
   const nbChunks    = Math.min(2000, Math.max(1, Math.ceil(dtSimTotal)));
   const tailleChunk = dtSimTotal / nbChunks;
-  for (let i = 0; i < nbChunks; i++) simulerTickHorsLigne(tailleChunk);
+  for (let i = 0; i < nbChunks; i++) {
+    simulerTickHorsLigne(tailleChunk);
+    simulerSequenceHorsLigne(tailleChunk);
+  }
+  if (etat.sequenceEnCours) etat.sequenceDerniereMajTs = maintenant;
 
-  // Catch/Recruit cooldown uses wall-clock time. Returning players only find
-  // the action ready: a cat is never granted automatically while offline.
+  // Catch/Recruit uses the same reduced simulated time as every other timer.
+  // Returning players only find the action ready: a cat is never granted automatically while offline.
   if (etat.sequenceEnCours && tempsRestantSequence() <= 0) etat.sequenceEnCours = false;
+
+  // Resolve every timer that became complete during the simulated period.
+  // These functions freeze mission power at launch and keep their normal
+  // reward-pending behavior; only the elapsed time is reduced while AFK.
+  const maintenantApresDecalage = Date.now();
+  etat.exploEnCours = etat.exploEnCours.filter(function(explo) {
+    if ((maintenantApresDecalage - explo.startTs) / 1000 >= explo.duree) {
+      terminerExplo(explo);
+      return false;
+    }
+    return true;
+  });
+  if (etat.exploZoneEnCours
+      && (maintenantApresDecalage - etat.exploZoneEnCours.startTs) / 1000 >= etat.exploZoneEnCours.duree) {
+    terminerExploZone();
+  }
+  Object.keys(etat.scoutingsEnCours || {}).forEach(function(scoutingId) {
+    const sc = etat.scoutingsEnCours[scoutingId];
+    const def = CONFIG.scoutings[scoutingId];
+    const duree = sc && sc.duree !== undefined ? sc.duree : (def ? def.duree : 120);
+    if (!sc || !def || duree <= 0) return;
+    const runs = Math.floor(Math.max(0, (maintenantApresDecalage - sc.startTs) / 1000) / duree);
+    if (runs > 0) terminerScouting(scoutingId, runs);
+  });
+  if (etat.learningEnCours
+      && maintenantApresDecalage - etat.learningEnCours.startTs >= etat.learningEnCours.duree) {
+    terminerApprentissage(etat.learningEnCours.itemId);
+  }
+  if (etat.formationEnCours
+      && (maintenantApresDecalage - etat.formationEnCours.startTs) / 1000 >= etat.formationEnCours.duree) {
+    terminerFormation();
+  }
 
   etat.dernierTimestamp = maintenant;
   verifierObjectifs();
@@ -5915,6 +6483,7 @@ function appliquerProgressionHorsLigne() {
 
   return {
     dureeReelleSec: ecouleReelMs / 1000,
+    dureeSimuleeSec: dtSimTotal,
     cardboardPlanks: etat.cardboardPlanks - avant.cardboardPlanks,
     basicWoodPlanks: etat.basicWoodPlanks - avant.basicWoodPlanks,
     pebbleBricks:    etat.pebbleBricks   - avant.pebbleBricks,
@@ -5944,6 +6513,7 @@ function afficherResumeAbsence(resume) {
   }
 
   ligne("⏱ Time away", formaterTemps(resume.dureeReelleSec));
+  ligne("⚙ Game time applied", formaterTemps(resume.dureeSimuleeSec));
 
   const ressources = [
     ["📋 Cardboard Planks", resume.cardboardPlanks],
@@ -6080,6 +6650,16 @@ document.getElementById("logs-souscontenu").addEventListener("keydown", gererNav
 
 function fermerModal(id) { fermerDialogueModal(id); }
 
+function fermerStoryAdventure() {
+  fermerModal("ecran-story-3");
+  if (storyEstVue("story3TransitionVue")) return;
+  marquerStoryVue("story3TransitionVue");
+  ouvrirDialogueModal("recruiting-transition-modal", {
+    focusSelector: ".recruiting-transition-action",
+    returnFocusSelector: "#bouton-sequence"
+  });
+}
+
 function validerStoryJob() {
   fermerModal("ecran-story-6b");
   ouvrirDialogueModal("gang-leader-unlock-modal", {
@@ -6175,26 +6755,7 @@ function fermerStoryBird() {
   _birdMiniJeuPending = false;
   var el = document.getElementById("bird-btn");
   if (el) el.style.display = "none";
-  _birdCursorPct = 0; _birdDir = 1;
-  ouvrirDialogueModal("bird-minijeu", {
-    focusSelector: ".bird-catch-btn",
-    returnFocusSelector: "#bouton-sequence"
-  });
-  var miniPerk = etat.spherePerks && etat.spherePerks['gl-mini'] === 'learned';
-  var carte = document.querySelector('.bird-minijeu-carte');
-  if (carte) carte.classList.toggle('bird-facile', miniPerk);
-  var speed = miniPerk ? 75 : 150;
-  var last = performance.now();
-  function frame(ts) {
-    var dt = (ts - last) / 1000; last = ts;
-    _birdCursorPct += _birdDir * speed * dt;
-    if (_birdCursorPct >= 100) { _birdCursorPct = 100; _birdDir = -1; }
-    if (_birdCursorPct <= 0)   { _birdCursorPct = 0;   _birdDir =  1; }
-    var cursor = document.getElementById("bird-cursor");
-    if (cursor) cursor.style.left = _birdCursorPct + "%";
-    _birdMiniJeuRaf = requestAnimationFrame(frame);
-  }
-  _birdMiniJeuRaf = requestAnimationFrame(frame);
+  demarrerBirdMiniJeu();
 }
 function afficherModal(id) {
   if (id === "ecran-story-explorator") preparerStoryExplorator();
@@ -6280,6 +6841,11 @@ document.getElementById("bouton-intro").addEventListener("click", function() {
 function changerOnglet(id) {
   if (!IDS_ONGLETS.includes(id)) return;
   if (id === "logs" && etat.chatons < 3) return;
+  // On mobile, the Gang tab is the list landing view. Returning to it from
+  // another tab must not reopen the kitty profile that was previously open.
+  if (id === "gang" && window.matchMedia("(max-width: 768px)").matches) {
+    detailKittyMobileOuvert = false;
+  }
   document.body.classList.remove("interface-compacte");
   marquerOngletVisite(id);
   IDS_ONGLETS.forEach(function(tab) {
@@ -6297,6 +6863,7 @@ function changerOnglet(id) {
   if (id === "inventaire")  { inventaireDirty = true; }
   if (id === "facilities")  { jcDirty = true; }
   rendu(); // render the newly visible tab immediately instead of waiting for the next 100 ms tick
+  if (id === "gang") renduManagement();
 }
 
 function gererNavigationOnglets(e) {
@@ -6371,10 +6938,12 @@ function cyclerVitesse() {
 function definirObjectifsReduits(reduit) {
   const panneau = document.getElementById("panneau-objectifs");
   const btn     = document.getElementById("objectifs-toggle");
+  const titre   = document.getElementById("objectifs-titre");
   panneau.classList.toggle("reduit", reduit);
   btn.textContent = reduit ? "+" : "−";
   btn.setAttribute("aria-expanded", reduit ? "false" : "true");
   btn.title = reduit ? "Expand guide" : "Collapse guide";
+  titre.setAttribute("aria-expanded", reduit ? "false" : "true");
 }
 
 function toggleObjectifs() {
@@ -6814,27 +7383,36 @@ var _birdDir            = 1;
 var _birdMiniJeuPending = false;
 
 function planifierOiseau() {
-  var delai = (Math.random() * 600 + 300) * 1000; // 5 à 15 min
+  if (!catheringDebloquee()) {
+    if (_birdTimerId) clearTimeout(_birdTimerId);
+    _birdTimerId = null;
+    return;
+  }
+  if (_birdTimerId) clearTimeout(_birdTimerId);
+  var premiere = !etat.birdPremiereReussie;
+  var delai;
+  if (premiere) {
+    if (!Number.isFinite(etat.birdPremierSpawnTs) || etat.birdPremierSpawnTs <= 0) {
+      etat.birdPremierSpawnTs = Date.now() + 5 * 60 * 1000;
+      sauvegarder();
+    }
+    delai = Math.max(0, etat.birdPremierSpawnTs - Date.now());
+  } else {
+    delai = (Math.random() * 600 + 300) * 1000; // 5 à 15 min
+  }
   _birdTimerId = setTimeout(montrerOiseau, delai);
 }
 
 function montrerOiseau() {
+  if (!catheringDebloquee()) return;
   var el = document.getElementById("bird-btn");
   if (el) el.style.display = "inline-flex";
   var dbg = document.getElementById("bird-debug-btn");
   if (dbg) dbg.style.display = "none";
 }
 
-function ouvrirBirdMiniJeu() {
-  if (!storyEstVue("storyBirdVue")) {
-    marquerStoryVue("storyBirdVue");
-    var birdBtn = document.getElementById("bird-btn");
-    if (birdBtn) birdBtn.style.display = "none";
-    _birdMiniJeuPending = true;
-    afficherModal("ecran-story-bird");
-    renduStories();
-    return;
-  }
+function demarrerBirdMiniJeu() {
+  var premiere = !etat.birdPremiereReussie;
   var el = document.getElementById("bird-btn");
   if (el) el.style.display = "none";
   _birdCursorPct = 0;
@@ -6843,10 +7421,17 @@ function ouvrirBirdMiniJeu() {
     focusSelector: ".bird-catch-btn",
     returnFocusSelector: "#bouton-sequence"
   });
-  var miniPerk = etat.spherePerks && etat.spherePerks['gl-mini'] === 'learned';
+  var miniPerk = !premiere && etat.spherePerks && etat.spherePerks['gl-mini'] === 'learned';
   var carte = document.querySelector('.bird-minijeu-carte');
-  if (carte) carte.classList.toggle('bird-facile', miniPerk);
-  var speed = miniPerk ? 75 : 150;
+  if (carte) {
+    carte.classList.toggle('bird-premiere', premiere);
+    carte.classList.toggle('bird-facile', !premiere && miniPerk);
+  }
+  var desc = document.getElementById("bird-minijeu-desc");
+  if (desc) desc.textContent = premiere
+    ? "Take your time. Click CATCH! when the cursor reaches the bird. You can try again if you miss."
+    : "Click CATCH! when the cursor reaches the bird.";
+  var speed = premiere ? 35 : (miniPerk ? 75 : 150);
   var last = performance.now();
   function frame(ts) {
     var dt = (ts - last) / 1000;
@@ -6861,6 +7446,20 @@ function ouvrirBirdMiniJeu() {
   _birdMiniJeuRaf = requestAnimationFrame(frame);
 }
 
+function ouvrirBirdMiniJeu() {
+  if (!catheringDebloquee()) return;
+  if (!storyEstVue("storyBirdVue")) {
+    marquerStoryVue("storyBirdVue");
+    var birdBtn = document.getElementById("bird-btn");
+    if (birdBtn) birdBtn.style.display = "none";
+    _birdMiniJeuPending = true;
+    afficherModal("ecran-story-bird");
+    renduStories();
+    return;
+  }
+  demarrerBirdMiniJeu();
+}
+
 function _apresMinijeuOiseau() {
   var dbg = document.getElementById("bird-debug-btn");
   if (dbg) dbg.style.display = DEV_MODE ? "inline-flex" : "none";
@@ -6868,15 +7467,29 @@ function _apresMinijeuOiseau() {
 }
 
 function clickerBird() {
-  if (_birdMiniJeuRaf) { cancelAnimationFrame(_birdMiniJeuRaf); _birdMiniJeuRaf = null; }
-  fermerDialogueModal("bird-minijeu");
+  var premiere = !etat.birdPremiereReussie;
   var miniPerk = etat.spherePerks && etat.spherePerks['gl-mini'] === 'learned';
-  var success = miniPerk
+  var success = premiere
+    ? (_birdCursorPct >= 20 && _birdCursorPct <= 80)
+    : miniPerk
     ? (_birdCursorPct >= 38 && _birdCursorPct <= 62)
     : (_birdCursorPct >= 45 && _birdCursorPct <= 55);
+  if (premiere && !success) {
+    var desc = document.getElementById("bird-minijeu-desc");
+    if (desc) desc.textContent = "Almost! The first lesson is forgiving. Try CATCH! again when the cursor is closer.";
+    return;
+  }
+  if (_birdMiniJeuRaf) { cancelAnimationFrame(_birdMiniJeuRaf); _birdMiniJeuRaf = null; }
+  fermerDialogueModal("bird-minijeu");
   if (success) {
+    if (premiere) etat.birdPremiereReussie = true;
     etat.workBoostFinTs = Date.now() + 120000;
-    ajouterLog("event", "Bernardo caught a bird — work production x10 for 2 minutes!");
+    ajouterLog("event", "Bernardo caught a bird, boosting worker production x10 for 2 minutes!");
+    var successMessage = document.getElementById("bird-success-titre");
+    if (successMessage) successMessage.textContent = premiere
+      ? "Great catch! This mini-game boosts worker production for a short time. Other bird types may appear in the future, and it will be harder from now on."
+      : "Well done, Bernardo! That graceful move has motivated the gang. They will work faster for a short time.";
+    sauvegarder();
     ouvrirDialogueModal("bird-success-popup", {
       focusSelector: ".bird-success-btn",
       returnFocusSelector: "#bouton-sequence"
@@ -6894,6 +7507,7 @@ function fermerBirdSuccessPopup() {
 }
 
 function skipBird() {
+  if (!etat.birdPremiereReussie) return;
   if (_birdMiniJeuRaf) { cancelAnimationFrame(_birdMiniJeuRaf); _birdMiniJeuRaf = null; }
   fermerDialogueModal("bird-minijeu");
   ajouterLog("event", "A bird flew past... and nobody noticed.");

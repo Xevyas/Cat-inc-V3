@@ -24,7 +24,7 @@ const CONFIG = {
   woodcatting:      { secondesParUnite: 60 },
   basicWoodcatting: { secondesParUnite: 600 },
   grasscatting:     { secondesParUnite: 120 },
-  pebblegathering: { deblocageA: 7,  secondesParUnite: 240 },
+  pebblegathering: { deblocageA: 5,  secondesParUnite: 240 },
   rockgathering:   { secondesParUnite: 2400 },
   rockFactory: {
     secondesParBrique: 12000,

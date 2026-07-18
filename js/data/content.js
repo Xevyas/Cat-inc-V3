@@ -13,84 +13,84 @@ const RESOURCE_INFO = {
     nom:     "Cardboard Pieces",
     tier:    "Tier 1 · Wood family",
     desc:    "Small patches of cardboard found lying on the ground. Might be useful.",
-    produce: "Gathered privately by a Cat assigned to a Cardboard Planks recipe.",
+    produce: "Gathered by a Cat assigned to a Cardboard Planks recipe.",
     usage:   "Used inside that recipe slot (10 pieces per plank). It is never stored globally."
   },
   "inv-res-cardboard-plank": {
     nom:     "Cardboard Planks",
     tier:    "Tier 1 · Wood family (processed)",
     desc:    "Sturdy planks pressed from cardboard. The backbone of early construction.",
-    produce: "Assign a Cat to a Cardboard Planks recipe in Work. The slot privately gathers 10 Cardboard Pieces first.",
+    produce: "Assign a Cat to a Cardboard Planks recipe in Work. The slot gathers 10 Cardboard Pieces first.",
     usage:   "Used to construct buildings like Houses."
   },
   "inv-res-basic-wood": {
     nom:     "Basic Wood",
     tier:    "Tier 2 · Wood family",
     desc:    "Rough wooden planks salvaged from human furniture. Heavier to carry, but sturdier.",
-    produce: "Gathered privately by a Cat assigned to a Basic Wood Planks recipe.",
+    produce: "Gathered by a Cat assigned to a Basic Wood Planks recipe.",
     usage:   "Used inside that recipe slot (10 logs per plank). It is never stored globally."
   },
   "inv-res-wood-plank": {
     nom:     "Basic Wood Planks",
     tier:    "Tier 2 · Wood family (processed)",
     desc:    "Refined wooden planks, sanded and shaped. A real upgrade from cardboard.",
-    produce: "Assign a Cat to a Basic Wood Planks recipe in Work. The slot privately gathers 10 Basic Wood first.",
+    produce: "Assign a Cat to a Basic Wood Planks recipe in Work. The slot gathers 10 Basic Wood first.",
     usage:   "Used to construct buildings like Houses."
   },
   "inv-res-catnip": {
     nom:     "Catnip",
     tier:    "Tier 1 · Food family",
     desc:    "Fresh catnip from the garden. Nutritious, if you're a cat.",
-    produce: "Gathered privately by a Cat assigned to a Catnip Salads recipe.",
+    produce: "Gathered by a Cat assigned to a Catnip Salads recipe.",
     usage:   "Used inside that recipe slot (10 catnip per salad). It is never stored globally."
   },
   "inv-res-salads": {
     nom:     "Salads",
     tier:    "Tier 1 · Food family (processed)",
     desc:    "A balanced catnip salad. Even Bernardo eats his greens.",
-    produce: "Assign a Cat to a Catnip Salads recipe in Work. The slot privately gathers 10 Catnip first.",
+    produce: "Assign a Cat to a Catnip Salads recipe in Work. The slot gathers 10 Catnip first.",
     usage:   "Feed to a cat in the Gang tab to give them +1 XP."
   },
   "inv-res-anchovy": {
     nom:     "Anchovy",
     tier:    "Tier 2 · Food family",
     desc:    "Fresh anchovies fished from the nearby stream. A cat's favourite.",
-    produce: "Gathered privately by a Cat assigned to a Grilled Anchovy recipe.",
+    produce: "Gathered by a Cat assigned to a Grilled Anchovy recipe.",
     usage:   "Used inside that recipe slot (10 anchovies per serving). It is never stored globally."
   },
   "inv-res-grilled-anchovy": {
     nom:     "Grilled Anchovy",
     tier:    "Tier 2 · Food family (processed)",
     desc:    "Golden, crispy, perfectly grilled. Worth every second of cooking.",
-    produce: "Assign a Cat to a Grilled Anchovy recipe in Work. The slot privately gathers 10 Anchovies first.",
+    produce: "Assign a Cat to a Grilled Anchovy recipe in Work. The slot gathers 10 Anchovies first.",
     usage:   "Not yet used — future recipes coming."
   },
   "inv-res-pebbles": {
     nom:     "Pebbles",
     tier:    "Tier 1 · Rock family",
     desc:    "Small smooth pebbles gathered from the yard. Heavy pockets, light heart.",
-    produce: "Gathered privately by a Cat assigned to a Pebble Bricks recipe.",
+    produce: "Gathered by a Cat assigned to a Pebble Bricks recipe.",
     usage:   "Used inside that recipe slot (10 pebbles per brick). It is never stored globally."
   },
   "inv-res-pebble-brick": {
     nom:     "Pebble Bricks",
     tier:    "Tier 1 · Rock family (processed)",
     desc:    "Compact bricks made from compressed pebbles. Surprisingly solid.",
-    produce: "Assign a Cat to a Pebble Bricks recipe in Work. The slot privately gathers 10 Pebbles first.",
+    produce: "Assign a Cat to a Pebble Bricks recipe in Work. The slot gathers 10 Pebbles first.",
     usage:   "Used to construct buildings like Facilities."
   },
   "inv-res-rocks": {
     nom:     "Rocks",
     tier:    "Tier 2 · Rock family",
     desc:    "Dense stones hauled from deeper in the yard. Much heavier than pebbles.",
-    produce: "Gathered privately by a Cat assigned to a Rock Bricks recipe.",
+    produce: "Gathered by a Cat assigned to a Rock Bricks recipe.",
     usage:   "Used inside that recipe slot (10 rocks per brick). It is never stored globally."
   },
   "inv-res-rock-brick": {
     nom:     "Rock Bricks",
     tier:    "Tier 2 · Rock family (processed)",
     desc:    "Solid bricks forged from dense rock. Built to last.",
-    produce: "Assign a Cat to a Rock Bricks recipe in Work. The slot privately gathers 10 Rocks first.",
+    produce: "Assign a Cat to a Rock Bricks recipe in Work. The slot gathers 10 Rocks first.",
     usage:   "Used in advanced construction."
   },
   "inv-res-human-leftovers": {
