@@ -203,6 +203,23 @@ body {
   font-weight: 700;
   text-align: center;
 }
+.work-summary-go {
+  display: block;
+  width: max-content;
+  max-width: calc(100% - 20px);
+  margin: -8px auto 8px;
+  padding: 5px 12px;
+  color: var(--couleur-accent);
+  font-family: inherit;
+  font-size: .64rem;
+  font-weight: 900;
+  border: 1px solid #e2b37d;
+  border-radius: 999px;
+  background: #fff8ee;
+  cursor: pointer;
+}
+.work-summary-go:hover { color: #fff; background: var(--couleur-accent); }
+.work-summary-go:focus-visible { outline: 2px solid var(--couleur-accent); outline-offset: 2px; }
 .work-summary-waiting {
   width: 100%;
   padding: 8px 10px;
@@ -385,6 +402,8 @@ body {
   background: conic-gradient(var(--couleur-accent) calc(var(--prog, 0) * 1turn), #dfd5c8 0);
 }
 .work-recipe-cat-face { display: grid; place-items: center; width: 100%; height: 100%; overflow: hidden; border: 3px solid #fff; border-radius: 50%; background: #fff7ea; }
+.work-recipe-cat-face[data-clavier-clic] { cursor: pointer; }
+.work-recipe-cat-face[data-clavier-clic]:focus-visible { outline: 3px solid rgba(212, 98, 42, 0.55); outline-offset: 2px; }
 .work-recipe-cat-face .kitty-icon { width: 100%; height: 100%; object-fit: contain; }
 .work-recipe-cat-remove {
   position: absolute;
@@ -1156,6 +1175,111 @@ body {
   margin-bottom: 2px;
 }
 
+/* Food distribution summary */
+.food-distribution-modal .explo-modal-panneau {
+  width: min(520px, 92vw);
+  max-width: 520px;
+}
+.food-distribution-copy {
+  margin: -4px 0 0;
+  color: var(--couleur-texte-secondaire, currentColor);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+.food-distribution-stats {
+  padding: 8px 10px;
+  border: 1px solid #e2c6a9;
+  border-radius: 8px;
+  background: #fff5e7;
+  color: var(--couleur-accent);
+  font-size: 0.76rem;
+  font-weight: 900;
+  line-height: 1.35;
+  text-align: center;
+}
+.food-distribution-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 48vh;
+  overflow-y: auto;
+  padding-right: 3px;
+}
+.food-distribution-stats + .food-distribution-summary { margin-top: 8px; }
+.food-distribution-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  min-height: 50px;
+  padding: 6px 8px;
+  border: 1px solid #e8ddd0;
+  border-radius: 9px;
+  background: #faf6f0;
+}
+.food-distribution-portrait {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border: 2px solid #dfcdbb;
+  border-radius: 50%;
+  background: #fff;
+}
+.food-distribution-portrait .kitty-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.food-distribution-name {
+  min-width: 0;
+  color: var(--couleur-texte);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+.food-distribution-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+  color: var(--couleur-texte-secondaire, currentColor);
+  font-size: 0.68rem;
+  line-height: 1.3;
+}
+.food-distribution-level {
+  color: var(--couleur-verte, #277b62);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-align: right;
+  white-space: nowrap;
+}
+.food-distribution-level.none {
+  color: var(--couleur-texte-secondaire, currentColor);
+  font-weight: 700;
+}
+.food-distribution-total {
+  margin-top: 2px;
+  padding-top: 8px;
+  border-top: 1px solid #e8ddd0;
+  color: var(--couleur-texte);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-align: right;
+}
+.food-distribution-continue {
+  align-self: center;
+  min-width: 130px;
+  padding: 9px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--couleur-accent);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+.food-distribution-continue:hover { filter: brightness(1.08); }
+
 /* ── Sphere learn button ─────────────────────────────────────────────────── */
 .sphere-learn-btn {
   display: block;
@@ -1206,7 +1330,11 @@ body {
   background: #f7f3ee;
   border-radius: 8px;
   border: 1px solid #e8ddd0;
-  min-height: 56px;
+  box-sizing: border-box;
+  height: 150px;
+  max-height: 150px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   font-family: inherit;
 }
 .sphere-detail-nom {
@@ -6024,7 +6152,8 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
     width: 96vw;
     height: min(620px, 90vh);
     aspect-ratio: auto;
-    background-size: auto 100%;
+    background-size: contain;
+    background-position: center;
   }
   .book-learning-close { top: 17%; right: 4%; }
   .book-learning-content {
@@ -6626,6 +6755,10 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
   .tc-cat-job,
   .tc-cat-level { font-size: 0.6rem; }
   .tc-sphere-column { padding: 9px; }
+  .sphere-detail-panel {
+    height: 158px;
+    max-height: 158px;
+  }
 }
 
 /* Story screens must remain usable on short phones and in landscape. */

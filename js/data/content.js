@@ -250,6 +250,7 @@ const METIERS = {
 
 // ── Sphere grids (one per job, UX-only for now) ─────────────────────────────
 function simpleResourceSphereGrid(prefix, resourceLabel) {
+  const recipeFamilyLabel = resourceLabel === 'Rock' ? 'Rocks' : resourceLabel;
   return {
     spheres: [
       { id: prefix + '-prod', x: 120, y: 290, r: 36, couleur: '#ffbf00',
@@ -264,10 +265,15 @@ function simpleResourceSphereGrid(prefix, resourceLabel) {
         nom: 'SPEED BOOST',
         desc: 'Increases the speed boost granted to the "' + resourceLabel + '" by 50%. This adds to the manager\'s level bonus.',
         etat: 'unlocked', cout: { cannedCatFood: 1 } },
+      { id: prefix + '-slot', x: 290, y: 460, r: 36, couleur: '#3aaecf',
+        nom: 'NEW SLOT',
+        desc: 'Adds one recipe slot to the ' + recipeFamilyLabel + ' family.',
+        etat: 'unlocked', cout: { cannedCatFood: 1 } },
     ],
     connections: [
       [prefix + '-prod', prefix + '-c'],
       [prefix + '-c', prefix + '-speed'],
+      [prefix + '-c', prefix + '-slot'],
     ]
   };
 }
@@ -287,10 +293,15 @@ function complexResourceSphereGrid(prefix, resourceLabel, rawLabel) {
         nom: 'SPEED BOOST',
         desc: 'Increases the speed boost granted to ' + resourceLabel + ' by 50%. This adds to the manager\'s level bonus.',
         etat: 'unlocked', cout: { cannedCatFood: 1 } },
+      { id: prefix + '-slot', x: 290, y: 460, r: 36, couleur: '#3aaecf',
+        nom: 'NEW SLOT',
+        desc: 'Adds one recipe slot to the ' + rawLabel.charAt(0).toUpperCase() + rawLabel.slice(1) + ' family.',
+        etat: 'unlocked', cout: { cannedCatFood: 1 } },
     ],
     connections: [
       [prefix + '-cost', prefix + '-c'],
       [prefix + '-c', prefix + '-speed'],
+      [prefix + '-c', prefix + '-slot'],
     ]
   };
 }

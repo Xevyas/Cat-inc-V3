@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0101" />
+  <link rel="stylesheet" href="style.css?v=0.0104" />
 </head>
 <body>
 
@@ -594,6 +594,20 @@
     </div>
   </div>
 
+  <!-- FOOD DISTRIBUTION SUMMARY -->
+  <div id="food-distribution-modal" class="explo-modal food-distribution-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="food-distribution-title" aria-describedby="food-distribution-copy" style="display:none">
+    <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerFoodDistributionModal()"></div>
+    <div class="explo-modal-panneau" role="document" tabindex="-1">
+      <div class="explo-modal-header">
+        <span class="explo-modal-titre" id="food-distribution-title">Food distributed</span>
+        <button class="explo-modal-close" aria-label="Close food distribution summary" onclick="fermerFoodDistributionModal()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
+      </div>
+      <p id="food-distribution-copy" class="food-distribution-copy">Here is how the food was shared across the Gang.</p>
+      <div id="food-distribution-summary"></div>
+      <button type="button" class="food-distribution-continue" onclick="fermerFoodDistributionModal()">Continue</button>
+    </div>
+  </div>
+
   <!-- CONTENU LOGS -->
   <div id="contenu-logs" role="tabpanel" aria-labelledby="onglet-logs" aria-hidden="true" style="display:none">
     <div class="logs-heading">
@@ -671,7 +685,7 @@
           <span class="settings-toggle-switch"></span>
         </label>
         <div class="settings-separateur"></div>
-        <div class="settings-version" aria-label="Game version">Version <strong>v0.0029</strong></div>
+        <div class="settings-version" aria-label="Game version">Version <strong>v0.0030</strong></div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
       </div>
     </div>
@@ -835,14 +849,14 @@
   <div id="inv-res-popup" role="tooltip" aria-hidden="true" style="display:none"></div>
 
   <script src="js/cat-inc.js?v=0.0032"></script>
-  <script src="js/data/config.js?v=0.0037"></script>
-  <script src="js/data/content.js?v=0.0048"></script>
+  <script src="js/data/config.js?v=0.0039"></script>
+  <script src="js/data/content.js?v=0.0049"></script>
   <script src="js/core/state.js?v=0.0037"></script>
   <script src="js/core/save.js?v=0.0039"></script>
   <script src="js/core/production.js?v=0.0036"></script>
   <script src="js/ui/dom.js?v=0.0032"></script>
-  <script src="js/ui/audio.js?v=0.0004"></script>
-  <script src="jeu.js?v=0.0117"></script>
+  <script src="js/ui/audio.js?v=0.0007"></script>
+  <script src="jeu.js?v=0.0118"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

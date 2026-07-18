@@ -283,6 +283,7 @@ const etat = creerEtatInitial();
 
 function reinitialiserEtat() {
   remplacerEtat(etat, creerEtatInitial());
+  workStructureInitialisee = false;
 }
 
 
@@ -738,12 +739,12 @@ const MAP_FAMILLE = {
 };
 const METIER_PAR_FAMILLE = { wood: ["lumberjack"], food: ["farmer"], sawmill: ["carpenter"], catchen: ["chef"], rock: ["miner"], pawsonry: ["stonemason"], houses: ["builder"] };
 const MANAGER_SPHERE_PERKS = {
-  wood: { production: 'lj-prod', speed: 'lj-speed' },
-  food: { production: 'farmer-prod', speed: 'farmer-speed' },
-  rock: { production: 'miner-prod', speed: 'miner-speed' },
-  sawmill: { cost: 'carpenter-cost', speed: 'carpenter-speed' },
-  catchen: { cost: 'chef-cost', speed: 'chef-speed' },
-  pawsonry: { cost: 'stonemason-cost', speed: 'stonemason-speed' },
+  wood: { production: 'lj-prod', speed: 'lj-speed', slot: 'lj-slot', recipeFamily: 'wood' },
+  food: { production: 'farmer-prod', speed: 'farmer-speed', slot: 'farmer-slot', recipeFamily: 'food' },
+  rock: { production: 'miner-prod', speed: 'miner-speed', slot: 'miner-slot', recipeFamily: 'rock' },
+  sawmill: { cost: 'carpenter-cost', speed: 'carpenter-speed', slot: 'carpenter-slot', recipeFamily: 'wood' },
+  catchen: { cost: 'chef-cost', speed: 'chef-speed', slot: 'chef-slot', recipeFamily: 'food' },
+  pawsonry: { cost: 'stonemason-cost', speed: 'stonemason-speed', slot: 'stonemason-slot', recipeFamily: 'rock' },
   houses: { auto: 'builder-auto', formula: 'builder-cost', speed: 'builder-speed' }
 };
 
@@ -772,7 +773,8 @@ function managerSphereStateKey(famille) {
   if (!perks) return "";
   return (spherePerkLearned(perks.production) ? "prod" : "")
     + (spherePerkLearned(perks.speed) ? "speed" : "")
-    + (spherePerkLearned(perks.cost) ? "cost" : "");
+    + (spherePerkLearned(perks.cost) ? "cost" : "")
+    + (spherePerkLearned(perks.slot) ? "slot" : "");
 }
 
 function managerPerksHtml(famille, className, hideHouseBuildPerks) {
@@ -795,7 +797,34 @@ function managerPerksHtml(famille, className, hideHouseBuildPerks) {
   if (spherePerkLearned(perks.speed)) {
     html += '<span class="' + cls + '"><span class="bonus-var">×1.5</span> manager speed (perk)</span>';
   }
+  if (spherePerkLearned(perks.slot) && perks.recipeFamily) {
+    const familyLabel = WORK_FAMILIES[perks.recipeFamily] ? WORK_FAMILIES[perks.recipeFamily].label : perks.recipeFamily;
+    html += '<span class="' + cls + '">+1 ' + familyLabel + ' recipe slot (perk)</span>';
+  }
   return html;
+}
+
+function synchroniserSlotsRecettesAvecPerks() {
+  if (!etat.workRecipeSlots) etat.workRecipeSlots = {};
+  let changed = false;
+  Object.keys(WORK_FAMILIES).forEach(function(recipeFamily) {
+    let slots = Array.isArray(etat.workRecipeSlots[recipeFamily]) ? etat.workRecipeSlots[recipeFamily] : [];
+    while (slots.length < 2) {
+      slots.push(stateCore.makeWorkRecipeSlot());
+      changed = true;
+    }
+    const extraSlots = Object.keys(MANAGER_SPHERE_PERKS).reduce(function(total, managerFamily) {
+      const perks = MANAGER_SPHERE_PERKS[managerFamily];
+      return total + (perks.recipeFamily === recipeFamily && spherePerkLearned(perks.slot) ? 1 : 0);
+    }, 0);
+    const targetCount = 2 + extraSlots;
+    while (slots.length < targetCount) {
+      slots.push(stateCore.makeWorkRecipeSlot());
+      changed = true;
+    }
+    etat.workRecipeSlots[recipeFamily] = slots;
+  });
+  return changed;
 }
 
 function managerKittyForFamily(famille) {
@@ -1204,6 +1233,13 @@ function jouerSonAilesOiseau() {
   }
 }
 
+function demarrerMusiqueAmbiante() {
+  const audio = globalThis.CatInc && globalThis.CatInc.audio;
+  if (audio && typeof audio.startMusic === "function") {
+    audio.startMusic(etat.volumeMusique);
+  }
+}
+
 function conserverSauvegardeRecuperation(raw, raison) {
   try {
     localStorage.setItem(SAVE_RECOVERY_KEY, JSON.stringify({
@@ -1258,6 +1294,7 @@ function charger() {
     assignerVisageChaton: assignerVisageChaton
   });
   remplacerEtat(etat, nouvelEtat);
+  workStructureInitialisee = false;
 
   // Promotion remains in the browser layer because it creates a notification and a log.
   if (etat.itemsAppris.includes("schoolGuide") || etat.jobCenterConstruit) assignerGangLeader();
@@ -1326,7 +1363,11 @@ function actualiserVolumeAudioUI(canal, rawValue) {
 function gererVolumeAudio(canal, rawValue) {
   const value = Math.max(0, Math.min(100, Number(rawValue) || 0)) / 100;
   if (canal === "sfx") etat.volumeEffetsSonores = value;
-  if (canal === "music") etat.volumeMusique = value;
+  if (canal === "music") {
+    etat.volumeMusique = value;
+    const audio = globalThis.CatInc && globalThis.CatInc.audio;
+    if (audio && typeof audio.setMusicVolume === "function") audio.setMusicVolume(value);
+  }
   actualiserVolumeAudioUI(canal, value * 100);
   sauvegarder();
 }
@@ -2040,10 +2081,15 @@ let workStructureInitialisee = false;
 
 function initialiserWorkStructure() {
   if (workStructureInitialisee) return;
+  synchroniserSlotsRecettesAvecPerks();
   const section = domParId("section-work-pairs");
   if (!section) return;
   const familyHtml = Object.keys(WORK_FAMILIES).map(function(familyId) {
     const family = WORK_FAMILIES[familyId];
+    const slots = etat.workRecipeSlots[familyId] || [];
+    const slotsHtml = slots.map(function(slot, slotIdx) {
+      return '<article class="work-recipe-slot" id="recipe-slot-' + familyId + '-' + slotIdx + '"></article>';
+    }).join("");
     return '<div id="famille-' + familyId + '" class="work-recipe-family">'
       + '<header class="work-recipe-family-header">'
       +   '<div><span class="pair-family-kicker">Production family</span><h2>' + family.label + '</h2></div>'
@@ -2053,8 +2099,7 @@ function initialiserWorkStructure() {
       +   '</section>'
       + '</header>'
       + '<div class="work-recipe-slots" id="work-recipe-slots-' + familyId + '">'
-      +   '<article class="work-recipe-slot" id="recipe-slot-' + familyId + '-0"></article>'
-      +   '<article class="work-recipe-slot" id="recipe-slot-' + familyId + '-1"></article>'
+      +   slotsHtml
       + '</div>'
       + '</div>';
   }).join("");
@@ -2170,6 +2215,9 @@ function renduWorkSummary(unlockedFamilies) {
     const emptyHtml = active.length === 0
       ? '<div class="work-summary-empty">No active production</div>'
       : "";
+    const goToFamilyHtml = active.length === 0
+      ? '<button type="button" class="work-summary-go" onclick="ouvrirFamilleDepuisResume(\'' + familyId + '\')" aria-label="Go to ' + echapperAttributHtml(family.label) + ' production">Go to ' + echapperAttributHtml(family.label) + '</button>'
+      : "";
     const waitingHtml = waiting.length > 0
       ? '<button type="button" class="work-summary-waiting" onclick="ouvrirRecetteEnAttenteDepuisResume(\'' + familyId + '\',' + waiting[0].slotIdx + ')">' + waiting.length + ' recipe' + (waiting.length > 1 ? 's' : '') + ' waiting for a Cat</button>'
       : "";
@@ -2177,7 +2225,7 @@ function renduWorkSummary(unlockedFamilies) {
     return '<section class="work-summary-family work-summary-family-' + familyId + '">'
       + '<header class="work-summary-header"><div><span>Production family</span><h2>' + family.label + '</h2></div><strong' + (active.length ? '' : ' class="is-empty"') + '>' + active.length + '/' + availableSlotCount + ' ACTIVE</strong></header>'
       + managerHtml
-      + '<div class="work-summary-list">' + rowsHtml + emptyHtml + waitingHtml + '</div>'
+      + '<div class="work-summary-list">' + rowsHtml + emptyHtml + goToFamilyHtml + waitingHtml + '</div>'
       + '</section>';
   }).join("");
 
@@ -2185,6 +2233,10 @@ function renduWorkSummary(unlockedFamilies) {
   if (summary.dataset.summaryState === stateKey) return;
   summary.dataset.summaryState = stateKey;
   summary.innerHTML = cards;
+}
+
+function ouvrirFamilleDepuisResume(familyId) {
+  filtrerWork(familyId);
 }
 
 function ouvrirSlotDepuisResume(familyId, slotIdx) {
@@ -2244,7 +2296,7 @@ function renduSlotRecette(familyId, slotIdx) {
   const outputRate = kitty ? tauxProductionSlotRecette(pair, slot) : 0;
   const processingDuration = kitty ? dureeProcessingRecette(pair, kitty) : Infinity;
   const catHtml = kitty
-    ? '<div class="work-recipe-cat-ring" style="--prog:' + progress.overall + '" role="progressbar" aria-label="Full recipe progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(progress.overall * 100) + '"><div class="work-recipe-cat-face">' + kittyIconHtml(kitty) + '</div>'
+    ? '<div class="work-recipe-cat-ring" style="--prog:' + progress.overall + '" role="progressbar" aria-label="Full recipe progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(progress.overall * 100) + '"><div class="work-recipe-cat-face"' + attributsActivationClavier("Change " + kitty.nom + " assigned to this recipe") + ' onclick="ouvrirModalWorkerRecette(\'' + familyId + '\',' + slotIdx + ')">' + kittyIconHtml(kitty) + '</div>'
       + '<button class="work-recipe-cat-remove" aria-label="Remove ' + echapperAttributHtml(kitty.nom) + ' from this recipe" onclick="retirerWorkerRecette(\'' + familyId + '\',' + slotIdx + ');event.stopPropagation()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button></div>'
       + '<strong class="work-recipe-cat-name">' + echapperAttributHtml(kitty.nom) + '</strong>'
       + '<span class="work-recipe-cat-rate">' + libelleNombreDecimal(outputRate * 60, 2) + '/min</span>'
@@ -2417,6 +2469,7 @@ function ouvrirAllocationRessource(resourceKey) {
 }
 
 function renduWorkPairs(u) {
+  if (synchroniserSlotsRecettesAvecPerks()) workStructureInitialisee = false;
   initialiserWorkStructure();
 
   // Each family button appears only when at least one gathering tier is unlocked.
@@ -2490,8 +2543,9 @@ function renduWorkPairs(u) {
       renderManagerSlot(currentFamily.gatheringManager);
       renderManagerSlot(currentFamily.processingManager);
     }
-    renduSlotRecette(workFiltre, 0);
-    renduSlotRecette(workFiltre, 1);
+    (etat.workRecipeSlots[workFiltre] || []).forEach(function(slot, slotIdx) {
+      renduSlotRecette(workFiltre, slotIdx);
+    });
   }
 
   ["wood", "food", "rock"].forEach(function(familyId) {
@@ -2879,6 +2933,9 @@ function apprendrePerk(sphereId) {
     Object.keys(sphere.cout).forEach(function(res) { etat[res] -= sphere.cout[res]; });
   }
   etat.spherePerks[sphereId] = 'learned';
+  if (sphere && /-slot$/.test(sphereId)) {
+    if (synchroniserSlotsRecettesAvecPerks()) workStructureInitialisee = false;
+  }
   // Unlock children of this sphere
   if (def) {
     def.connections.forEach(function(conn) {
@@ -3025,6 +3082,45 @@ function setFoodMgmtPct(p) {
   renduFoodManagement();
 }
 
+function fermerFoodDistributionModal() {
+  fermerDialogueModal("food-distribution-modal");
+}
+
+function afficherFoodDistributionRecap(recap) {
+  const summary = document.getElementById("food-distribution-summary");
+  if (!summary) return;
+  const recipients = recap.filter(function(entry) { return entry.foodUnits > 0; });
+  if (!recipients.length) return;
+
+  const totalFoodUnits = recipients.reduce(function(total, entry) { return total + entry.foodUnits; }, 0);
+  const totalXp = recipients.reduce(function(total, entry) { return total + entry.xp; }, 0);
+  const totalLevelUps = recipients.reduce(function(total, entry) { return total + entry.levelUps; }, 0);
+  const catsFedLabel = recipients.length + (recipients.length === 1 ? " Cat fed" : " Cats fed");
+  const levelLabel = totalLevelUps + (totalLevelUps === 1 ? " level gained" : " levels gained");
+  summary.innerHTML = '<div class="food-distribution-stats">' + totalXp + ' XP distributed · ' + levelLabel + ' · ' + catsFedLabel + '</div>'
+    + '<div class="food-distribution-summary">'
+    + recipients.map(function(entry) {
+      const foodLabel = entry.foodUnits + (entry.foodUnits === 1 ? " food item" : " food items");
+      const levelLabel = entry.niveauAvant + " => " + entry.kitty.niveau + " (+" + entry.levelUps + (entry.levelUps === 1 ? " level" : " levels") + ")";
+      return '<div class="food-distribution-row">'
+        + '<span class="food-distribution-portrait">' + kittyIconHtml(entry.kitty) + '</span>'
+        + '<span><strong class="food-distribution-name">' + echapperAttributHtml(entry.kitty.nom) + '</strong>'
+        + '<span class="food-distribution-details"><span>' + foodLabel + '</span><span>+' + entry.xp + ' XP</span></span></span>'
+        + '<strong class="food-distribution-level' + (entry.levelUps ? "" : " none") + '">' + levelLabel + '</strong>'
+        + '</div>';
+    }).join("")
+    + '<div class="food-distribution-total">Total: ' + totalFoodUnits + (totalFoodUnits === 1 ? " food item" : " food items")
+    + ' · +' + totalXp + ' XP · +' + totalLevelUps + (totalLevelUps === 1 ? " level" : " levels") + '</div>'
+    + '</div>';
+
+  ouvrirDialogueModal("food-distribution-modal", {
+    dismissible: true,
+    fermer: fermerFoodDistributionModal,
+    focusSelector: ".food-distribution-continue",
+    returnFocusSelector: "#gang-tools .gang-tool-btn"
+  });
+}
+
 function renduFoodManagement() {
   var panel = document.getElementById('food-management-panel');
   if (!panel) return;
@@ -3085,11 +3181,18 @@ function distribuerFood(mode) {
 
   var foods = Object.keys(FOOD_XP).sort(function(a, b) { return FOOD_XP[a] - FOOD_XP[b]; });
   var totalLevelUps = 0;
+  var distributionRecap = etat.kittiesData.map(function(k) {
+    return { kitty: k, niveauAvant: k.niveau, foodUnits: 0, xp: 0, levelUps: 0 };
+  });
+  function recapPour(k) {
+    var index = etat.kittiesData.indexOf(k);
+    return index >= 0 ? distributionRecap[index] : null;
+  }
 
   // Consume at most `cible` XP using floor division per food type (never overshoots).
   // If floor division yields 0 units for every type but stock exists and forceSingle is true,
   // consume exactly 1 unit of the smallest available food (handles "need 1 XP, only have 15-XP items").
-  function consommerXp(cible, forceSingle) {
+  function consommerXp(cible, forceSingle, recap) {
     var consomme = 0;
     foods.forEach(function(f) {
       var stock = etat[f] || 0;
@@ -3098,6 +3201,7 @@ function distribuerFood(mode) {
       var units  = Math.min(Math.floor(reste / FOOD_XP[f]), stock);
       etat[f]   -= units;
       consomme  += units * FOOD_XP[f];
+      if (recap) recap.foodUnits += units;
     });
     // If nothing was consumed but forced (e.g. needed=1, smallest unit=15), consume 1 of the smallest
     if (consomme === 0 && forceSingle) {
@@ -3105,6 +3209,7 @@ function distribuerFood(mode) {
         if ((etat[foods[fi]] || 0) > 0) {
           etat[foods[fi]] -= 1;
           consomme = FOOD_XP[foods[fi]];
+          if (recap) recap.foodUnits += 1;
           break;
         }
       }
@@ -3112,12 +3217,14 @@ function distribuerFood(mode) {
     return consomme;
   }
 
-  function donnerXp(k, xp) {
+  function donnerXp(k, xp, recap) {
     k.xp += xp;
+    if (recap) recap.xp += xp;
     while (k.xp >= xpPourNiveau(k.niveau)) {
       k.xp -= xpPourNiveau(k.niveau);
       k.niveau++;
       totalLevelUps++;
+      if (recap) recap.levelUps++;
       ajouterLog("event", k.nom + " reached Level " + k.niveau + "!");
     }
   }
@@ -3126,7 +3233,10 @@ function distribuerFood(mode) {
     var xpParChat = Math.floor(xpBudget / nbChats);
     if (!xpParChat) { afficherNotification("Not enough XP to distribute evenly."); return; }
     // floor division: each cat gets at most xpParChat XP, no overshoot
-    etat.kittiesData.forEach(function(k) { donnerXp(k, consommerXp(xpParChat, false)); });
+    etat.kittiesData.forEach(function(k) {
+      var recap = recapPour(k);
+      donnerXp(k, consommerXp(xpParChat, false, recap), recap);
+    });
 
   } else { // basniveau — level up lowest cats first (Option A)
     var budget = xpBudget;
@@ -3141,10 +3251,11 @@ function distribuerFood(mode) {
       var needed = xpPourNiveau(best.niveau) - best.xp;
       if (needed > budget) break;
       // forceSingle=true: if needed < smallest unit, consume 1 unit anyway (XP overflow goes to cat's bank)
-      var gained = consommerXp(needed, true);
+      var recap = recapPour(best);
+      var gained = consommerXp(needed, true, recap);
       if (gained === 0) break; // no food left at all
       budget -= gained;
-      donnerXp(best, gained);
+      donnerXp(best, gained, recap);
     }
   }
 
@@ -3156,6 +3267,7 @@ function distribuerFood(mode) {
   afficherNotification(msg);
   renduManagement();
   if (_foodMgmtOuvert) renduFoodManagement();
+  afficherFoodDistributionRecap(distributionRecap);
 }
 
 function renduManagement() {
@@ -4575,20 +4687,20 @@ function appliquerRecompense(recompenseId, recompenseQty) {
     if (!etat.itemsAcquis.includes("compass")) {
       etat.itemsAcquis.push("compass");
       inventaireDirty = true;
-      afficherNotification("🧭 Compass obtained! A path beyond the neighbourhood may be opening.");
+      afficherNotification("Compass obtained! A path beyond the neighbourhood may be opening.");
       ajouterLog("unlock", "Compass added to your Inventory.");
     }
   }
   if (recompenseId === "basicWoodPlanks") {
     const qty = recompenseQty || 1;
     etat.basicWoodPlanks += qty;
-    afficherNotification("🪵 " + qty + " Basic Wood Planks found!");
+    afficherNotification(qty + " Basic Wood Planks found!");
     ajouterLog("event", qty + " Basic Wood Planks added to inventory.");
   }
   if (recompenseId === "humanLeftovers") {
     const qty = recompenseQty || 1;
     etat.humanLeftovers += qty;
-    afficherNotification("🗑️ " + qty + " Human Leftovers found!");
+    afficherNotification(qty + " Human Leftovers found!");
     ajouterLog("event", qty + " Human Leftovers found in the neighbor's trash.");
   }
   if (recompenseId === "schoolGuide") {
@@ -4596,7 +4708,7 @@ function appliquerRecompense(recompenseId, recompenseQty) {
       etat.itemsAcquis.push("schoolGuide");
       inventaireDirty = true;
     }
-    afficherNotification("📚 School Guide obtained! Check your Inventory.");
+    afficherNotification("School Guide obtained! Check your Inventory.");
     ajouterLog("unlock", "School Guide added to your Inventory.");
     if (!storyEstVue("story6aVue")) {
       marquerStoryVue("story6aVue");
@@ -4609,7 +4721,7 @@ function appliquerRecompense(recompenseId, recompenseQty) {
       etat.itemsAcquis.push("fishingGuide");
       inventaireDirty = true;
     }
-    afficherNotification("🎣 Fishing Guide obtained! Check your Inventory.");
+    afficherNotification("Fishing Guide obtained! Check your Inventory.");
     ajouterLog("unlock", "Fishing Guide for Dummies added to your Inventory.");
   }
   if (recompenseId === "constructionPlan") {
@@ -4617,7 +4729,7 @@ function appliquerRecompense(recompenseId, recompenseQty) {
       etat.itemsAcquis.push("constructionPlan");
       inventaireDirty = true;
     }
-    afficherNotification("📐 Construction Plan obtained! Check your Inventory.");
+    afficherNotification("Construction Plan obtained! Check your Inventory.");
     ajouterLog("unlock", "Construction Plan added to your Inventory.");
   }
   if (recompenseId === "stoneGuide") {
@@ -4625,7 +4737,7 @@ function appliquerRecompense(recompenseId, recompenseQty) {
       etat.itemsAcquis.push("stoneGuide");
       inventaireDirty = true;
     }
-    afficherNotification("⛏️ Stone Craft Guide obtained! Check your Inventory.");
+    afficherNotification("Stone Craft Guide obtained! Check your Inventory.");
     ajouterLog("unlock", "Stone Craft Guide added to your Inventory.");
   }
   if (recompenseId === "seminarGuide") {
@@ -4633,18 +4745,18 @@ function appliquerRecompense(recompenseId, recompenseQty) {
       etat.itemsAcquis.push("seminarGuide");
       inventaireDirty = true;
     }
-    afficherNotification("📋 Corporate Seminar Booklet obtained! Check your Inventory.");
+    afficherNotification("Corporate Seminar Booklet obtained! Check your Inventory.");
     ajouterLog("unlock", "Corporate Seminar Booklet added to your Inventory.");
   }
   if (recompenseId === "cannedCatFood") {
     etat.cannedCatFood += (recompenseQty || 1);
-    afficherNotification("🥫 Canned Cat Food obtained!");
+    afficherNotification("Canned Cat Food obtained!");
     ajouterLog("event", "Canned Cat Food added to inventory.");
   }
   if (recompenseId === "humanWorkersFood") {
     const qty = recompenseQty || 1;
     etat.humanWorkersFood += qty;
-    afficherNotification("🍖 " + qty + " Human Workers Food found!");
+    afficherNotification(qty + " Human Workers Food found!");
     ajouterLog("event", qty + " Human Workers Food added to inventory.");
   }
 }
@@ -5614,7 +5726,11 @@ function assignerManager(famille, kittyIndex) {
 function retirerKittyDeSesRoles(kittyIdx) {
   Object.values(etat.workRecipeSlots || {}).forEach(function(slots) {
     slots.forEach(function(slot) {
-      if (slot.kittyIndex === kittyIdx) reinitialiserProgressionRecette(slot, false);
+      // A recipe's cycle belongs to the slot, not to the Cat assigned to it.
+      // Moving a Cat away therefore leaves the selected recipe, gathered input
+      // and current phase ready for the next Cat. Only changing/clearing the
+      // recipe itself should discard that progress.
+      if (slot.kittyIndex === kittyIdx) slot.kittyIndex = null;
     });
   });
   Object.keys(etat.managers).forEach(function(f) {
@@ -5626,7 +5742,6 @@ function forcerWorkerRecette(kittyIdx, familyId, slotIdx) {
   retirerKittyDeSesRoles(kittyIdx);
   const slot = slotRecette(familyId, slotIdx);
   if (!slot || !slot.recipeId) return;
-  viderProgressionRecette(slot);
   slot.kittyIndex = kittyIdx;
   jouerSonAffectation();
   fermerModalWorker();
@@ -5904,7 +6019,9 @@ function assignerWorkerSlot(kittyIndex) {
   if (!workerModalOuvert) return;
   const slot = slotRecette(workerModalOuvert.familyId, workerModalOuvert.slotIdx);
   if (!slot || !slot.recipeId) return;
-  viderProgressionRecette(slot);
+  // Replacing the Cat does not restart the recipe. Gathering/processing
+  // progress and private inputs are reset only when the recipe changes or is
+  // cleared (see appliquerSelectionRecette / retirerRecetteSelectionneeConfirme).
   slot.kittyIndex = kittyIndex;
   jouerSonAffectation();
   fermerModalWorker();
@@ -5914,7 +6031,8 @@ function assignerWorkerSlot(kittyIndex) {
 function retirerWorkerRecette(familyId, slotIdx) {
   const slot = slotRecette(familyId, slotIdx);
   if (!slot) return;
-  reinitialiserProgressionRecette(slot, false);
+  // Keep the recipe cycle intact while the slot waits for another Cat.
+  slot.kittyIndex = null;
   sauvegarder(); rendu();
 }
 
@@ -7617,3 +7735,9 @@ document.addEventListener("visibilitychange", function() {
     if (resume) afficherResumeAbsence(resume);
   }
 });
+
+// Browsers block autoplay until the player interacts with the page. Start the
+// loop on the first pointer or keyboard action, then keep its volume synced
+// through Settings.
+document.addEventListener("pointerdown", demarrerMusiqueAmbiante, { passive: true });
+document.addEventListener("keydown", demarrerMusiqueAmbiante, { passive: true });
