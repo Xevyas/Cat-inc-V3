@@ -3,9 +3,10 @@
 
   const CatInc = root.CatInc = root.CatInc || {};
 
-  // Processed Resources Production bonus — scales at 1.05^level.
+  // Processed Resources Production bonus — scales at +3% per level.
+  const PROCESS_LEVEL_MULTIPLIER = 1.03;
   function productionProcBonus(kitty) {
-    return kitty ? Math.pow(1.05, kitty.niveau) : 1;
+    return kitty ? Math.pow(PROCESS_LEVEL_MULTIPLIER, kitty.niveau) : 1;
   }
 
   // Advances one self-contained recipe slot through its private Gathering and

@@ -92,7 +92,26 @@ function creerEtatInitial() {
   jobCenterConstruit:       false,
   trainingCenterDebloque:   false,
   trainingCenterConstruit:  false,
+  laboratoryDebloque:       false,
+  laboratoryConstruit:      false,
+  engineerRankUpgradesDebloques: false,
   formationEnCours:    null,   // { kittyIndex, metier, startTs, duree }
+  formationIngenieurEnCours: null, // { kittyIndex, metier, startTs, duree }
+  // Daily quests unlocked by studying The Daily Purpose. The date key is
+  // calculated in Europe/Paris so a new set starts at Paris midnight.
+  dailyQuests: {
+    dateKey: "",
+    recipeFamily: "food",
+    scoutingSuccesses: 0,
+    catLevelUps: 0,
+    birdCaught: false,
+    recipesCompleted: 0,
+    rewardClaimed: false,
+    scoutingCannedCatFood: {
+      raidSupermarketAgain: 3,
+      stealGasStationAgain: 2
+    }
+  },
   regionCourante:      "startingNeighbourhood",
   zonesExplorees:      ["D1"], // D1 (home) always starts explored
   exploZoneEnCours:    null,   // { zoneId, kittyIndices, startTs, duree }

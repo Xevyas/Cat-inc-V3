@@ -213,6 +213,74 @@ const ITEMS = {
       { id: "study", label: "Study (2h)" }
     ]
   },
+  dailyPurpose: {
+    id:           "dailyPurpose",
+    nom:          "The Daily Purpose",
+    emoji:        LIVRE_ICONE,
+    description:  "A human self-help book about building a daily routine and becoming the best version of yourself. The kind of advice that sounds profound before breakfast.",
+    studyDuration: 3600000,
+    learningGame: {
+      phraseParts: [
+        "Rise with ",
+        ", honor your ",
+        ", and unlock the ",
+        " ",
+        " of ",
+        ", one tiny ",
+        " at a time!"
+      ],
+      answers: ["purpose", "routine", "best", "version", "yourself", "step"]
+    },
+    actions: [
+      { id: "study", label: "Study (1h)" }
+    ]
+  },
+  engineerGuide: {
+    id:           "engineerGuide",
+    nom:          "The Engineer's Path",
+    emoji:        LIVRE_ICONE,
+    description:  "A human engineering guide pointing toward a new generation of recipes and specialists.",
+    unlocksLabel: "Laboratory",
+    studyDuration: 3600000,
+    learningGame: {
+      phraseParts: [
+        "An engineer turns a ",
+        " into a ",
+        ", tests the ",
+        ", learns from each ",
+        ", and improves the final ",
+        " for ",
+        "."
+      ],
+      answers: ["problem", "design", "prototype", "failure", "solution", "everyone"]
+    },
+    actions: [
+      { id: "study", label: "Study (1h)" }
+    ]
+  },
+  teamworkGuide: {
+    id:           "teamworkGuide",
+    nom:          "The Teamwork Advantage",
+    emoji:        LIVRE_ICONE,
+    description:  "A human teamwork guide about combining different minds to uncover perspectives and solutions no one could find alone.",
+    unlocksLabel: "Engineer rank upgrades",
+    studyDuration: 3600000,
+    learningGame: {
+      phraseParts: [
+        "Bring different ",
+        " together around one ",
+        ", and their varied ",
+        " can reveal ",
+        " solutions that no single ",
+        " could ",
+        " alone."
+      ],
+      answers: ["minds", "challenge", "perspectives", "unexpected", "person", "find"]
+    },
+    actions: [
+      { id: "study", label: "Study (1h)" }
+    ]
+  },
   stoneGuide: {
     id:           "stoneGuide",
     nom:          "Stone Craft Guide",
@@ -245,7 +313,8 @@ const METIERS = {
   builder:       { id: "builder",     nom: "Wood Builder", emoji: "🏗️", famille: null,         familleNom: "Wood Houses",                duree: 3600, unlockItem: "constructionPlan", bonusLabel: "recruitment speed" },
   miner:         { id: "miner",       nom: "Miner",        emoji: "⛏️", famille: "rock",        familleNom: "Rock resource family",       duree: 3600, unlockItem: "stoneGuide" },
   stonemason:    { id: "stonemason",  nom: "Stonemason",   emoji: "🪨", famille: "pawsonry",    familleNom: "Pawsonry resource family",   duree: 3600, unlockItem: "stoneGuide" },
-  "gang-leader": { id: "gang-leader", nom: "Gang Leader",  emoji: "👑", famille: null,          familleNom: "Work speed",                 duree: 0 }
+  "gang-leader": { id: "gang-leader", nom: "Gang Leader",  emoji: "👑", famille: null,          familleNom: "Work speed",                 duree: 0 },
+  "camp-engineer": { id: "camp-engineer", nom: "Camp Engineer", emoji: "🔧", famille: "engineering", familleNom: "Passive camp systems", duree: 3600, engineer: true }
 };
 
 // ── Sphere grids (one per job, UX-only for now) ─────────────────────────────

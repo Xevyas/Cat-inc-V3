@@ -132,6 +132,7 @@ const CONFIG = {
         { recompense: "cannedCatFood",    qty: 1, weight: 25 },
         { recompense: "humanWorkersFood", qty: 1, weight: 75 },
       ],
+      dailyCannedCatFoodStock: 3,
       zone:           "supermarket",
       unlockCampaign: "infiltrateSupermarket"
     },
@@ -147,6 +148,7 @@ const CONFIG = {
         { recompense: "humanWorkersFood", qty: 4, weight: 45 },
         { recompense: "cannedCatFood",    qty: 1, weight: 5 }
       ],
+      dailyCannedCatFoodStock: 2,
       zone:           "gasStation",
       unlockCampaign: "sneakBackEntrance"
     }
@@ -162,6 +164,18 @@ const CONFIG = {
       recompense:  "schoolGuide",
       zone:        "D1"
     },
+    searchHomeHouse: {
+      id:          "searchHomeHouse",
+      nom:         "Search the house",
+      description: "The house is empty now. Search quickly before the humans come back.",
+      difficulte:  70,
+      duree:       3600,
+      slots:       2,
+      recompense:  "engineerGuide",
+      zone:        "D1",
+      unlockAfterStory: "storyHouseEvacuationVue",
+      lockedReason: "Human inside the house. Your cats can't search it yet."
+    },
     searchNeighborTrash: {
       id:          "searchNeighborTrash",
       nom:         "Search Neighbor's trash",
@@ -171,6 +185,17 @@ const CONFIG = {
       slots:       2,
       recompense:  "fishingGuide",
       zone:        "E1"
+    },
+    searchRightHouse: {
+      id:          "searchRightHouse",
+      nom:         "Search the house",
+      description: "There may be useful things inside, but a human is still home.",
+      difficulte:  0,
+      duree:       0,
+      slots:       2,
+      recompense:  null,
+      zone:        "E1",
+      lockedReason: "Human inside the house. Your cats can't search it yet."
     },
     searchLeftNeighborTrash: {
       id:            "searchLeftNeighborTrash",
@@ -182,6 +207,18 @@ const CONFIG = {
       recompense:    "humanLeftovers",
       recompenseQty: 10,
       zone:          "C1"
+    },
+    searchLeftHouse: {
+      id:          "searchLeftHouse",
+      nom:         "Search Left Neighbor's House",
+      description: "The left neighbors have left in a hurry. Their empty house may hold useful tools and ideas.",
+      difficulte:  80,
+      duree:       4800,
+      slots:       2,
+      recompense:  "teamworkGuide",
+      zone:        "C1",
+      unlockAfterStory: "storyLeftHouseEvacuationVue",
+      lockedReason: "Human inside the house. Your cats can't search it yet."
     },
     exploreSquattedGarden: {
       id:          "exploreSquattedGarden",
@@ -235,6 +272,17 @@ const CONFIG = {
       slots:       2,
       recompense:  "cannedCatFood",
       zone:        "supermarket"
+    },
+    checkSupermarketBookSection: {
+      id:                  "checkSupermarketBookSection",
+      nom:                 "Check the book section",
+      description:         "The humans keep a whole section of books about becoming better versions of themselves. Let's see what all the fuss is about.",
+      difficulte:          65,
+      duree:               3600,
+      slots:               2,
+      recompense:          "dailyPurpose",
+      zone:                "supermarket",
+      unlockAfterCampaign: "infiltrateSupermarket"
     },
     exploreOutside: {
       id:          "exploreOutside",

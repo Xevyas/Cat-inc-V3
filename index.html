@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0104" />
+  <link rel="stylesheet" href="style.css?v=0.0105" />
 </head>
 <body>
 
@@ -128,6 +128,39 @@
         <p class="intro-ligne intro-miaou"><img class="titre-icone" src="img/interface/Exploration_Final.png" alt="" style="image-rendering:pixelated;mix-blend-mode:multiply;"> Explorations unlocked!</p>
       </div>
       <button class="bouton-intro" onclick="ouvrirCarteDepuisStoryGangRise()">Let's explore!</button>
+    </div>
+  </div>
+
+  <!-- STORY HOUSE EVACUATION : 15 cats recruited -->
+  <div id="ecran-story-house-evacuation" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
+    <div class="intro-boite">
+      <div class="intro-dialogue">
+        <p class="intro-ligne intro-miaou">From the kitchen window, the mother suddenly notices something moving in the garden</p>
+        <p class="intro-ligne"><span class="intro-perso mere">Mother</span> Wait. What is that?</p>
+        <p class="intro-ligne"><span class="intro-perso enfant">Child</span> Cats. There are cats everywhere.</p>
+        <p class="intro-ligne"><span class="intro-perso mere">Mother</span> No, look at the garden. They built shelters. And tables. What are they doing?</p>
+        <p class="intro-ligne"><span class="intro-perso enfant">Child</span> I think they made a camp.</p>
+        <p class="intro-ligne"><span class="intro-perso mere">Mother</span> Cats do not build camps. Get away from the window, now.</p>
+        <p class="intro-ligne"><span class="intro-perso enfant">Child</span> But they look friendly.</p>
+        <p class="intro-ligne"><span class="intro-perso mere">Mother</span> There are fifteen of them, and they are clearly organized. We are leaving before they notice us.</p>
+        <p class="intro-ligne intro-miaou">The mother grabs the keys with trembling hands. The child takes one last look at the strange camp, then quickly gets into the car.</p>
+        <p class="intro-ligne intro-miaou">They drive away toward the grandparents' house, leaving the garden, and the empty house, to the cats.</p>
+        <p class="intro-ligne intro-miaou">The house is finally empty. Search the house in the Explorations tab.</p>
+      </div>
+      <button class="bouton-intro" onclick="ouvrirMaisonDepuisStory()">Search the empty house!</button>
+    </div>
+  </div>
+
+  <!-- STORY LEFT HOUSE EVACUATION : 17 cats recruited -->
+  <div id="ecran-story-left-house" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
+    <div class="intro-boite">
+      <div class="intro-dialogue">
+        <p class="intro-ligne intro-miaou">The neighbors on the left peek through their curtains and see the camp growing in the garden next door.</p>
+        <p class="intro-ligne"><span class="intro-perso mere">Neighbor</span> There are more cats every day. They are building shelters now.</p>
+        <p class="intro-ligne"><span class="intro-perso mere">Neighbor</span> I am not waiting to see what they build next. Pack the car.</p>
+        <p class="intro-ligne intro-miaou">They leave in a hurry, leaving their house empty and ready to be explored.</p>
+      </div>
+      <button class="bouton-intro" onclick="ouvrirMaisonVoisineGaucheDepuisStory()">Search the left neighbor's house!</button>
     </div>
   </div>
 
@@ -321,42 +354,42 @@
         <span class="ressource-valeur" id="val-chatons">0</span>
       </div>
     </div>
-    <div class="ressource" id="row-cardboard-planks" data-tooltip="Cardboard Planks" style="display:none">
+    <div class="ressource" id="row-cardboard-planks" data-tooltip="Cardboard Planks" data-tier="T1" style="display:none">
       <img class="ressource-icone" src="img/resources/Cardboard Plank_Final.png" alt="Cardboard Plank">
       <div class="ressource-chiffres">
         <span class="ressource-valeur" id="val-cardboard-planks">0</span>
         <span class="ressource-taux" id="taux-cardboard-planks"></span>
       </div>
     </div>
-    <div class="ressource" id="row-basic-wood-planks" data-tooltip="Basic Wood Planks" style="display:none">
+    <div class="ressource" id="row-basic-wood-planks" data-tooltip="Basic Wood Planks" data-tier="T2" style="display:none">
       <img class="ressource-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
       <div class="ressource-chiffres">
         <span class="ressource-valeur" id="val-basic-wood-planks">0</span>
         <span class="ressource-taux" id="taux-basic-wood-planks"></span>
       </div>
     </div>
-    <div class="ressource" id="row-pebble-bricks" data-tooltip="Pebble Bricks" style="display:none">
+    <div class="ressource" id="row-pebble-bricks" data-tooltip="Pebble Bricks" data-tier="T1" style="display:none">
       <img class="ressource-icone" src="img/resources/Pebble Brick_Final.png" alt="Pebble Brick">
       <div class="ressource-chiffres">
         <span class="ressource-valeur" id="val-pebble-bricks">0</span>
         <span class="ressource-taux" id="taux-pebble-bricks"></span>
       </div>
     </div>
-    <div class="ressource" id="row-rock-bricks" data-tooltip="Rock Bricks" style="display:none">
+    <div class="ressource" id="row-rock-bricks" data-tooltip="Rock Bricks" data-tier="T2" style="display:none">
       <img class="ressource-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick">
       <div class="ressource-chiffres">
         <span class="ressource-valeur" id="val-rock-bricks">0</span>
         <span class="ressource-taux" id="taux-rock-bricks"></span>
       </div>
     </div>
-    <div class="ressource" id="row-salads" data-tooltip="Catnip Salad" style="display:none">
+    <div class="ressource" id="row-salads" data-tooltip="Catnip Salad" data-tier="T1" style="display:none">
       <img class="ressource-icone" src="img/resources/Catnip Salad_Final.png" alt="Catnip Salad">
       <div class="ressource-chiffres">
         <span class="ressource-valeur" id="val-salads">0</span>
         <span class="ressource-taux" id="taux-salads"></span>
       </div>
     </div>
-    <div class="ressource" id="row-grilled-anchovy" data-tooltip="Grilled Anchovy" style="display:none">
+    <div class="ressource" id="row-grilled-anchovy" data-tooltip="Grilled Anchovy" data-tier="T2" style="display:none">
       <img class="ressource-icone" src="img/resources/Grilled Anchovy_Final.png?v=0.0029" alt="Grilled Anchovy">
       <div class="ressource-chiffres">
         <span class="ressource-valeur" id="val-grilled-anchovy">0</span>
@@ -522,6 +555,20 @@
         </div>
         <div id="tc-interface" class="tc-interface" style="display:none"></div>
       </section>
+      <section class="panneau panneau-buildings" id="section-laboratory" style="display:none">
+        <h2 class="panneau-titre">Laboratory</h2>
+        <p class="panneau-desc">Study engineering and discover entirely new forms of boosts.</p>
+        <div class="bloc-action bloc-action-building">
+          <img class="work-sprite" src="img/Buildings/Training Center_Final.png" alt="Laboratory">
+          <div class="bloc-entete-textes">
+            <span class="bloc-desc">A laboratory where cats can discover new engineering laws and principles.</span>
+          </div>
+          <button onclick="acheterLaboratoire()" id="bouton-laboratory" class="btn-achat">
+            100 <img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"> + 100 <img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
+          </button>
+        </div>
+        <div id="laboratory-interface" style="display:none"></div>
+      </section>
     </div>
   </div> <!-- /contenu-facilities -->
 
@@ -585,6 +632,7 @@
   <!-- CONTENU GANG -->
   <div id="contenu-gang" role="tabpanel" aria-labelledby="onglet-gang" aria-hidden="false">
     <div id="gang-tools" style="display:none"></div>
+    <div id="gang-subtabs" class="gang-subtabs" role="tablist" aria-label="Gang views" style="display:none"></div>
     <div id="food-management-panel" style="display:none"></div>
     <div class="management-layout" id="management-layout">
       <div id="liste-kitties" class="liste-kitties"></div>
@@ -637,6 +685,7 @@
   <div id="panneau-objectifs" role="region" aria-labelledby="objectifs-titre">
     <div id="objectifs-entete">
       <h2 id="objectifs-titre" tabindex="0" role="button" data-clavier-clic="true" aria-label="Toggle tutorial guide" aria-expanded="true" aria-controls="objectifs-corps" onclick="toggleObjectifs()">Next step</h2>
+      <button id="objectifs-vue-toggle" type="button" onclick="event.stopPropagation(); toggleObjectifsVue()" aria-pressed="false" title="Show daily quests" style="display:none">Daily</button>
       <button id="objectifs-toggle" type="button" aria-expanded="true" aria-controls="objectifs-corps" onclick="event.stopPropagation(); toggleObjectifs()" title="Collapse guide">−</button>
     </div>
     <div id="objectifs-corps">
@@ -648,6 +697,11 @@
         </div>
         <div id="objectif-guide-liste" class="obj-guide-liste"></div>
         <div id="objectif-guide-secondaires" class="obj-guide-secondaires"></div>
+      </div>
+      <div id="objectifs-daily" class="objectifs-daily" style="display:none">
+        <div id="daily-quests-liste" class="daily-quests-liste"></div>
+        <div id="daily-quests-reward" class="daily-quests-reward"></div>
+        <div id="daily-quests-secondaires" class="obj-guide-secondaires"></div>
       </div>
     </div>
   </div>
@@ -685,7 +739,7 @@
           <span class="settings-toggle-switch"></span>
         </label>
         <div class="settings-separateur"></div>
-        <div class="settings-version" aria-label="Game version">Version <strong>v0.0031</strong></div>
+        <div class="settings-version" aria-label="Game version">Version <strong>v0.0032</strong></div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
       </div>
     </div>
@@ -849,14 +903,14 @@
   <div id="inv-res-popup" role="tooltip" aria-hidden="true" style="display:none"></div>
 
   <script src="js/cat-inc.js?v=0.0032"></script>
-  <script src="js/data/config.js?v=0.0040"></script>
-  <script src="js/data/content.js?v=0.0049"></script>
-  <script src="js/core/state.js?v=0.0037"></script>
-  <script src="js/core/save.js?v=0.0039"></script>
+  <script src="js/data/config.js?v=0.0042"></script>
+  <script src="js/data/content.js?v=0.0051"></script>
+  <script src="js/core/state.js?v=0.0039"></script>
+  <script src="js/core/save.js?v=0.0041"></script>
   <script src="js/core/production.js?v=0.0036"></script>
   <script src="js/ui/dom.js?v=0.0032"></script>
   <script src="js/ui/audio.js?v=0.0007"></script>
-  <script src="jeu.js?v=0.0119"></script>
+  <script src="jeu.js?v=0.0121"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

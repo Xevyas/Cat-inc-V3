@@ -43,12 +43,12 @@ function validerStructureSauvegarde(d) {
     if (d[cle] !== undefined && !Array.isArray(d[cle])) return "Invalid field: " + cle + " must be an array.";
   }
 
-  const champsObjets = ["workRecipeSlots", "spherePerks", "scoutingsEnCours", "resultatsExplorationZones", "resultatsCampaigns", "butinsScouting", "managers"];
+  const champsObjets = ["workRecipeSlots", "spherePerks", "scoutingsEnCours", "resultatsExplorationZones", "resultatsCampaigns", "butinsScouting", "managers", "dailyQuests"];
   for (const cle of champsObjets) {
     if (d[cle] !== undefined && !estObjetSauvegarde(d[cle])) return "Invalid field: " + cle + " must be an object.";
   }
 
-  const champsObjetsOuNuls = ["learningEnCours", "formationEnCours", "exploZoneEnCours"];
+  const champsObjetsOuNuls = ["learningEnCours", "formationEnCours", "formationIngenieurEnCours", "exploZoneEnCours"];
   for (const cle of champsObjetsOuNuls) {
     if (d[cle] !== undefined && d[cle] !== null && !estObjetSauvegarde(d[cle])) {
       return "Invalid field: " + cle + " must be an object or null.";
@@ -70,6 +70,24 @@ function validerStructureSauvegarde(d) {
     }
   }
 
+  if (d.dailyQuests !== undefined) {
+    const q = d.dailyQuests;
+    if (typeof q.dateKey !== "string" || q.dateKey.length > 20) return "Invalid daily quest date.";
+    if (!["food", "wood", "rock"].includes(q.recipeFamily)) return "Invalid daily quest recipe family.";
+    for (const cle of ["scoutingSuccesses", "catLevelUps", "recipesCompleted"]) {
+      if (!Number.isInteger(q[cle]) || q[cle] < 0) return "Invalid daily quest progress.";
+    }
+    if (typeof q.birdCaught !== "boolean" || typeof q.rewardClaimed !== "boolean") {
+      return "Invalid daily quest flags.";
+    }
+    if (q.scoutingCannedCatFood !== undefined) {
+      if (!estObjetSauvegarde(q.scoutingCannedCatFood)) return "Invalid daily scouting stock.";
+      for (const cle of ["raidSupermarketAgain", "stealGasStationAgain"]) {
+        if (!Number.isInteger(q.scoutingCannedCatFood[cle]) || q.scoutingCannedCatFood[cle] < 0) return "Invalid daily scouting stock.";
+      }
+    }
+  }
+
   if (d.prochainVisageChaton !== undefined && d.prochainVisageChaton !== null
       && (typeof d.prochainVisageChaton !== "string" || d.prochainVisageChaton.length > 300 || /[<>]/.test(d.prochainVisageChaton))) {
     return "Invalid next cat portrait.";
@@ -81,7 +99,7 @@ function validerStructureSauvegarde(d) {
   const champsBooleens = [
     "sequenceEnCours", "afficherTempsAjusteRecrutement", "autoBuildWoodHouses", "scieriBloquee", "basicSawmillBloquee",
     "brickBloquee", "rockFactoryBloquee", "catchenBloquee", "catchenAnchovyBloquee", "premiereSaladeFaite",
-    "jobCenterDebloque", "jobCenterConstruit", "trainingCenterDebloque", "trainingCenterConstruit", "birdPremiereReussie",
+    "jobCenterDebloque", "jobCenterConstruit", "trainingCenterDebloque", "trainingCenterConstruit", "laboratoryDebloque", "laboratoryConstruit", "engineerRankUpgradesDebloques", "birdPremiereReussie",
     "managersDebloques"
   ];
   for (const cle of champsBooleens) {
@@ -107,7 +125,7 @@ function validerStructureSauvegarde(d) {
     const kittiesValides = d.kittiesData.every(function(k) {
       if (!estObjetSauvegarde(k)) return false;
       if (k.nom !== undefined && (typeof k.nom !== "string" || k.nom.length > 100 || /[<>]/.test(k.nom))) return false;
-      return ["niveau", "xp", "tier", "managerMult", "jobNiveau"].every(function(cle) {
+      return ["niveau", "xp", "tier", "managerMult", "jobNiveau", "engineerRank"].every(function(cle) {
         return k[cle] === undefined || (typeof k[cle] === "number" && Number.isFinite(k[cle]) && k[cle] >= 0);
       });
     });
@@ -240,6 +258,14 @@ function validerStructureSauvegarde(d) {
     if (!formationValide) return "Invalid training data.";
   }
 
+  if (d.formationIngenieurEnCours) {
+    const formationValide = indexKittyValide(d.formationIngenieurEnCours.kittyIndex, false)
+      && d.formationIngenieurEnCours.metier === "camp-engineer"
+      && typeof d.formationIngenieurEnCours.startTs === "number" && Number.isFinite(d.formationIngenieurEnCours.startTs)
+      && typeof d.formationIngenieurEnCours.duree === "number" && Number.isFinite(d.formationIngenieurEnCours.duree) && d.formationIngenieurEnCours.duree >= 0;
+    if (!formationValide) return "Invalid engineer training data.";
+  }
+
   if (d.regionCourante !== undefined && typeof d.regionCourante !== "string") return "Invalid current region.";
 
   if (d.logs) {
@@ -262,6 +288,7 @@ function analyserSauvegardeBrute(raw) {
   } catch (e) {
     return { ok: false, erreur: "The file does not contain valid JSON." };
   }
+
   const version = data && data.saveVersion === undefined ? 0 : data && data.saveVersion;
   if (donneesSauvegardeReconnaissables(data)
       && Number.isInteger(version) && version >= 0 && version < SAVE_VERSION) {
@@ -338,7 +365,12 @@ function analyserSauvegardeBrute(raw) {
     jobCenterConstruit:       etat.jobCenterConstruit,
     trainingCenterDebloque:   etat.trainingCenterDebloque,
     trainingCenterConstruit:  etat.trainingCenterConstruit,
+    laboratoryDebloque:       etat.laboratoryDebloque,
+    laboratoryConstruit:      etat.laboratoryConstruit,
+    engineerRankUpgradesDebloques: etat.engineerRankUpgradesDebloques,
     formationEnCours:         etat.formationEnCours,
+    formationIngenieurEnCours: etat.formationIngenieurEnCours,
+    dailyQuests:          etat.dailyQuests,
     regionCourante:           etat.regionCourante,
     zonesExplorees:      etat.zonesExplorees,
     exploZoneEnCours:    etat.exploZoneEnCours,
@@ -451,7 +483,27 @@ function analyserSauvegardeBrute(raw) {
   etat.jobCenterConstruit       = d.jobCenterConstruit       || false;
   etat.trainingCenterDebloque   = d.trainingCenterDebloque   || false;
   etat.trainingCenterConstruit  = d.trainingCenterConstruit  || false;
+  etat.laboratoryDebloque       = d.laboratoryDebloque       || etat.itemsAppris.includes("engineerGuide");
+  etat.laboratoryConstruit      = d.laboratoryConstruit      || false;
+  etat.engineerRankUpgradesDebloques = d.engineerRankUpgradesDebloques || etat.itemsAppris.includes("teamworkGuide");
   etat.formationEnCours         = d.formationEnCours         || null;
+  etat.formationIngenieurEnCours = d.formationIngenieurEnCours || null;
+  etat.dailyQuests              = d.dailyQuests || etat.dailyQuests;
+  if (!etat.dailyQuests || typeof etat.dailyQuests !== "object") {
+    etat.dailyQuests = {
+      dateKey: "", recipeFamily: "food", scoutingSuccesses: 0,
+      catLevelUps: 0, birdCaught: false, recipesCompleted: 0, rewardClaimed: false,
+      scoutingCannedCatFood: { raidSupermarketAgain: 3, stealGasStationAgain: 2 }
+    };
+  }
+  // Remove the temporary unlock flag from saves created by the immediately
+  // previous daily-panel experiment. Book study remains the unlock source.
+  if (Object.prototype.hasOwnProperty.call(etat.dailyQuests, "unlocked")) delete etat.dailyQuests.unlocked;
+  if (!etat.dailyQuests.scoutingCannedCatFood || typeof etat.dailyQuests.scoutingCannedCatFood !== "object") {
+    etat.dailyQuests.scoutingCannedCatFood = { raidSupermarketAgain: 3, stealGasStationAgain: 2 };
+  }
+  if (!Number.isInteger(etat.dailyQuests.scoutingCannedCatFood.raidSupermarketAgain)) etat.dailyQuests.scoutingCannedCatFood.raidSupermarketAgain = 3;
+  if (!Number.isInteger(etat.dailyQuests.scoutingCannedCatFood.stealGasStationAgain)) etat.dailyQuests.scoutingCannedCatFood.stealGasStationAgain = 2;
   etat.regionCourante      = d.regionCourante      || "startingNeighbourhood";
   etat.zonesExplorees      = d.zonesExplorees      || ["D1"];
   if (!etat.zonesExplorees.includes("D1")) etat.zonesExplorees.push("D1");
@@ -491,6 +543,8 @@ function analyserSauvegardeBrute(raw) {
     ajouterStory("story4Vue", Array.isArray(d.cathouses) && d.cathouses.length >= 1);
     ajouterStory("storyBasicWoodVue", (d.cardboardPlanks || d.planks || 0) >= 10 || (d.basicWoodTotalRecolte || 0) >= 1 || (d.objectifsComplis || []).includes("tenPlanks"));
     ajouterStory("story5Vue", chatons >= 6);
+    ajouterStory("storyHouseEvacuationVue", chatons >= 15);
+    ajouterStory("storyLeftHouseEvacuationVue", chatons >= 17);
     ajouterStory("story6aVue", itemsAcquis.includes("schoolGuide") || campaigns.includes("checkTheTrash"));
     ajouterStory("story6bVue", itemsAppris.includes("schoolGuide") || !!d.jobCenterDebloque || !!d.jobCenterConstruit);
     ajouterStory("storySaladVue", !!d.premiereSaladeFaite);
@@ -543,6 +597,7 @@ function analyserSauvegardeBrute(raw) {
     if (k.managerMult === undefined || k.managerMult === 2) k.managerMult = 1.5;
     if (!k.visage) k.visage = assignerVisageChaton(k.nom);
     if (k.jobNiveau === undefined) k.jobNiveau = 0;
+    if (k.metier === "camp-engineer" && k.engineerRank === undefined) k.engineerRank = 1;
   });
 
     return etat;
