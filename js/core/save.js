@@ -48,7 +48,7 @@ function validerStructureSauvegarde(d) {
     if (d[cle] !== undefined && !estObjetSauvegarde(d[cle])) return "Invalid field: " + cle + " must be an object.";
   }
 
-  const champsObjetsOuNuls = ["learningEnCours", "formationEnCours", "formationIngenieurEnCours", "exploZoneEnCours"];
+  const champsObjetsOuNuls = ["learningEnCours", "formationEnCours", "formationIngenieurEnCours", "formationTermineeEnAttente", "formationIngenieurTermineeEnAttente", "exploZoneEnCours"];
   for (const cle of champsObjetsOuNuls) {
     if (d[cle] !== undefined && d[cle] !== null && !estObjetSauvegarde(d[cle])) {
       return "Invalid field: " + cle + " must be an object or null.";
@@ -61,13 +61,16 @@ function validerStructureSauvegarde(d) {
     "catnipTotalRecolte", "pebbles", "pebblesTotalRecolte", "rocks", "rocksTotalRecolte", "planks",
     "cardboardPlanks", "cardboardPlanksTotalProduit", "basicWoodPlanks", "bricks", "pebbleBricks", "rockBricks", "salads", "anchovy",
     "anchovyTotalRecolte", "grilledAnchovy", "humanLeftovers", "humanWorkersFood", "cannedCatFood",
-    "workBoostFinTs", "birdPremierSpawnTs", "sequenceDebutTs", "sequenceDuree", "sequenceProgressBrute", "sequenceDerniereMajTs", "sequenceVitesseDerniere", "clicCount", "reductionAuMomentDuClic",
-    "reductionCumulee", "cathouseCount", "stoneCathouseCount", "volumeEffetsSonores", "volumeMusique"
+    "workBoostFinTs", "birdPremierSpawnTs", "birdPityEchecs", "sequenceDebutTs", "sequenceDuree", "sequenceProgressBrute", "sequenceDerniereMajTs", "sequenceVitesseDerniere", "clicCount", "reductionAuMomentDuClic",
+    "reductionCumulee", "cathouseCount", "stoneCathouseCount", "solidStoneCathouseCount", "volumeEffetsSonores", "volumeMusique"
   ];
   for (const cle of champsNumeriques) {
     if (d[cle] !== undefined && (typeof d[cle] !== "number" || !Number.isFinite(d[cle]) || d[cle] < 0)) {
       return "Invalid numeric field: " + cle + ".";
     }
+  }
+  if (d.birdPityEchecs !== undefined && (!Number.isInteger(d.birdPityEchecs) || d.birdPityEchecs < 0)) {
+    return "Invalid Bird pity data.";
   }
 
   if (d.dailyQuests !== undefined) {
@@ -92,15 +95,19 @@ function validerStructureSauvegarde(d) {
       && (typeof d.prochainVisageChaton !== "string" || d.prochainVisageChaton.length > 300 || /[<>]/.test(d.prochainVisageChaton))) {
     return "Invalid next cat portrait.";
   }
+  if (d.releaseNotesSeenVersion !== undefined
+      && (typeof d.releaseNotesSeenVersion !== "string" || d.releaseNotesSeenVersion.length > 30 || /[<>]/.test(d.releaseNotesSeenVersion))) {
+    return "Invalid release notes version.";
+  }
   for (const cle of ["volumeEffetsSonores", "volumeMusique"]) {
     if (d[cle] !== undefined && d[cle] > 1) return "Invalid audio volume: " + cle + ".";
   }
 
   const champsBooleens = [
-    "sequenceEnCours", "afficherTempsAjusteRecrutement", "autoBuildWoodHouses", "scieriBloquee", "basicSawmillBloquee",
+    "sequenceEnCours", "afficherTempsAjusteRecrutement", "avertirSurplusNourriture", "autoBuildWoodHouses", "scieriBloquee", "basicSawmillBloquee",
     "brickBloquee", "rockFactoryBloquee", "catchenBloquee", "catchenAnchovyBloquee", "premiereSaladeFaite",
     "jobCenterDebloque", "jobCenterConstruit", "trainingCenterDebloque", "trainingCenterConstruit", "laboratoryDebloque", "laboratoryConstruit", "engineerRankUpgradesDebloques", "birdPremiereReussie",
-    "managersDebloques"
+    "managersDebloques", "tutorialCompletionPopupSeen", "managerRoleTutorialShown"
   ];
   for (const cle of champsBooleens) {
     if (d[cle] !== undefined && typeof d[cle] !== "boolean") return "Invalid boolean field: " + cle + ".";
@@ -235,6 +242,7 @@ function validerStructureSauvegarde(d) {
         && compteurs.every(function(cle) {
           return Number.isInteger(butin[cle]) && butin[cle] >= 0;
         })
+        && (butin.tripled === undefined || (Number.isInteger(butin.tripled) && butin.tripled >= 0))
         && estObjetSauvegarde(butin.rewards)
         && Object.values(butin.rewards).every(function(qty) {
           return typeof qty === "number" && Number.isFinite(qty) && qty >= 0;
@@ -246,7 +254,8 @@ function validerStructureSauvegarde(d) {
   if (d.learningEnCours) {
     const learningValide = typeof d.learningEnCours.itemId === "string"
       && typeof d.learningEnCours.startTs === "number" && Number.isFinite(d.learningEnCours.startTs)
-      && typeof d.learningEnCours.duree === "number" && Number.isFinite(d.learningEnCours.duree) && d.learningEnCours.duree >= 0;
+      && typeof d.learningEnCours.duree === "number" && Number.isFinite(d.learningEnCours.duree) && d.learningEnCours.duree >= 0
+      && (d.learningEnCours.kittyIndex === undefined || indexKittyValide(d.learningEnCours.kittyIndex, false));
     if (!learningValide) return "Invalid learning data.";
   }
 
@@ -262,7 +271,8 @@ function validerStructureSauvegarde(d) {
     const formationValide = indexKittyValide(d.formationIngenieurEnCours.kittyIndex, false)
       && d.formationIngenieurEnCours.metier === "camp-engineer"
       && typeof d.formationIngenieurEnCours.startTs === "number" && Number.isFinite(d.formationIngenieurEnCours.startTs)
-      && typeof d.formationIngenieurEnCours.duree === "number" && Number.isFinite(d.formationIngenieurEnCours.duree) && d.formationIngenieurEnCours.duree >= 0;
+      && typeof d.formationIngenieurEnCours.duree === "number" && Number.isFinite(d.formationIngenieurEnCours.duree) && d.formationIngenieurEnCours.duree >= 0
+      && (d.formationIngenieurEnCours.engineerRank === undefined || (Number.isInteger(d.formationIngenieurEnCours.engineerRank) && d.formationIngenieurEnCours.engineerRank >= 1));
     if (!formationValide) return "Invalid engineer training data.";
   }
 
@@ -329,6 +339,7 @@ function analyserSauvegardeBrute(raw) {
     workBoostFinTs:         etat.workBoostFinTs,
     birdPremierSpawnTs:      etat.birdPremierSpawnTs,
     birdPremiereReussie:     etat.birdPremiereReussie,
+    birdPityEchecs:          etat.birdPityEchecs,
     sequenceEnCours:         etat.sequenceEnCours,
     sequenceDebutTs:         etat.sequenceDebutTs,
     sequenceDuree:           etat.sequenceDuree,
@@ -339,6 +350,7 @@ function analyserSauvegardeBrute(raw) {
     clicCount:               etat.clicCount,
     reductionAuMomentDuClic: etat.reductionAuMomentDuClic,
     afficherTempsAjusteRecrutement: etat.afficherTempsAjusteRecrutement,
+    avertirSurplusNourriture: etat.avertirSurplusNourriture,
     volumeEffetsSonores:     etat.volumeEffetsSonores,
     volumeMusique:           etat.volumeMusique,
     autoBuildWoodHouses:       etat.autoBuildWoodHouses,
@@ -354,6 +366,7 @@ function analyserSauvegardeBrute(raw) {
     cathouses:          etat.cathouses,
     cathouseCount:      etat.cathouseCount,
     stoneCathouseCount: etat.stoneCathouseCount,
+    solidStoneCathouseCount: etat.solidStoneCathouseCount,
     kittiesData:         etat.kittiesData,
     exploEnCours:        etat.exploEnCours,
     campaignsCompletees: etat.campaignsCompletees,
@@ -370,6 +383,8 @@ function analyserSauvegardeBrute(raw) {
     engineerRankUpgradesDebloques: etat.engineerRankUpgradesDebloques,
     formationEnCours:         etat.formationEnCours,
     formationIngenieurEnCours: etat.formationIngenieurEnCours,
+    formationTermineeEnAttente: etat.formationTermineeEnAttente,
+    formationIngenieurTermineeEnAttente: etat.formationIngenieurTermineeEnAttente,
     dailyQuests:          etat.dailyQuests,
     regionCourante:           etat.regionCourante,
     zonesExplorees:      etat.zonesExplorees,
@@ -380,9 +395,12 @@ function analyserSauvegardeBrute(raw) {
     butinsScouting:      etat.butinsScouting,
     managers:            etat.managers,
     managersDebloques:   etat.managersDebloques,
+    managerRoleTutorialShown: etat.managerRoleTutorialShown,
     objectifsComplis: etat.objectifsComplis,
+    tutorialCompletionPopupSeen: etat.tutorialCompletionPopupSeen,
     logs:          etat.logs,
     storiesVues:   etat.storiesVues,
+    releaseNotesSeenVersion: etat.releaseNotesSeenVersion,
     ongletsVisites: etat.ongletsVisites
   };
   }
@@ -440,6 +458,7 @@ function analyserSauvegardeBrute(raw) {
     ? d.birdPremierSpawnTs
     : maintenant + 5 * 60 * 1000;
   etat.birdPremiereReussie    = d.birdPremiereReussie === true;
+  etat.birdPityEchecs         = Number.isInteger(d.birdPityEchecs) ? Math.max(0, d.birdPityEchecs) : 0;
 
   etat.sequenceEnCours         = d.sequenceEnCours         || false;
   etat.sequenceDebutTs         = d.sequenceDebutTs         || 0;
@@ -451,6 +470,7 @@ function analyserSauvegardeBrute(raw) {
   etat.clicCount               = d.clicCount               || 0;
   etat.reductionAuMomentDuClic = d.reductionAuMomentDuClic || 0;
   etat.afficherTempsAjusteRecrutement = d.afficherTempsAjusteRecrutement || false;
+  etat.avertirSurplusNourriture = d.avertirSurplusNourriture !== false;
   etat.volumeEffetsSonores = d.volumeEffetsSonores !== undefined ? Math.min(1, d.volumeEffetsSonores) : 0.3;
   etat.volumeMusique       = d.volumeMusique       !== undefined ? Math.min(1, d.volumeMusique)       : 0.5;
   etat.autoBuildWoodHouses       = d.autoBuildWoodHouses || false;
@@ -473,6 +493,7 @@ function analyserSauvegardeBrute(raw) {
   etat.cathouses          = d.cathouses          || [];
   etat.cathouseCount      = d.cathouseCount      || 0;
   etat.stoneCathouseCount = d.stoneCathouseCount || 0;
+  etat.solidStoneCathouseCount = d.solidStoneCathouseCount || 0;
   etat.exploEnCours        = d.exploEnCours        || [];
   etat.campaignsCompletees = d.campaignsCompletees || [];
   etat.itemsAcquis         = d.itemsAcquis         || [];
@@ -512,8 +533,14 @@ function analyserSauvegardeBrute(raw) {
   etat.resultatsCampaigns  = d.resultatsCampaigns  || {};
   etat.scoutingsEnCours    = d.scoutingsEnCours    || {};
   etat.butinsScouting      = d.butinsScouting      || {};
+  Object.values(etat.butinsScouting).forEach(function(butin) {
+    if (!Number.isInteger(butin.tripled) || butin.tripled < 0) butin.tripled = 0;
+  });
   etat.managers            = d.managers            || { wood: null, food: null, sawmill: null, catchen: null, rock: null, pawsonry: null };
   etat.managersDebloques   = d.managersDebloques   || false;
+  etat.managerRoleTutorialShown = d.managerRoleTutorialShown === true;
+  etat.formationTermineeEnAttente = d.formationTermineeEnAttente || null;
+  etat.formationIngenieurTermineeEnAttente = d.formationIngenieurTermineeEnAttente || null;
   // Migration: backfill manager keys added in later versions
   if (etat.managers.wood     === undefined) etat.managers.wood     = null;
   if (etat.managers.food     === undefined) etat.managers.food     = null;
@@ -523,7 +550,9 @@ function analyserSauvegardeBrute(raw) {
   if (etat.managers.pawsonry === undefined) etat.managers.pawsonry = null;
   if (etat.managers.houses   === undefined) etat.managers.houses   = null;
   etat.objectifsComplis = d.objectifsComplis || [];
+  etat.tutorialCompletionPopupSeen = d.tutorialCompletionPopupSeen === true;
   etat.logs            = d.logs            || [];
+  etat.releaseNotesSeenVersion = typeof d.releaseNotesSeenVersion === "string" ? d.releaseNotesSeenVersion : "";
   if (Array.isArray(d.storiesVues)) {
     etat.storiesVues = d.storiesVues;
   } else {
@@ -542,7 +571,7 @@ function analyserSauvegardeBrute(raw) {
     ajouterStory("story3Vue", chatons >= 3);
     ajouterStory("story4Vue", Array.isArray(d.cathouses) && d.cathouses.length >= 1);
     ajouterStory("storyBasicWoodVue", (d.cardboardPlanks || d.planks || 0) >= 10 || (d.basicWoodTotalRecolte || 0) >= 1 || (d.objectifsComplis || []).includes("tenPlanks"));
-    ajouterStory("story5Vue", chatons >= 6);
+    ajouterStory("story5Vue", chatons >= 8);
     ajouterStory("storyHouseEvacuationVue", chatons >= 15);
     ajouterStory("storyLeftHouseEvacuationVue", chatons >= 17);
     ajouterStory("story6aVue", itemsAcquis.includes("schoolGuide") || campaigns.includes("checkTheTrash"));
@@ -561,7 +590,7 @@ function analyserSauvegardeBrute(raw) {
     if (etat.chatons >= 3) etat.ongletsVisites.push("work");
     if (etat.cardboardPiecesTotalRecolte >= 5) etat.ongletsVisites.push("buildings");
     if (etat.jobCenterDebloque) etat.ongletsVisites.push("facilities");
-    if (etat.chatons >= 6) etat.ongletsVisites.push("explorations");
+    if (etat.chatons >= 8) etat.ongletsVisites.push("explorations");
     if (etat.cardboardPiecesTotalRecolte >= 1) etat.ongletsVisites.push("inventaire");
   }
   ["gang", "logs"].forEach(function(id) {

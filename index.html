@@ -89,6 +89,48 @@
     </div>
   </div>
 
+  <!-- STORY : Manual Focus unlocked after the first successful recruitment -->
+  <div id="ecran-story-manual-focus" class="ecran-intro" role="dialog" aria-modal="true" aria-label="A Little Encouragement" aria-hidden="true" style="display:none">
+    <div class="intro-boite">
+      <div class="intro-dialogue">
+        <p class="intro-ligne intro-miaou">With a new recruit in the Gang, Bernardo watches the others return to work. Convincing one Cat has given him an idea.</p>
+        <p class="intro-ligne"><span class="intro-perso mochi">Mochi</span> You have that look again. What are you planning?</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> I just proved that the right words can make a Cat move. Maybe a little encouragement could help at work too.</p>
+        <p class="intro-ligne"><span class="intro-perso mochi">Mochi</span> Are you going to help carry things?</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> I was thinking of focused encouragement.</p>
+        <p class="intro-ligne"><span class="intro-perso mochi">Mochi</span> Of course you were.</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> And if I am the one working, I will simply concentrate harder.</p>
+        <p class="intro-ligne"><span class="intro-perso mochi">Mochi</span> That may be the first sensible part of this plan.</p>
+        <p class="intro-ligne intro-miaou">Manual Focus is now unlocked. Each click on the active Gathering or Processing panel stores 0.8 seconds of ×2 speed, up to 30 seconds. The remaining boost automatically follows the next phase of the same recipe, but focusing another recipe resets the reserve.</p>
+      </div>
+      <button class="bouton-intro" onclick="ouvrirManualFocusDepuisStory()">Try Manual Focus</button>
+    </div>
+  </div>
+
+  <!-- TUTORIAL COMPLETE : shown once when the last tutorial objective is completed -->
+  <div id="tutorial-complete-modal" class="explo-modal tutorial-complete-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="tutorial-complete-title" aria-describedby="tutorial-complete-copy" style="display:none">
+    <div class="explo-modal-overlay" aria-hidden="true"></div>
+    <div class="explo-modal-panneau" role="document" tabindex="-1">
+      <div class="explo-modal-header">
+        <span class="explo-modal-titre" id="tutorial-complete-title">Tutorial complete!</span>
+      </div>
+      <p class="gang-leader-unlock-copy" id="tutorial-complete-copy">You’ve learned the basics of Cat Inc. From here on, new buildings, resources and discoveries will gradually appear. The game will explain what you need to know, and you should be ready to figure out the rest on your own.</p>
+      <button id="tutorial-complete-confirm" class="btn-inv-action tutorial-complete-action" type="button" onclick="fermerTutorialComplete()">Got it!</button>
+    </div>
+  </div>
+
+  <!-- MANAGER ROLE TUTORIAL : shown once when the first manager is assigned -->
+  <div id="manager-role-tutorial-modal" class="explo-modal manager-role-tutorial-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="manager-role-tutorial-title" aria-describedby="manager-role-tutorial-copy" style="display:none">
+    <div class="explo-modal-overlay" aria-hidden="true"></div>
+    <div class="explo-modal-panneau" role="document" tabindex="-1">
+      <div class="explo-modal-header">
+        <span class="explo-modal-titre" id="manager-role-tutorial-title">A special role: Manager</span>
+      </div>
+      <p class="gang-leader-unlock-copy" id="manager-role-tutorial-copy">Managers are a special role. Assign a Cat with a manager job to a dedicated Manager slot in Work for their bonus to apply.</p>
+      <button id="manager-role-tutorial-confirm" class="btn-inv-action manager-role-tutorial-action" type="button" onclick="fermerManagerRoleTutorial()">Got it!</button>
+    </div>
+  </div>
+
   <!-- STORY 4 : first Cardboard Box built -->
   <div id="ecran-story-4" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
     <div class="intro-boite">
@@ -121,8 +163,8 @@
   <div id="ecran-story-5" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
     <div class="intro-boite">
       <div class="intro-dialogue">
-        <p class="intro-ligne intro-miaou">Six kitties gathered in the garden</p>
-        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Look at us. Six strong. We're not just a handful anymore. We're a crew.</p>
+        <p class="intro-ligne intro-miaou">Eight kitties gathered in the garden</p>
+        <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Look at us. Eight strong. We're not just a handful anymore. We're a crew.</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> I've been thinking. We've been working this garden long enough. It's time we start looking further out.</p>
         <p class="intro-ligne"><span class="intro-perso bernard">Bernardo</span> Let's start with what's right here. We walk past our own trash bins every day without a second look. Could be something useful sitting right there.</p>
         <p class="intro-ligne intro-miaou"><img class="titre-icone" src="img/interface/Exploration_Final.png" alt="" style="image-rendering:pixelated;mix-blend-mode:multiply;"> Explorations unlocked!</p>
@@ -269,6 +311,20 @@
     </div>
   </div>
 
+  <!-- RELEASE NOTES : shown once for each published game version -->
+  <div id="ecran-release-notes" class="ecran-intro release-notes-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="release-notes-title" aria-describedby="release-notes-copy" style="display:none">
+    <div class="intro-boite release-notes-box" role="document" tabindex="-1">
+      <div class="intro-dialogue">
+        <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0033</h2>
+        <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
+          <div id="release-notes-list" class="release-notes-list"></div>
+        <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
+      </div>
+      <button id="release-notes-close" class="bouton-intro" type="button" onclick="fermerNotesVersion()" disabled>Continue in 5s</button>
+    </div>
+  </div>
+
   <!-- OFFLINE PROGRESS SUMMARY -->
   <div id="ecran-absence" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
     <div class="intro-boite">
@@ -320,7 +376,10 @@
     <div class="bird-minijeu-carte reflex-minijeu-carte" role="document" tabindex="-1">
       <div class="reflex-title-row">
         <h3 class="bird-minijeu-titre" id="bird-minijeu-titre">Bernardo spotted a bird!</h3>
-        <span class="reflex-game-tag">TIMING CHALLENGE</span>
+        <div class="bird-game-tags">
+          <span class="reflex-game-tag">TIMING CHALLENGE</span>
+          <span id="bird-pity" class="bird-pity" aria-live="polite" hidden>0 fails : 0% speed reduced</span>
+        </div>
       </div>
       <p class="bird-minijeu-desc" id="bird-minijeu-desc">Click <strong>CATCH!</strong> when the cursor reaches the bird.</p>
       <div class="reflex-status-row" aria-hidden="true"><span>TIMING</span><span>ONE ATTEMPT</span></div>
@@ -481,7 +540,7 @@
           </div>
           <span class="achat-possede">× <span id="possede-cathouse">0</span></span>
           <button onclick="acheterCathouse()" id="bouton-cathouse" class="btn-achat">
-            <span id="cout-cathouse">1</span> <img class="cout-icone" src="img/resources/Cardboard Plank_Final.png" alt="Cardboard Plank">
+            <span id="cout-cathouse">1</span> <span class="cout-tier-badge work-tier-badge-tier-1" aria-label="Tier 1">T1</span><img class="cout-icone" src="img/resources/Cardboard Plank_Final.png" alt="Cardboard Plank">
           </button>
         </div>
 
@@ -494,7 +553,7 @@
           </div>
           <span class="achat-possede">× <span id="possede-cathouse2">0</span></span>
           <button onclick="acheterCatHouse()" id="bouton-cathouse2" class="btn-achat">
-            <span id="cout-cathouse2">1</span> <img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
+            <span id="cout-cathouse2">1</span> <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
           </button>
         </div>
       </section>
@@ -511,8 +570,21 @@
           </div>
           <span class="achat-possede">× <span id="possede-stone-cathouse">0</span></span>
           <button onclick="acheterStoneCathouse()" id="bouton-stone-cathouse" class="btn-achat">
-            <span id="cout-stone-planks">1</span> <img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
-            + <span id="cout-stone-bricks">10</span> <img class="cout-icone" src="img/resources/Pebble Brick_Final.png" alt="Pebble Brick">
+            <span id="cout-stone-planks">5</span> <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
+            + <span id="cout-stone-bricks">5</span> <span class="cout-tier-badge work-tier-badge-tier-1" aria-label="Tier 1">T1</span><img class="cout-icone" src="img/resources/Pebble Brick_Final.png" alt="Pebble Brick">
+          </button>
+        </div>
+        <div class="bloc-action bloc-action-building" id="bloc-solid-stone-cathouse" style="display:none">
+          <img class="work-sprite" src="img/Buildings/Solid Stone Cathouse_Final.png" alt="">
+          <div class="bloc-entete-textes">
+            <span class="bloc-nom">Solid Stone Cathouse</span>
+            <span class="bloc-desc">+40% recruit speed per Solid Stone Cathouse</span>
+            <span class="bloc-desc" id="reduction-solid-stone-cathouse"></span>
+          </div>
+          <span class="achat-possede">× <span id="possede-solid-stone-cathouse">0</span></span>
+          <button onclick="acheterSolidStoneCathouse()" id="bouton-solid-stone-cathouse" class="btn-achat">
+            <span id="cout-solid-stone-planks">10</span> <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
+            + <span id="cout-solid-stone-bricks">5</span> <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick">
           </button>
         </div>
       </section>
@@ -531,7 +603,7 @@
             <span class="bloc-desc">Jobs improve production and unlock specialized roles.</span>
           </div>
           <button onclick="acheterJobCenter()" id="bouton-jobcenter" class="btn-achat">
-            10 <img class="cout-icone" src="img/resources/Pebble Brick_Final.png" alt="Pebble Brick"> + 1 <img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
+            10 <span class="cout-tier-badge work-tier-badge-tier-1" aria-label="Tier 1">T1</span><img class="cout-icone" src="img/resources/Pebble Brick_Final.png" alt="Pebble Brick"> + 1 <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
           </button>
         </div>
         <div id="jc-interface" style="display:none"></div>
@@ -546,7 +618,7 @@
               <span class="bloc-desc">A place where cats sharpen their skills. Unlock specializations to make every job more powerful.</span>
             </div>
             <button onclick="acheterTrainingCenter()" id="bouton-training-center" class="btn-achat">
-              10 <img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"> + 20 <img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
+              10 <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"> + 20 <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
             </button>
           </div>
           <div id="tc-entry" class="tc-entry" style="display:none">
@@ -564,7 +636,7 @@
             <span class="bloc-desc">A laboratory where cats can discover new engineering laws and principles.</span>
           </div>
           <button onclick="acheterLaboratoire()" id="bouton-laboratory" class="btn-achat">
-            100 <img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"> + 100 <img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
+            100 <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"> + 100 <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
           </button>
         </div>
         <div id="laboratory-interface" style="display:none"></div>
@@ -738,10 +810,30 @@
           <input type="checkbox" id="toggle-adjusted-time" onchange="basculerAffichageTempsAjuste(this.checked)">
           <span class="settings-toggle-switch"></span>
         </label>
+        <label class="settings-toggle-row">
+          <span>Warn before auto-feed overfeeding</span>
+          <input type="checkbox" id="toggle-overfood-warning" onchange="basculerAvertissementSurplusNourriture(this.checked)">
+          <span class="settings-toggle-switch"></span>
+        </label>
         <div class="settings-separateur"></div>
-        <div class="settings-version" aria-label="Game version">Version <strong>v0.0032</strong></div>
+        <div class="settings-version-row">
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0033</strong></div>
+          <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
+        </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
       </div>
+    </div>
+  </div>
+
+  <!-- CHANGELOG -->
+  <div id="changelog-modal" class="explo-modal changelog-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="changelog-modal-title" style="display:none">
+    <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerChangelog()"></div>
+    <div class="explo-modal-panneau" role="document" tabindex="-1">
+      <div class="explo-modal-header">
+        <span class="explo-modal-titre" id="changelog-modal-title">Changelog</span>
+        <button class="explo-modal-close" aria-label="Close Changelog" onclick="fermerChangelog()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
+      </div>
+      <div id="changelog-releases" class="changelog-releases"></div>
     </div>
   </div>
 
@@ -902,13 +994,14 @@
 
   <div id="inv-res-popup" role="tooltip" aria-hidden="true" style="display:none"></div>
 
-  <script src="js/cat-inc.js?v=0.0032"></script>
+  <script src="js/cat-inc.js?v=0.0033"></script>
   <script src="js/data/config.js?v=0.0042"></script>
   <script src="js/data/content.js?v=0.0051"></script>
+  <script src="js/data/changelog.js?v=0.0033"></script>
   <script src="js/core/state.js?v=0.0039"></script>
   <script src="js/core/save.js?v=0.0041"></script>
   <script src="js/core/production.js?v=0.0036"></script>
-  <script src="js/ui/dom.js?v=0.0032"></script>
+  <script src="js/ui/dom.js?v=0.0033"></script>
   <script src="js/ui/audio.js?v=0.0007"></script>
   <script src="jeu.js?v=0.0121"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>

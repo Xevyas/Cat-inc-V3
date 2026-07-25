@@ -16,15 +16,21 @@ const CONFIG = {
     reductionParSeconde: 5
   },
   stoneCathouse: {
-    coutBasePlanks: 1,
-    coutBaseBricks: 10,
+    coutBasePlanks: 5,
+    coutBaseBricks: 5,
     croissance:     1.7,
     speedBonus:     0.10
+  },
+  solidStoneCathouse: {
+    coutBasePlanks: 10,
+    coutBaseBricks: 5,
+    croissance:     1.7,
+    speedBonus:     0.40
   },
   woodcatting:      { secondesParUnite: 60 },
   basicWoodcatting: { secondesParUnite: 300 },
   grasscatting:     { secondesParUnite: 120 },
-  pebblegathering: { deblocageA: 5,  secondesParUnite: 180 },
+  pebblegathering: { deblocageA: 6,  secondesParUnite: 180 },
   rockgathering:   { secondesParUnite: 900 },
   rockFactory: {
     secondesParBrique: 4500,
@@ -40,7 +46,7 @@ const CONFIG = {
     secondesParBasicWood: 300
   },
   brickfactory: {
-    deblocageA:        5,
+    deblocageA:        6,
     secondesParBrique: 900,
     secondesParPebble: 90
   },
@@ -168,6 +174,7 @@ const CONFIG = {
       id:          "searchHomeHouse",
       nom:         "Search the house",
       description: "The house is empty now. Search quickly before the humans come back.",
+      lockedDescription: "There may be useful things inside, but a human is still home.",
       difficulte:  70,
       duree:       3600,
       slots:       2,
@@ -185,6 +192,17 @@ const CONFIG = {
       slots:       2,
       recompense:  "fishingGuide",
       zone:        "E1"
+    },
+    searchRightGarden: {
+      id:          "searchRightGarden",
+      nom:         "Search the garden",
+      description: "A few scraps are visible in a corner of the garden, as if people have been tossing their trash over the fence.",
+      difficulte:  15,
+      duree:       1200,
+      slots:       2,
+      recompense:  "humanLeftovers",
+      recompenseQty: 10,
+      zone:        "F1"
     },
     searchRightHouse: {
       id:          "searchRightHouse",
@@ -207,6 +225,17 @@ const CONFIG = {
       recompense:    "humanLeftovers",
       recompenseQty: 10,
       zone:          "C1"
+    },
+    searchLeftGarden: {
+      id:          "searchLeftGarden",
+      nom:         "Search the garden",
+      description: "A few scraps are visible in a corner of the garden, as if people have been tossing their trash over the fence.",
+      difficulte:  15,
+      duree:       1200,
+      slots:       2,
+      recompense:  "humanLeftovers",
+      recompenseQty: 10,
+      zone:        "B1"
     },
     searchLeftHouse: {
       id:          "searchLeftHouse",
@@ -262,6 +291,42 @@ const CONFIG = {
       recompense:          "seminarGuide",
       zone:                "A1",
       unlockAfterCampaign: "exploreGroundFloor"
+    },
+    searchUpperFloor: {
+      id:                  "searchUpperFloor",
+      nom:                 "Search the upper floor",
+      description:         "The builders left the upper floor exposed behind the scaffolding. Climb up, search the unfinished rooms, and get back down before the crew returns.",
+      difficulte:          80,
+      duree:               3600,
+      slots:               2,
+      recompense:          "sturdyHousePlans",
+      zone:                "A1",
+      unlockAfterCampaign: "exploreGroundFloor"
+    },
+    searchLeftParking: {
+      id:          "searchLeftParking",
+      nom:         "Search the parking",
+      description: "A pile of materials used by humans seems to be piling up in one corner of the parking lot.",
+      difficulte:  35,
+      duree:       2400,
+      slots:       2,
+      recompenses: [
+        { recompense: "rockBricks", qty: 2 }
+      ],
+      zone:        "parkingLeft"
+    },
+    searchRightParking: {
+      id:          "searchRightParking",
+      nom:         "Search the parking",
+      description: "A pile of materials used by humans seems to be piling up in one corner of the parking lot.",
+      difficulte:  35,
+      duree:       2400,
+      slots:       2,
+      recompenses: [
+        { recompense: "rockBricks", qty: 1 },
+        { recompense: "basicWoodPlanks", qty: 5 }
+      ],
+      zone:        "parkingRight"
     },
     infiltrateSupermarket: {
       id:          "infiltrateSupermarket",

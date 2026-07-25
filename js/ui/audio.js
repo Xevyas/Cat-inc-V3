@@ -7,6 +7,8 @@
     meowPurr: "Sounds/Meows/Meow Purr.mp3",
     meowStrong: "Sounds/Meows/Meow Strong.mp3",
     birdWingFlaps: "Sounds/Bird/Bird Wing Flaps.mp3",
+    explorationReveal: "Sounds/Other/Exploration Reveal.mp3",
+    rewardChest: "Sounds/Other/Reward Chest.mp3",
     music: "Sounds/Music/Base Music Test.ogg"
   });
   let assignmentMeowIndex = 0;
@@ -70,6 +72,12 @@
     },
     playBirdWingFlaps: function(volume) {
       play(SOURCES.birdWingFlaps, volume);
+    },
+    playExplorationReveal: function(volume) {
+      play(SOURCES.explorationReveal, volume);
+    },
+    playRewardChest: function(volume) {
+      play(SOURCES.rewardChest, volume);
     },
     startMusic: function(volume) {
       startMusic(volume);

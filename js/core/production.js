@@ -36,9 +36,11 @@
     const gatheringRate = positive(modifiers.gatheringSpeed, 1)
       * positive(modifiers.gatheringProduction, 1)
       * positive(modifiers.basicProduction, 1)
+      * positive(modifiers.gatheringManualSpeed, 1)
       * positive(modifiers.globalSpeed, 1)
       / rawSeconds;
     const processingRate = positive(modifiers.processingSpeed, 1)
+      * positive(modifiers.processingManualSpeed, 1)
       * positive(modifiers.globalSpeed, 1)
       / processingSeconds;
     const complexProduction = positive(modifiers.complexProduction, 1);

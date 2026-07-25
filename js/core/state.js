@@ -57,6 +57,7 @@ function creerEtatInitial() {
   clicCount:               0,
   reductionAuMomentDuClic: 0,
   afficherTempsAjusteRecrutement: false,
+  avertirSurplusNourriture: true,
   volumeEffetsSonores:     0.3,
   volumeMusique:           0.5,
   autoBuildWoodHouses:       false,
@@ -65,6 +66,7 @@ function creerEtatInitial() {
   // minutes; later events return to the normal random schedule.
   birdPremierSpawnTs:      Date.now() + 5 * 60 * 1000,
   birdPremiereReussie:     false,
+  birdPityEchecs:           0,
 
   // First-production story state
   premiereSaladeFaite:        false,
@@ -82,6 +84,7 @@ function creerEtatInitial() {
   cathouses:          [],
   cathouseCount:      0,
   stoneCathouseCount: 0,
+  solidStoneCathouseCount: 0,
   kittiesData:   [],   // { nom, metier, niveau, tier, catchTs }
   exploEnCours:        [],   // [{ id, kittyIndices, startTs, duree }]
   campaignsCompletees: [],
@@ -118,14 +121,19 @@ function creerEtatInitial() {
   resultatsExplorationZones: {}, // { zoneId: { success, kittyIndices } }
   resultatsCampaigns:  {},     // { campaignId: { success, kittyIndices, recompenses[] } }
   scoutingsEnCours:    {},     // { scoutingId: { kittyIndex, startTs } }
-  butinsScouting:      {},     // { scoutingId: { successful, failed, regular, lucky, superLucky, doubled, rewards } }
+  butinsScouting:      {},     // { scoutingId: { successful, failed, regular, lucky, superLucky, doubled, tripled, rewards } }
   managers:            { wood: null, food: null, sawmill: null, catchen: null, rock: null, pawsonry: null, houses: null },
   managersDebloques:   false,
+  managerRoleTutorialShown: false,
   objectifsComplis: [],
+  tutorialCompletionPopupSeen: false,
   logs:          [],
   storiesVues:  [],
+  releaseNotesSeenVersion: "",
   ongletsVisites: ["gang", "logs"],
-  learningEnCours: null,   // { itemId, startTs, duree } in ms (Study or legacy direct learning)
+  learningEnCours: null,   // { itemId, kittyIndex, startTs, duree } in ms (Study or legacy direct learning)
+  formationTermineeEnAttente: null, // { kittyIndex, metier, finishedTs } until the player validates the result
+  formationIngenieurTermineeEnAttente: null, // { kittyIndex, metier, engineerRank, finishedTs } until validation
 
   // Last real-world timestamp the game state was saved (for offline progress)
     dernierTimestamp: Date.now()
