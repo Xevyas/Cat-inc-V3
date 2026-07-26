@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0106" />
+  <link rel="stylesheet" href="style.css?v=0.0109" />
 </head>
 <body>
 
@@ -377,7 +377,7 @@
     <div class="intro-boite release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
-        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0034 · July 26, 2026</h2>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0035 · July 26, 2026</h2>
         <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
           <div id="release-notes-list" class="release-notes-list"></div>
         <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
@@ -678,6 +678,11 @@
 
   <!-- CONTENU FACILITIES -->
   <div id="contenu-facilities" role="tabpanel" aria-labelledby="onglet-facilities" aria-hidden="true" style="display:none">
+    <div id="facilities-subtabs" class="facilities-subtabs" role="tablist" aria-label="Facilities sections" aria-hidden="true" data-has-tabs="false">
+      <button id="facilities-subtab-jobs" class="facilities-subtab btn-filtre-work facilities-subtab-active btn-filtre-work-actif" type="button" role="tab" aria-selected="true" aria-controls="section-job-center" onclick="selectionnerVueFacilitiesMobile('jobs')">Jobs</button>
+      <button id="facilities-subtab-training" class="facilities-subtab btn-filtre-work" type="button" role="tab" aria-selected="false" aria-controls="section-training-center" onclick="selectionnerVueFacilitiesMobile('training')">Train</button>
+      <button id="facilities-subtab-lab" class="facilities-subtab btn-filtre-work" type="button" role="tab" aria-selected="false" aria-controls="section-laboratory" onclick="selectionnerVueFacilitiesMobile('lab')" style="display:none">Lab</button>
+    </div>
     <div class="grille grille-2col" id="facilities-grid">
       <section class="panneau panneau-buildings" id="section-job-center">
         <h2 class="panneau-titre panneau-titre-aide">Job Center <span class="panneau-aide-wrap"><button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Job Center" aria-expanded="false" aria-controls="job-center-help" onclick="togglePanneauAide(event)">?</button><span id="job-center-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Train unassigned cats for jobs that match the gang's needs.</span></span></h2>
@@ -696,16 +701,13 @@
         <h2 class="panneau-titre panneau-titre-aide">Training Center <span class="panneau-aide-wrap"><button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Training Center" aria-expanded="false" aria-controls="training-center-help" onclick="togglePanneauAide(event)">?</button><span id="training-center-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Develop experienced workers through permanent specializations.</span></span></h2>
         <div id="tc-overview">
           <div class="bloc-action bloc-action-building">
-            <img class="work-sprite" src="img/Buildings/Training Center_Final.png" alt="">
+            <img class="work-sprite" src="img/Buildings/Training Center_Final.png" alt="Training Center">
             <div class="bloc-entete-textes">
-              <span class="bloc-desc">A place where cats sharpen their skills. Unlock specializations to make every job more powerful.</span>
+              <span class="bloc-desc" id="training-center-intro-copy">A place where cats sharpen their skills. Unlock specializations to make every job more powerful.</span>
             </div>
             <button onclick="acheterTrainingCenter()" id="bouton-training-center" class="btn-achat">
               10 <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"> + 20 <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
             </button>
-          </div>
-          <div id="tc-entry" class="tc-entry" style="display:none">
-            <button id="btn-enter-training-center" class="tc-enter-btn" onclick="ouvrirTrainingCenter()">Enter Training Center</button>
           </div>
         </div>
         <div id="tc-interface" class="tc-interface" style="display:none"></div>
@@ -751,8 +753,10 @@
   <div id="contenu-explorations" role="tabpanel" aria-labelledby="onglet-explorations" aria-hidden="true" style="display:none">
 
     <section class="panneau" id="section-explo-map">
-      <h2 class="panneau-titre">Neighborhood map</h2>
-      <p class="panneau-desc">Select a zone to review its status, campaigns and scouting missions.</p>
+      <div class="explo-map-heading">
+        <h2 class="panneau-titre">Neighborhood map</h2>
+        <span class="panneau-aide-wrap"><button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Neighborhood map" aria-expanded="false" aria-controls="neighborhood-map-help" onclick="togglePanneauAide(event)">?</button><span id="neighborhood-map-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">Select a zone to review its status, campaigns and scouting missions.</span></span>
+      </div>
       <div id="explo-map-section"></div>
     </section>
 
@@ -916,7 +920,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0034</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0035</strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1096,13 +1100,13 @@
   <script src="js/cat-inc.js?v=0.0033"></script>
   <script src="js/data/config.js?v=0.0043"></script>
   <script src="js/data/content.js?v=0.0052"></script>
-  <script src="js/data/changelog.js?v=0.0034"></script>
+  <script src="js/data/changelog.js?v=0.0035"></script>
   <script src="js/core/state.js?v=0.0040"></script>
   <script src="js/core/save.js?v=0.0042"></script>
   <script src="js/core/production.js?v=0.0036"></script>
   <script src="js/ui/dom.js?v=0.0033"></script>
   <script src="js/ui/audio.js?v=0.0007"></script>
-  <script src="jeu.js?v=0.0122"></script>
+  <script src="jeu.js?v=0.0125"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

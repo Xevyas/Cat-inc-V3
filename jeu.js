@@ -2250,6 +2250,30 @@ function reclamerRecompenseQuotidienne() {
 // 8. OBJECTIVES
 // ════════════════════════════════════════════════════════════
 
+let tutorielCompletionEnAttente = false;
+
+function ouvrirCompletionTutorielSiNecessaire() {
+  if (!tutorielCompletionEnAttente || etat.tutorialCompletionPopupSeen) return;
+  // Release notes, story screens and the save-upgrade dialog take priority.
+  // Keep the acknowledgement queued instead of marking it seen behind one of
+  // those overlays, so it cannot disappear during the initial launch flow.
+  const autreModalOuvert = Array.from(document.querySelectorAll('.explo-modal, .ecran-intro')).some(function(el) {
+    return el.id !== "tutorial-complete-modal"
+      && el.style.display !== "none"
+      && el.getAttribute("aria-hidden") !== "true";
+  });
+  if (autreModalOuvert) {
+    setTimeout(ouvrirCompletionTutorielSiNecessaire, 250);
+    return;
+  }
+  tutorielCompletionEnAttente = false;
+  etat.tutorialCompletionPopupSeen = true;
+  sauvegarder();
+  ouvrirDialogueModal("tutorial-complete-modal", {
+    focusSelector: "#tutorial-complete-confirm"
+  });
+}
+
 function verifierObjectifs() {
   let changed = false;
   OBJECTIFS.forEach(function(obj) {
@@ -2259,19 +2283,16 @@ function verifierObjectifs() {
       changed = true;
     }
   });
-  const tutorielTermine = dailyQuetesDebloquees()
-    && !(etat.dailyQuests && etat.dailyQuests.rewardClaimed === true)
-    && objectifsActifsTries().length === 0;
-  const afficherFinTutoriel = changed && tutorielTermine && !etat.tutorialCompletionPopupSeen;
-  if (afficherFinTutoriel) etat.tutorialCompletionPopupSeen = true;
+  // Tutorial completion is independent from Daily Quests. Daily Purpose may
+  // be learned later, so tying this check to dailyQuetesDebloquees() could
+  // silently skip the completion acknowledgement altogether.
+  const tutorielTermine = objectifsActifsTries().length === 0;
+  const afficherFinTutoriel = tutorielTermine && !etat.tutorialCompletionPopupSeen && !tutorielCompletionEnAttente;
+  if (afficherFinTutoriel) tutorielCompletionEnAttente = true;
   if (changed || afficherFinTutoriel) { rendu(); sauvegarder(); }
   renduObjectifs();
   if (afficherFinTutoriel) {
-    setTimeout(function() {
-      ouvrirDialogueModal("tutorial-complete-modal", {
-        focusSelector: "#tutorial-complete-confirm"
-      });
-    }, 0);
+    setTimeout(ouvrirCompletionTutorielSiNecessaire, 0);
   }
 }
 
@@ -3841,8 +3862,56 @@ function renduBuildings(u) {
 }
 
 // ── 9e. Facilities section
+let facilitiesMobileVue = "jobs";
+
+function actualiserSousOngletsFacilities(u) {
+  const nav = domParId("facilities-subtabs");
+  const contenu = domParId("contenu-facilities");
+  if (!nav || !contenu) return;
+
+  const sousOngletsVisibles = !!u.trainingCenter;
+  if (facilitiesMobileVue === "lab" && !u.laboratory) facilitiesMobileVue = "jobs";
+
+  nav.dataset.hasTabs = sousOngletsVisibles ? "true" : "false";
+  nav.dataset.tabCount = u.laboratory ? "3" : "2";
+  nav.setAttribute("aria-hidden", sousOngletsVisibles ? "false" : "true");
+  contenu.dataset.facilitiesView = facilitiesMobileVue;
+  document.body.classList.toggle("facilities-subtabs-actifs", sousOngletsVisibles);
+
+  ["jobs", "training", "lab"].forEach(function(view) {
+    const bouton = domParId("facilities-subtab-" + view);
+    if (!bouton) return;
+    const actif = view === facilitiesMobileVue;
+    bouton.classList.toggle("facilities-subtab-active", actif);
+    bouton.classList.toggle("btn-filtre-work-actif", actif);
+    bouton.setAttribute("aria-selected", actif ? "true" : "false");
+    bouton.tabIndex = actif ? 0 : -1;
+  });
+
+  const boutonLab = domParId("facilities-subtab-lab");
+  if (boutonLab) ecrireStyle(boutonLab, "display", u.laboratory ? "" : "none");
+}
+
+function selectionnerVueFacilitiesMobile(view) {
+  const u = unlocks();
+  if (view !== "jobs" && view !== "training" && view !== "lab") return;
+  if (view === "training" && !u.trainingCenter) return;
+  if (view === "lab" && !u.laboratory) return;
+  facilitiesMobileVue = view;
+  jcDirty = true;
+  labDirty = true;
+  _tcKey = null;
+  rendu();
+  requestAnimationFrame(function() {
+    const cibleId = view === "training" ? "section-training-center" : (view === "lab" ? "section-laboratory" : "section-job-center");
+    const section = domParId(cibleId);
+    if (section) section.scrollIntoView({ block: "start" });
+  });
+}
+
 function renduFacilities(u) {
   if (!u.jobCenter) return;
+  actualiserSousOngletsFacilities(u);
   const btnJC = domParId("bouton-jobcenter");
   ecrirePropriete(btnJC, "disabled", etat.jobCenterConstruit || etat.pebbleBricks < 10 || etat.basicWoodPlanks < 1);
   ecrireHTML(btnJC, etat.jobCenterConstruit ? CHECK_ICON + " Built" :
@@ -3852,6 +3921,8 @@ function renduFacilities(u) {
   if (etat.jobCenterConstruit) renduJobCenter(u);
 
   const secTC = domParId("section-training-center");
+  const facilities = domParId("contenu-facilities");
+  if (facilities) facilities.classList.toggle("training-center-available", !!u.trainingCenter);
   if (secTC) {
     ecrireStyle(secTC, "display", u.trainingCenter ? "" : "none");
     if (u.trainingCenter) {
@@ -3862,15 +3933,14 @@ function renduFacilities(u) {
           '10 ' + badgeTierCout(2) + ' <img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"> + 20 ' + badgeTierCout(2) + ' <img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">');
       }
       const tcOverview = domParId("tc-overview");
-      const tcEntry = domParId("tc-entry");
       const tcIface = domParId("tc-interface");
-      const facilities = domParId("contenu-facilities");
-      if (!etat.trainingCenterConstruit) tcTrainingOuvert = false;
-      if (facilities) facilities.classList.toggle("training-center-open", !!(etat.trainingCenterConstruit && tcTrainingOuvert));
-      ecrireStyle(tcOverview, "display", tcTrainingOuvert && etat.trainingCenterConstruit ? "none" : "block");
-      ecrireStyle(tcEntry, "display", etat.trainingCenterConstruit && !tcTrainingOuvert ? "block" : "none");
-      ecrireStyle(tcIface, "display", etat.trainingCenterConstruit && tcTrainingOuvert ? "block" : "none");
-      if (etat.trainingCenterConstruit && tcTrainingOuvert) renduTrainingCenter();
+      const tcIntro = domParId("training-center-intro-copy");
+      ecrireStyle(tcOverview, "display", "block");
+      ecrireTexte(tcIntro, etat.trainingCenterConstruit
+        ? "Select a cat to review its specialization sphere."
+        : "A place where cats sharpen their skills. Unlock specializations to make every job more powerful.");
+      ecrireStyle(tcIface, "display", etat.trainingCenterConstruit ? "block" : "none");
+      if (etat.trainingCenterConstruit) renduTrainingCenter();
     }
   }
 
@@ -3891,23 +3961,6 @@ function renduFacilities(u) {
       }
     }
   }
-}
-
-function ouvrirTrainingCenter() {
-  if (!etat.trainingCenterConstruit) return;
-  tcTrainingOuvert = true;
-  _tcKey = null;
-  rendu();
-  requestAnimationFrame(function() {
-    const section = document.getElementById("section-training-center");
-    if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
-}
-
-function fermerTrainingCenter() {
-  tcTrainingOuvert = false;
-  _tcKey = null;
-  rendu();
 }
 
 // ── 9f-i. Laboratory engineering training
@@ -4133,7 +4186,7 @@ function synchroniserDeblocagesSpherePerks() {
 
 function renduTrainingCenter() {
   const el = document.getElementById("tc-interface");
-  if (!el || !etat.trainingCenterConstruit || !tcTrainingOuvert) return;
+  if (!el || !etat.trainingCenterConstruit) return;
 
   const roster = trainingCenterKitties();
   const rosterKey = roster.map(function(entry) {
@@ -4151,12 +4204,18 @@ function renduTrainingCenter() {
   _tcKey = key;
 
   let html = '<div class="tc-workspace">';
-  html += '<div class="tc-workspace-header">';
-  html += '<button type="button" class="tc-back-btn" onclick="fermerTrainingCenter()">← Back to Facilities</button>';
-  html += '<div><div class="tc-workspace-title">Job Specialization</div><div class="tc-workspace-desc">Select a cat to review its specialization sphere.</div></div>';
-  html += '</div>';
+  if (k) {
+    const pickerMetier = METIERS[k.metier];
+    const pickerLevel = jobLevelInfo(k.metier);
+    html += '<button type="button" class="tc-mobile-picker" data-jc-modal-trigger="spec" onclick="ouvrirModalJC(\'spec\')" aria-label="Change the cat selected for specialization">';
+    html += '<span class="tc-cat-icon">' + kittyIconHtml(k) + '</span>';
+    html += '<span class="tc-cat-info"><span class="tc-cat-name">' + echapperAttributHtml(k.nom) + '</span><span class="tc-cat-job">' + (pickerMetier ? pickerMetier.emoji + ' ' + pickerMetier.nom : k.metier) + ' · Lv. ' + pickerLevel.cur + '/' + pickerLevel.max + '</span></span>';
+    html += '<span class="tc-mobile-picker-action">Change</span></button>';
+  } else {
+    html += '<button type="button" class="tc-mobile-picker tc-mobile-picker-empty" data-jc-modal-trigger="spec" onclick="ouvrirModalJC(\'spec\')"><span class="jc-slot-plus">+</span><span>Select a cat with a job</span></button>';
+  }
   html += '<div class="tc-workspace-grid">';
-  html += '<aside class="tc-roster" aria-label="Cats with jobs">';
+  html += '<aside class="tc-roster tc-roster-desktop" aria-label="Cats with jobs">';
   html += '<div class="tc-roster-title">Cats with jobs</div>';
   html += '<div class="tc-roster-list" role="group" aria-label="Cats with jobs">';
   if (roster.length === 0) {
@@ -6467,6 +6526,10 @@ function lancerExploZone() {
   var hasHalvesTime = slots.some(function(ki) { return ki !== null && scoutingHalveTime(ki); });
   var launchPower = slots.reduce(function(s, ki) { return s + kittyEP(ki); }, 0);
   etat.exploZoneEnCours = { zoneId: zoneId, kittyIndices: slots.slice(), power: launchPower, startTs: Date.now(), duree: hasHalvesTime ? z.duree / 2 : z.duree };
+  if (estExplorationMobile()) {
+    explorationMobileVue = "map";
+    explorationMobileTypeMission = "campaigns";
+  }
   carteDirty = true;
   exploTabDirty = true;
   sauvegarder(); rendu();
@@ -7683,7 +7746,6 @@ let jcFormationKittySelectionne = null;
 let jcMetierSelectionne = null;
 
 let tcSpecKittySelectionne = null;
-let tcTrainingOuvert       = false;
 let _sphereGridJob        = null;  // job id of the currently rendered sphere grid
 let _sphereSelectionnee   = null;  // id of the selected sphere node
 let jcJobInfoAnchor        = null;
@@ -7957,6 +8019,7 @@ function renduModalJC() {
         const m = METIERS[k.metier];
         const _mlvl = jobLevelInfo(k.metier);
         html += '<div class="jc-modal-kitty"' + attributsActivationClavier("Select " + k.nom + " to specialize") + ' onclick="selectionnerKittySpec(' + idx + ')">';
+        html += '<span class="jc-modal-kitty-emoji">' + kittyIconHtml(k) + '</span>';
         html += '<div class="jc-modal-kitty-info">';
         html += '<span class="jc-modal-kitty-nom">' + k.nom + '</span>';
         html += '<span class="jc-modal-kitty-tier">' + (m ? m.emoji + ' ' + m.nom : k.metier) + '</span>';
@@ -9739,6 +9802,12 @@ function changerOnglet(id) {
   // another tab must not reopen the kitty profile that was previously open.
   if (id === "gang" && estMobile) {
     detailKittyMobileOuvert = false;
+  }
+  // Explorations is the map landing page on mobile. A zone workspace is
+  // temporary, so returning to the tab always starts from the map.
+  if (id === "explorations" && estMobile) {
+    explorationMobileVue = "map";
+    explorationMobileTypeMission = "campaigns";
   }
   document.body.classList.remove("interface-compacte");
   marquerOngletVisite(id);

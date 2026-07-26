@@ -57,11 +57,31 @@
       })
   ]);
 
+  const release0035Categories = Object.freeze([
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Mobile Exploration now returns to the map when the Explorations tab or the zone Explore action is opened again.",
+        "Exploration headers now expose their description through the same contextual help button used by other game panels.",
+        "Mobile panels now share consistent horizontal margins, full available width and spacing below navigation rails.",
+        "Facilities gains mobile Jobs, Train and Lab subtabs as each specialized building becomes available.",
+        "The Training Center now opens directly in Facilities, with a compact mobile Cat picker replacing the long inline roster."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "The Tutorial completion acknowledgement now appears even when Daily Purpose has not been learned yet.",
+        "The Houses tab no longer creates a horizontal scrollbar on narrow mobile screens."
+      ])
+    })
+  ]);
+
   // Local changes made after the latest published release live here.
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0034",
+    baseVersion: "0.0035",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -74,6 +94,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0035",
+      date: "2026-07-26",
+      categories: release0035Categories
+    }),
     Object.freeze({
       version: "0.0034",
       date: "2026-07-26",
