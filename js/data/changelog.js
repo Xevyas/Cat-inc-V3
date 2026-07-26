@@ -65,14 +65,17 @@
         "Exploration headers now expose their description through the same contextual help button used by other game panels.",
         "Mobile panels now share consistent horizontal margins, full available width and spacing below navigation rails.",
         "Facilities gains mobile Jobs, Train and Lab subtabs as each specialized building becomes available.",
-        "The Training Center now opens directly in Facilities, with a compact mobile Cat picker replacing the long inline roster."
+        "The Training Center now opens directly in Facilities, with a compact mobile Cat picker replacing the long inline roster.",
+        "Multi-resource building costs now wrap as complete resource groups on narrow mobile screens.",
+        "The AFK summary now uses the game's interface and resource artwork instead of emojis."
       ])
     }),
     Object.freeze({
       label: "Bug Fixes",
       changes: Object.freeze([
         "The Tutorial completion acknowledgement now appears even when Daily Purpose has not been learned yet.",
-        "The Houses tab no longer creates a horizontal scrollbar on narrow mobile screens."
+        "The Houses tab no longer creates a horizontal scrollbar on narrow mobile screens.",
+        "Exploration assignment cards now stay aligned when the first slot carries the required Explorator label."
       ])
     })
   ]);

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0109" />
+  <link rel="stylesheet" href="style.css?v=0.0112" />
 </head>
 <body>
 
@@ -654,9 +654,9 @@
             <span class="bloc-desc" id="reduction-stone-cathouse"></span>
           </div>
           <span class="achat-possede">× <span id="possede-stone-cathouse">0</span></span>
-          <button onclick="acheterStoneCathouse()" id="bouton-stone-cathouse" class="btn-achat">
-            <span id="cout-stone-planks">5</span> <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
-            + <span id="cout-stone-bricks">5</span> <span class="cout-tier-badge work-tier-badge-tier-1" aria-label="Tier 1">T1</span><img class="cout-icone" src="img/resources/Pebble Brick_Final.png" alt="Pebble Brick">
+          <button onclick="acheterStoneCathouse()" id="bouton-stone-cathouse" class="btn-achat btn-achat-cout-multiple">
+            <span class="cout-groupe"><span id="cout-stone-planks">5</span><span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank"></span>
+            <span class="cout-groupe cout-groupe-suite"><span class="cout-plus">+</span><span id="cout-stone-bricks">5</span><span class="cout-tier-badge work-tier-badge-tier-1" aria-label="Tier 1">T1</span><img class="cout-icone" src="img/resources/Pebble Brick_Final.png" alt="Pebble Brick"></span>
           </button>
         </div>
         <div class="bloc-action bloc-action-building" id="bloc-solid-stone-cathouse" style="display:none">
@@ -667,9 +667,9 @@
             <span class="bloc-desc" id="reduction-solid-stone-cathouse"></span>
           </div>
           <span class="achat-possede">× <span id="possede-solid-stone-cathouse">0</span></span>
-          <button onclick="acheterSolidStoneCathouse()" id="bouton-solid-stone-cathouse" class="btn-achat">
-            <span id="cout-solid-stone-planks">10</span> <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
-            + <span id="cout-solid-stone-bricks">5</span> <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick">
+          <button onclick="acheterSolidStoneCathouse()" id="bouton-solid-stone-cathouse" class="btn-achat btn-achat-cout-multiple">
+            <span class="cout-groupe"><span id="cout-solid-stone-planks">10</span><span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank"></span>
+            <span class="cout-groupe cout-groupe-suite"><span class="cout-plus">+</span><span id="cout-solid-stone-bricks">5</span><span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"></span>
           </button>
         </div>
       </section>
@@ -691,8 +691,9 @@
           <div class="bloc-entete-textes">
             <span class="bloc-desc">Jobs improve production and unlock specialized roles.</span>
           </div>
-          <button onclick="acheterJobCenter()" id="bouton-jobcenter" class="btn-achat">
-            10 <span class="cout-tier-badge work-tier-badge-tier-1" aria-label="Tier 1">T1</span><img class="cout-icone" src="img/resources/Pebble Brick_Final.png" alt="Pebble Brick"> + 1 <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
+          <button onclick="acheterJobCenter()" id="bouton-jobcenter" class="btn-achat btn-achat-cout-multiple">
+            <span class="cout-groupe">10<span class="cout-tier-badge work-tier-badge-tier-1" aria-label="Tier 1">T1</span><img class="cout-icone" src="img/resources/Pebble Brick_Final.png" alt="Pebble Brick"></span>
+            <span class="cout-groupe cout-groupe-suite"><span class="cout-plus">+</span>1<span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank"></span>
           </button>
         </div>
         <div id="jc-interface" style="display:none"></div>
@@ -705,8 +706,9 @@
             <div class="bloc-entete-textes">
               <span class="bloc-desc" id="training-center-intro-copy">A place where cats sharpen their skills. Unlock specializations to make every job more powerful.</span>
             </div>
-            <button onclick="acheterTrainingCenter()" id="bouton-training-center" class="btn-achat">
-              10 <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"> + 20 <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
+            <button onclick="acheterTrainingCenter()" id="bouton-training-center" class="btn-achat btn-achat-cout-multiple">
+              <span class="cout-groupe">10<span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"></span>
+              <span class="cout-groupe cout-groupe-suite"><span class="cout-plus">+</span>20<span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank"></span>
             </button>
           </div>
         </div>
@@ -719,8 +721,9 @@
           <div class="bloc-entete-textes">
             <span class="bloc-desc">A laboratory where cats can discover new engineering laws and principles.</span>
           </div>
-          <button onclick="acheterLaboratoire()" id="bouton-laboratory" class="btn-achat">
-            100 <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"> + 100 <span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">
+          <button onclick="acheterLaboratoire()" id="bouton-laboratory" class="btn-achat btn-achat-cout-multiple">
+            <span class="cout-groupe">100<span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"></span>
+            <span class="cout-groupe cout-groupe-suite"><span class="cout-plus">+</span>100<span class="cout-tier-badge work-tier-badge-tier-2" aria-label="Tier 2">T2</span><img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank"></span>
           </button>
         </div>
         <div id="laboratory-interface" style="display:none"></div>
@@ -1100,13 +1103,13 @@
   <script src="js/cat-inc.js?v=0.0033"></script>
   <script src="js/data/config.js?v=0.0043"></script>
   <script src="js/data/content.js?v=0.0052"></script>
-  <script src="js/data/changelog.js?v=0.0035"></script>
+  <script src="js/data/changelog.js?v=0.0035&build=1"></script>
   <script src="js/core/state.js?v=0.0040"></script>
   <script src="js/core/save.js?v=0.0042"></script>
   <script src="js/core/production.js?v=0.0036"></script>
   <script src="js/ui/dom.js?v=0.0033"></script>
   <script src="js/ui/audio.js?v=0.0007"></script>
-  <script src="jeu.js?v=0.0125"></script>
+  <script src="jeu.js?v=0.0127"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

@@ -1943,6 +1943,21 @@ body.mini-game-runtime-active #bird-btn {
 }
 .absence-ligne:last-child { border-bottom: none; padding-bottom: 0; }
 
+.absence-libelle {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.absence-icone {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
 .absence-val { color: var(--couleur-accent); }
 
 /* ── Taux de production sous la ressource bois ───────────*/
@@ -3301,6 +3316,15 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
 }
 .btn-achat:hover:not(:disabled) { background-color: #6b4f0f; }
 .btn-achat:disabled { opacity: 0.3; cursor: not-allowed; }
+.cout-groupe {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+.cout-groupe-suite { gap: 4px; }
+.cout-plus { font-weight: 900; }
 .cout-icone {
   width: 36px;
   height: 36px;
@@ -6045,6 +6069,7 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
 /* Slots */
 .explo-slots {
   display: flex;
+  align-items: flex-start;
   gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 12px;
@@ -7637,7 +7662,19 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
     max-width: 100%;
     min-width: 0;
     white-space: normal;
-    overflow-wrap: anywhere;
+  }
+  .btn-achat-cout-multiple {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 2px 7px;
+    max-width: 100%;
+    min-width: 0;
+    white-space: normal;
+  }
+  .btn-achat-cout-multiple .cout-groupe {
+    flex: 0 0 auto;
   }
   #contenu-work > #section-work-pairs {
     width: calc(100% - 24px);

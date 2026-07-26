@@ -3915,7 +3915,8 @@ function renduFacilities(u) {
   const btnJC = domParId("bouton-jobcenter");
   ecrirePropriete(btnJC, "disabled", etat.jobCenterConstruit || etat.pebbleBricks < 10 || etat.basicWoodPlanks < 1);
   ecrireHTML(btnJC, etat.jobCenterConstruit ? CHECK_ICON + " Built" :
-    '10 ' + badgeTierCout(1) + ' <img class="cout-icone" src="img/resources/Pebble Brick_Final.png" alt="Pebble Brick"> + 1 ' + badgeTierCout(2) + ' <img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">');
+    '<span class="cout-groupe">10' + badgeTierCout(1) + '<img class="cout-icone" src="img/resources/Pebble Brick_Final.png" alt="Pebble Brick"></span>'
+    + '<span class="cout-groupe cout-groupe-suite"><span class="cout-plus">+</span>1' + badgeTierCout(2) + '<img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank"></span>');
   const jcIface = domParId("jc-interface");
   ecrireStyle(jcIface, "display", etat.jobCenterConstruit ? "block" : "none");
   if (etat.jobCenterConstruit) renduJobCenter(u);
@@ -3930,7 +3931,8 @@ function renduFacilities(u) {
       if (btnTC) {
         ecrirePropriete(btnTC, "disabled", etat.trainingCenterConstruit || etat.rockBricks < 10 || etat.basicWoodPlanks < 20);
         ecrireHTML(btnTC, etat.trainingCenterConstruit ? CHECK_ICON + " Built" :
-          '10 ' + badgeTierCout(2) + ' <img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"> + 20 ' + badgeTierCout(2) + ' <img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">');
+          '<span class="cout-groupe">10' + badgeTierCout(2) + '<img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"></span>'
+          + '<span class="cout-groupe cout-groupe-suite"><span class="cout-plus">+</span>20' + badgeTierCout(2) + '<img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank"></span>');
       }
       const tcOverview = domParId("tc-overview");
       const tcIface = domParId("tc-interface");
@@ -3952,7 +3954,8 @@ function renduFacilities(u) {
       if (btnLab) {
         ecrirePropriete(btnLab, "disabled", etat.laboratoryConstruit || etat.rockBricks < 100 || etat.basicWoodPlanks < 100);
         ecrireHTML(btnLab, etat.laboratoryConstruit ? CHECK_ICON + " Built" :
-          '100 ' + badgeTierCout(2) + ' <img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"> + 100 ' + badgeTierCout(2) + ' <img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank">');
+          '<span class="cout-groupe">100' + badgeTierCout(2) + '<img class="cout-icone" src="img/resources/Rock Brick_Final.png" alt="Rock Brick"></span>'
+          + '<span class="cout-groupe cout-groupe-suite"><span class="cout-plus">+</span>100' + badgeTierCout(2) + '<img class="cout-icone" src="img/resources/Basic Wood Plank_Final.png" alt="Basic Wood Plank"></span>');
       }
       const labIface = domParId("laboratory-interface");
       if (labIface) {
@@ -9295,11 +9298,21 @@ function afficherResumeAbsence(resume) {
   parametres.textContent = "Max AFK : " + maxAfkLabel + " / Ratio : " + ratioLabel + " of real time";
   conteneur.appendChild(parametres);
 
-  function ligne(label, valeur) {
+  function ligne(label, valeur, iconeSrc) {
     const el = document.createElement("div");
     el.className = "absence-ligne";
     const lbl = document.createElement("span");
-    lbl.textContent = label;
+    lbl.className = "absence-libelle";
+    if (iconeSrc) {
+      const icone = document.createElement("img");
+      icone.className = "absence-icone";
+      icone.src = iconeSrc;
+      icone.alt = "";
+      lbl.appendChild(icone);
+    }
+    const texte = document.createElement("span");
+    texte.textContent = label;
+    lbl.appendChild(texte);
     const val = document.createElement("span");
     val.className   = "absence-val";
     val.textContent = valeur;
@@ -9308,25 +9321,26 @@ function afficherResumeAbsence(resume) {
     conteneur.appendChild(el);
   }
 
-  ligne("⏱ Time away", formaterTemps(resume.dureeReelleSec));
-  ligne("⚙ Game time applied", formaterTemps(resume.dureeSimuleeSec));
+  ligne("Time away", formaterTemps(resume.dureeReelleSec), "img/interface/Settings_Final.png");
+  ligne("Game time applied", formaterTemps(resume.dureeSimuleeSec), "img/interface/Work_Final.png");
 
   const ressources = [
-    ["📋 Cardboard Planks", resume.cardboardPlanks],
-    ["🪵 Basic Wood Planks", resume.basicWoodPlanks],
-    ["🪨 Pebble Bricks",    resume.pebbleBricks],
-    ["🧱 Rock Bricks",      resume.rockBricks],
-    ["🥗 Catnip Salad",      resume.salads],
-    ["🐟 Grilled Anchovy",  resume.grilledAnchovy]
+    ["Cardboard Planks", resume.cardboardPlanks, "img/resources/Cardboard Plank_Final.png"],
+    ["Basic Wood Planks", resume.basicWoodPlanks, "img/resources/Basic Wood Plank_Final.png"],
+    ["Pebble Bricks",    resume.pebbleBricks,    "img/resources/Pebble Brick_Final.png"],
+    ["Rock Bricks",      resume.rockBricks,      "img/resources/Rock Brick_Final.png"],
+    ["Catnip Salad",     resume.salads,          "img/resources/Catnip Salad_Final.png"],
+    ["Grilled Anchovy",  resume.grilledAnchovy,  "img/resources/Grilled Anchovy_Final.png"]
   ];
   let produit = false;
   ressources.forEach(function(r) {
-    if (r[1] > 0) { ligne(r[0], "+" + formaterNombre(r[1])); produit = true; }
+    if (r[1] > 0) { ligne(r[0], "+" + formaterNombre(r[1]), r[2]); produit = true; }
   });
-  if (!produit) ligne("🐾 Production", "Nothing produced");
+  if (!produit) ligne("Production", "Nothing produced", "img/interface/Work_Final.png");
 
   if (resume.kittyAttrape) {
-    ligne("🐱 New cat", resume.kittyAttrape + " joined the gang!");
+    const kitty = etat.kittiesData.find(function(k) { return k.nom === resume.kittyAttrape; });
+    ligne("New cat", resume.kittyAttrape + " joined the gang!", kitty && kitty.visage ? kitty.visage : CAT_FACES.bernardo);
   }
 
   afficherModal("ecran-absence");
