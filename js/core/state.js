@@ -61,6 +61,9 @@ function creerEtatInitial() {
   volumeEffetsSonores:     0.3,
   volumeMusique:           0.5,
   autoBuildWoodHouses:       false,
+  // Resources hidden from the compact top rail. An empty list means every
+  // unlocked resource is displayed by default.
+  resourceBarHidden:       [],
 
   // Bird event progression. The first event is deliberately fixed at five
   // minutes; later events return to the normal random schedule.
@@ -100,7 +103,7 @@ function creerEtatInitial() {
   engineerRankUpgradesDebloques: false,
   formationEnCours:    null,   // { kittyIndex, metier, startTs, duree }
   formationIngenieurEnCours: null, // { kittyIndex, metier, startTs, duree }
-  // Daily quests unlocked by studying The Daily Purpose. The date key is
+  // Daily quests unlocked by learning The Daily Purpose. The date key is
   // calculated in Europe/Paris so a new set starts at Paris midnight.
   dailyQuests: {
     dateKey: "",
@@ -109,8 +112,13 @@ function creerEtatInitial() {
     catLevelUps: 0,
     birdCaught: false,
     recipesCompleted: 0,
-    rewardClaimed: false,
-    scoutingCannedCatFood: {
+    rewardClaimed: false
+  },
+  // Scouting Canned Cat Food stocks reset at Paris midnight independently
+  // from the Daily Purpose book and its Daily Quests.
+  dailyScoutingStocks: {
+    dateKey: "",
+    remaining: {
       raidSupermarketAgain: 3,
       stealGasStationAgain: 2
     }

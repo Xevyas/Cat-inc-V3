@@ -336,6 +336,7 @@ const CONFIG = {
       duree:       3600,
       slots:       2,
       recompense:  "cannedCatFood",
+      recompenseQty: 2,
       zone:        "supermarket"
     },
     checkSupermarketBookSection: {

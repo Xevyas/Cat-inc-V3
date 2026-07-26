@@ -13,6 +13,10 @@
   const ONGLETS_VALIDES = ["gang", "work", "buildings", "facilities", "explorations", "inventaire", "logs"];
   const WORK_FAMILIES = ["wood", "food", "rock"];
   const WORK_RECIPE_PHASES = ["idle", "gathering", "processing", "waiting"];
+  const RESOURCE_BAR_KEYS = [
+    "cardboardPlanks", "basicWoodPlanks", "pebbleBricks", "rockBricks",
+    "salads", "grilledAnchovy", "humanLeftovers", "humanWorkersFood", "cannedCatFood"
+  ];
 
 function estObjetSauvegarde(valeur) {
   return valeur !== null && typeof valeur === "object" && !Array.isArray(valeur);
@@ -37,13 +41,13 @@ function validerStructureSauvegarde(d) {
 
   const champsTableaux = [
     "cathouses", "kittiesData", "exploEnCours", "campaignsCompletees", "itemsAcquis", "itemsAppris", "itemsEtudies",
-    "zonesExplorees", "objectifsComplis", "logs", "storiesVues", "ongletsVisites"
+    "zonesExplorees", "objectifsComplis", "logs", "storiesVues", "ongletsVisites", "resourceBarHidden"
   ];
   for (const cle of champsTableaux) {
     if (d[cle] !== undefined && !Array.isArray(d[cle])) return "Invalid field: " + cle + " must be an array.";
   }
 
-  const champsObjets = ["workRecipeSlots", "spherePerks", "scoutingsEnCours", "resultatsExplorationZones", "resultatsCampaigns", "butinsScouting", "managers", "dailyQuests"];
+  const champsObjets = ["workRecipeSlots", "spherePerks", "scoutingsEnCours", "resultatsExplorationZones", "resultatsCampaigns", "butinsScouting", "managers", "dailyQuests", "dailyScoutingStocks"];
   for (const cle of champsObjets) {
     if (d[cle] !== undefined && !estObjetSauvegarde(d[cle])) return "Invalid field: " + cle + " must be an object.";
   }
@@ -90,6 +94,14 @@ function validerStructureSauvegarde(d) {
       }
     }
   }
+  if (d.dailyScoutingStocks !== undefined) {
+    const stocks = d.dailyScoutingStocks;
+    if (typeof stocks.dateKey !== "string" || stocks.dateKey.length > 20) return "Invalid daily scouting stock date.";
+    if (!estObjetSauvegarde(stocks.remaining)) return "Invalid daily scouting stock.";
+    for (const cle of ["raidSupermarketAgain", "stealGasStationAgain"]) {
+      if (!Number.isInteger(stocks.remaining[cle]) || stocks.remaining[cle] < 0) return "Invalid daily scouting stock.";
+    }
+  }
 
   if (d.prochainVisageChaton !== undefined && d.prochainVisageChaton !== null
       && (typeof d.prochainVisageChaton !== "string" || d.prochainVisageChaton.length > 300 || /[<>]/.test(d.prochainVisageChaton))) {
@@ -117,7 +129,7 @@ function validerStructureSauvegarde(d) {
     return "Invalid cathouse history.";
   }
 
-  const champsTableauxDeChaines = ["campaignsCompletees", "itemsAcquis", "itemsAppris", "itemsEtudies", "zonesExplorees", "objectifsComplis", "storiesVues", "ongletsVisites"];
+  const champsTableauxDeChaines = ["campaignsCompletees", "itemsAcquis", "itemsAppris", "itemsEtudies", "zonesExplorees", "objectifsComplis", "storiesVues", "ongletsVisites", "resourceBarHidden"];
   for (const cle of champsTableauxDeChaines) {
     if (d[cle] && !d[cle].every(function(valeur) { return typeof valeur === "string"; })) {
       return "Invalid entries in field: " + cle + ".";
@@ -126,6 +138,9 @@ function validerStructureSauvegarde(d) {
 
   if (d.ongletsVisites && !d.ongletsVisites.every(function(id) { return ONGLETS_VALIDES.includes(id); })) {
     return "Invalid visited tab data.";
+  }
+  if (d.resourceBarHidden && !d.resourceBarHidden.every(function(id) { return RESOURCE_BAR_KEYS.includes(id); })) {
+    return "Invalid resource bar preferences.";
   }
 
   if (d.kittiesData) {
@@ -354,6 +369,7 @@ function analyserSauvegardeBrute(raw) {
     volumeEffetsSonores:     etat.volumeEffetsSonores,
     volumeMusique:           etat.volumeMusique,
     autoBuildWoodHouses:       etat.autoBuildWoodHouses,
+    resourceBarHidden:       etat.resourceBarHidden,
     scieriBloquee:              etat.scieriBloquee,
     basicSawmillBloquee:        etat.basicSawmillBloquee,
     brickBloquee:               etat.brickBloquee,
@@ -386,6 +402,7 @@ function analyserSauvegardeBrute(raw) {
     formationTermineeEnAttente: etat.formationTermineeEnAttente,
     formationIngenieurTermineeEnAttente: etat.formationIngenieurTermineeEnAttente,
     dailyQuests:          etat.dailyQuests,
+    dailyScoutingStocks:  etat.dailyScoutingStocks,
     regionCourante:           etat.regionCourante,
     zonesExplorees:      etat.zonesExplorees,
     exploZoneEnCours:    etat.exploZoneEnCours,
@@ -474,6 +491,9 @@ function analyserSauvegardeBrute(raw) {
   etat.volumeEffetsSonores = d.volumeEffetsSonores !== undefined ? Math.min(1, d.volumeEffetsSonores) : 0.3;
   etat.volumeMusique       = d.volumeMusique       !== undefined ? Math.min(1, d.volumeMusique)       : 0.5;
   etat.autoBuildWoodHouses       = d.autoBuildWoodHouses || false;
+  etat.resourceBarHidden = Array.isArray(d.resourceBarHidden)
+    ? Array.from(new Set(d.resourceBarHidden.filter(function(id) { return RESOURCE_BAR_KEYS.includes(id); })))
+    : [];
 
   etat.premiereSaladeFaite        = d.premiereSaladeFaite        || false;
   // Migration: compute reduction from old timestamp-based saves
@@ -513,18 +533,36 @@ function analyserSauvegardeBrute(raw) {
   if (!etat.dailyQuests || typeof etat.dailyQuests !== "object") {
     etat.dailyQuests = {
       dateKey: "", recipeFamily: "food", scoutingSuccesses: 0,
-      catLevelUps: 0, birdCaught: false, recipesCompleted: 0, rewardClaimed: false,
-      scoutingCannedCatFood: { raidSupermarketAgain: 3, stealGasStationAgain: 2 }
+      catLevelUps: 0, birdCaught: false, recipesCompleted: 0, rewardClaimed: false
     };
   }
   // Remove the temporary unlock flag from saves created by the immediately
   // previous daily-panel experiment. Book study remains the unlock source.
   if (Object.prototype.hasOwnProperty.call(etat.dailyQuests, "unlocked")) delete etat.dailyQuests.unlocked;
-  if (!etat.dailyQuests.scoutingCannedCatFood || typeof etat.dailyQuests.scoutingCannedCatFood !== "object") {
-    etat.dailyQuests.scoutingCannedCatFood = { raidSupermarketAgain: 3, stealGasStationAgain: 2 };
+  // Migrate the former stocks nested in Daily Quests. Keeping the old date
+  // preserves stock already consumed today; the runtime resets stale dates.
+  const legacyScoutingStocks = etat.dailyQuests.scoutingCannedCatFood;
+  etat.dailyScoutingStocks = d.dailyScoutingStocks || {
+    dateKey: etat.dailyQuests.dateKey || "",
+    remaining: {
+      raidSupermarketAgain: legacyScoutingStocks && Number.isInteger(legacyScoutingStocks.raidSupermarketAgain)
+        ? legacyScoutingStocks.raidSupermarketAgain : 3,
+      stealGasStationAgain: legacyScoutingStocks && Number.isInteger(legacyScoutingStocks.stealGasStationAgain)
+        ? legacyScoutingStocks.stealGasStationAgain : 2
+    }
+  };
+  if (!etat.dailyScoutingStocks || typeof etat.dailyScoutingStocks !== "object") {
+    etat.dailyScoutingStocks = { dateKey: "", remaining: {} };
   }
-  if (!Number.isInteger(etat.dailyQuests.scoutingCannedCatFood.raidSupermarketAgain)) etat.dailyQuests.scoutingCannedCatFood.raidSupermarketAgain = 3;
-  if (!Number.isInteger(etat.dailyQuests.scoutingCannedCatFood.stealGasStationAgain)) etat.dailyQuests.scoutingCannedCatFood.stealGasStationAgain = 2;
+  if (typeof etat.dailyScoutingStocks.dateKey !== "string") etat.dailyScoutingStocks.dateKey = "";
+  if (!etat.dailyScoutingStocks.remaining || typeof etat.dailyScoutingStocks.remaining !== "object") {
+    etat.dailyScoutingStocks.remaining = {};
+  }
+  if (!Number.isInteger(etat.dailyScoutingStocks.remaining.raidSupermarketAgain)) etat.dailyScoutingStocks.remaining.raidSupermarketAgain = 3;
+  if (!Number.isInteger(etat.dailyScoutingStocks.remaining.stealGasStationAgain)) etat.dailyScoutingStocks.remaining.stealGasStationAgain = 2;
+  if (Object.prototype.hasOwnProperty.call(etat.dailyQuests, "scoutingCannedCatFood")) {
+    delete etat.dailyQuests.scoutingCannedCatFood;
+  }
   etat.regionCourante      = d.regionCourante      || "startingNeighbourhood";
   etat.zonesExplorees      = d.zonesExplorees      || ["D1"];
   if (!etat.zonesExplorees.includes("D1")) etat.zonesExplorees.push("D1");

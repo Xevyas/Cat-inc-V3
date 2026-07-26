@@ -33,6 +33,17 @@ const GAME_RELEASE_VERSION = changelogData.currentVersion;
 const GAME_RELEASE_NOTES = changelogData.releases[0].categories;
 const GAME_CHANGELOG = changelogData.releases;
 
+// Prevent mobile browsers from opening the native context menu when a player
+// holds a game icon or other interactive sprite. Text and controls remain
+// usable through the game's normal click/touch handlers.
+if (typeof document !== "undefined") {
+  document.addEventListener("contextmenu", function(event) {
+    if (event.target.closest && event.target.closest("img, button, svg, [role='button']")) {
+      event.preventDefault();
+    }
+  }, { passive: false });
+}
+
 // Keep navigation and log copy text-only. Resource and item cards retain their
 // visual sprites; this only strips decorative emoji from interface labels and
 // any legacy log entries loaded from an older save.
@@ -355,7 +366,7 @@ function kittyIsOnZoneExplo(kittyIdx) {
 
 function kittyIsBusy(kittyIdx) {
   const kitty = etat.kittiesData[kittyIdx];
-  return estIngenieur(kitty) || kittyIsOnExpedition(kittyIdx) || kittyIsInWorkerSlot(kittyIdx) || kittyIsInTraining(kittyIdx) || kittyIsOnZoneExplo(kittyIdx) || kittyIsOnScouting(kittyIdx) || kittyIsInScoutingStaging(kittyIdx) || kittyIsLearningBook(kittyIdx);
+  return estIngenieur(kitty) || kittyEstManager(kittyIdx) || kittyIsOnExpedition(kittyIdx) || kittyIsInWorkerSlot(kittyIdx) || kittyIsInTraining(kittyIdx) || kittyIsOnZoneExplo(kittyIdx) || kittyIsOnScouting(kittyIdx) || kittyIsInScoutingStaging(kittyIdx) || kittyIsLearningBook(kittyIdx);
 }
 
 function isAvailableForAutoAssign(ki, currentSlots) {
@@ -469,9 +480,14 @@ function autoAssignExplo(type, id) {
 
 function totalAlloue() {
   var total = 0;
+  var managersAlloues = new Set();
   Object.values(etat.workRecipeSlots || {}).forEach(function(slots) {
     slots.forEach(function(s) { if (s.kittyIndex !== null) total++; });
   });
+  Object.values(etat.managers || {}).forEach(function(ki) {
+    if (Number.isInteger(ki)) managersAlloues.add(ki);
+  });
+  total += managersAlloues.size;
   if (etat.formationEnCours) total++;
   if (etat.formationIngenieurEnCours) total++;
   if (etat.learningEnCours && Number.isInteger(etat.learningEnCours.kittyIndex)) total++;
@@ -492,6 +508,119 @@ function kittyIsOnScouting(kittyIdx) {
 }
 function kittyIsInScoutingStaging(kittyIdx) {
   return Object.values(scoutingsStagingKitty).some(function(ki) { return ki === kittyIdx; });
+}
+
+// Exploration slots are temporary reservations rather than running actions.
+// Keep them separate from kittyIsBusy so a player can move a Cat between
+// pending slots, while other actions still respect the one-action invariant.
+function kittyIsInExplorationStaging(kittyIdx) {
+  var inCampaignSlot = (typeof exploKittiesSelectionnees !== "undefined")
+    && Object.values(exploKittiesSelectionnees || {}).some(function(slots) {
+      return Array.isArray(slots) && slots.includes(kittyIdx);
+    });
+  var inZoneSlot = (typeof carteExploSlots !== "undefined")
+    && Object.values(carteExploSlots || {}).some(function(slots) {
+      return Array.isArray(slots) && slots.includes(kittyIdx);
+    });
+  return inCampaignSlot || inZoneSlot;
+}
+
+function kittyHasNonReplaceableAction(kittyIdx) {
+  return estIngenieur(etat.kittiesData[kittyIdx])
+    || kittyIsOnExpedition(kittyIdx)
+    || kittyIsOnZoneExplo(kittyIdx)
+    || kittyIsOnScouting(kittyIdx)
+    || kittyIsInScoutingStaging(kittyIdx)
+    || kittyIsInTraining(kittyIdx)
+    || kittyIsLearningBook(kittyIdx);
+}
+
+// Repair older saves and protect the core invariant: a Cat can own one action
+// at most. Running actions have priority over replaceable assignments; when an
+// invalid duplicate is found, the later assignment is released.
+function normaliserOccupationsChatons() {
+  var changed = false;
+  var claimed = new Set();
+  var kittyValide = function(ki) {
+    return Number.isInteger(ki) && !!etat.kittiesData[ki];
+  };
+  var estIngenieurEtat = function(ki) {
+    var kitty = etat.kittiesData[ki];
+    return typeof estIngenieur === "function" ? estIngenieur(kitty) : !!(kitty && /engineer/i.test(String(kitty.metier || "")));
+  };
+  var claim = function(ki) {
+    if (!kittyValide(ki) || estIngenieurEtat(ki) || claimed.has(ki)) return false;
+    claimed.add(ki);
+    return true;
+  };
+  var cleanIndices = function(indices) {
+    if (!Array.isArray(indices)) return [];
+    var result = [];
+    indices.forEach(function(ki) {
+      if (claim(ki)) result.push(ki);
+      else changed = true;
+    });
+    return result;
+  };
+
+  if (etat.exploZoneEnCours) {
+    var zoneBefore = etat.exploZoneEnCours.kittyIndices;
+    var zoneAfter = cleanIndices(zoneBefore);
+    if (!Array.isArray(zoneBefore) || zoneAfter.length !== zoneBefore.length) changed = true;
+    etat.exploZoneEnCours.kittyIndices = zoneAfter;
+  }
+  (etat.exploEnCours || []).forEach(function(mission) {
+    if (!mission) return;
+    var before = mission.kittyIndices;
+    var after = cleanIndices(before);
+    if (!Array.isArray(before) || after.length !== before.length) changed = true;
+    mission.kittyIndices = after;
+  });
+  Object.keys(etat.scoutingsEnCours || {}).forEach(function(id) {
+    var scouting = etat.scoutingsEnCours[id];
+    if (!scouting || !claim(scouting.kittyIndex)) {
+      delete etat.scoutingsEnCours[id];
+      changed = true;
+    }
+  });
+  ["learningEnCours", "formationEnCours", "formationIngenieurEnCours"].forEach(function(field) {
+    var action = etat[field];
+    if (!action) return;
+    if (!claim(action.kittyIndex)) {
+      etat[field] = null;
+      changed = true;
+    }
+  });
+  Object.keys(etat.managers || {}).forEach(function(famille) {
+    var ki = etat.managers[famille];
+    if (ki === null || ki === undefined) return;
+    if (!claim(ki)) {
+      etat.managers[famille] = null;
+      changed = true;
+    }
+  });
+  Object.values(etat.workRecipeSlots || {}).forEach(function(slots) {
+    (slots || []).forEach(function(slot) {
+      if (!slot || slot.kittyIndex === null || slot.kittyIndex === undefined) return;
+      if (!claim(slot.kittyIndex)) {
+        slot.kittyIndex = null;
+        changed = true;
+      }
+    });
+  });
+
+  // Engineers are passive and cannot remain attached to any running action.
+  var retirerIngenieurs = function(indices) {
+    if (!Array.isArray(indices)) return indices;
+    var filtered = indices.filter(function(ki) { return !estIngenieurEtat(ki); });
+    if (filtered.length !== indices.length) changed = true;
+    return filtered;
+  };
+  if (etat.exploZoneEnCours) etat.exploZoneEnCours.kittyIndices = retirerIngenieurs(etat.exploZoneEnCours.kittyIndices);
+  (etat.exploEnCours || []).forEach(function(mission) {
+    if (mission) mission.kittyIndices = retirerIngenieurs(mission.kittyIndices);
+  });
+  return changed;
 }
 
 // Maps a worker action to the exact resource it produces, e.g. "génère des Cardboard Pieces"
@@ -630,11 +759,35 @@ function multiplicateurRecompenseScoutingApplique(baseQty, actualQty) {
   return 1;
 }
 
+function stocksScoutingQuotidiensParDefaut(dateKey) {
+  const remaining = {};
+  Object.keys(CONFIG.scoutings).forEach(function(id) {
+    const def = CONFIG.scoutings[id];
+    if (Number.isFinite(def.dailyCannedCatFoodStock)) remaining[id] = def.dailyCannedCatFoodStock;
+  });
+  return { dateKey: dateKey, remaining: remaining };
+}
+
+function initialiserStocksScoutingQuotidiens() {
+  const dateKey = cleDateParis(Date.now());
+  const actuel = etat.dailyScoutingStocks;
+  const idsAvecStock = Object.keys(CONFIG.scoutings).filter(function(id) {
+    return Number.isFinite(CONFIG.scoutings[id].dailyCannedCatFoodStock);
+  });
+  const invalide = !actuel
+    || actuel.dateKey !== dateKey
+    || !actuel.remaining
+    || idsAvecStock.some(function(id) { return !Number.isInteger(actuel.remaining[id]); });
+  if (!invalide) return false;
+  etat.dailyScoutingStocks = stocksScoutingQuotidiensParDefaut(dateKey);
+  return true;
+}
+
 function stockCannedCatFoodScouting(scoutingId) {
   const def = CONFIG.scoutings[scoutingId];
   if (!def || !Number.isFinite(def.dailyCannedCatFoodStock)) return null;
-  initialiserQuetesQuotidiennes();
-  const stocks = etat.dailyQuests && etat.dailyQuests.scoutingCannedCatFood;
+  initialiserStocksScoutingQuotidiens();
+  const stocks = etat.dailyScoutingStocks && etat.dailyScoutingStocks.remaining;
   if (!stocks) return null;
   const remaining = Number.isFinite(stocks[scoutingId])
     ? Math.min(def.dailyCannedCatFoodStock, Math.max(0, stocks[scoutingId]))
@@ -651,7 +804,7 @@ function limiterRecompenseScouting(scoutingId, recompenseId, qty, kittyIndex) {
   if (stock.remaining <= 0 || desired <= 0) return 0;
   if (Math.random() < scoutingLuckyFoodChance(kittyIndex)) return desired;
   const awarded = Math.min(desired, stock.remaining);
-  if (awarded > 0) etat.dailyQuests.scoutingCannedCatFood[scoutingId] = stock.remaining - awarded;
+  if (awarded > 0) etat.dailyScoutingStocks.remaining[scoutingId] = stock.remaining - awarded;
   return awarded;
 }
 
@@ -715,6 +868,7 @@ function scoutingHalveTime(kittyIndex) {
 }
 
 function assignerKittyScouting(scoutingId, kittyIndex) {
+  if (etat.scoutingsEnCours[scoutingId] || !etat.kittiesData[kittyIndex] || kittyIsBusy(kittyIndex)) return false;
   var def = CONFIG.scoutings[scoutingId];
   var duree = def ? (scoutingHalveTime(kittyIndex) ? def.duree / 2 : def.duree) : 120;
   etat.scoutingsEnCours[scoutingId] = { kittyIndex: kittyIndex, power: kittyEP(kittyIndex), startTs: Date.now(), duree: duree };
@@ -726,6 +880,7 @@ function assignerKittyScouting(scoutingId, kittyIndex) {
   sauvegarder();
   renduCarte(unlocks());
   renderCampaignCards();
+  return true;
 }
 
 function retirerKittyScouting(scoutingId) {
@@ -777,7 +932,7 @@ function woodCathouseBaseSpeed() {
 
 function woodCathouseBoxBoostMultiplier() {
   return spherePerkLearned('builder-box-boost')
-    ? Math.pow(1.05, etat.cathouses.length)
+    ? 1 + 0.05 * etat.cathouses.length
     : 1;
 }
 
@@ -1634,6 +1789,7 @@ function charger() {
   });
   remplacerEtat(etat, nouvelEtat);
   workStructureInitialisee = false;
+  if (typeof normaliserOccupationsChatons === "function" && normaliserOccupationsChatons()) sauvegarder();
 
   // Promotion remains in the browser layer because it creates a notification and a log.
   if (etat.itemsAppris.includes("schoolGuide") || etat.jobCenterConstruit) assignerGangLeader();
@@ -1730,11 +1886,22 @@ function rendreChangelog() {
   const conteneur = document.getElementById("changelog-releases");
   if (!conteneur) return;
   conteneur.innerHTML = "";
+  const formaterDateRelease = function(date) {
+    if (!date) return "";
+    const parsed = new Date(date + "T00:00:00");
+    if (Number.isNaN(parsed.getTime())) return date;
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric", month: "long", day: "numeric"
+    }).format(parsed);
+  };
   GAME_CHANGELOG.forEach(function(release, index) {
     const section = document.createElement("section");
     section.className = "changelog-release";
     const titre = document.createElement("h3");
-    titre.textContent = "v" + release.version + (index === 0 ? " · Current" : "");
+    const date = formaterDateRelease(release.date);
+    titre.textContent = "v" + release.version
+      + (date ? " · " + date : "")
+      + (index === 0 ? " · Current" : "");
     section.appendChild(titre);
     const categories = release.categories || [];
     categories.forEach(function(category) {
@@ -1927,8 +2094,9 @@ function toggleFiltreLogs(type) {
 const DAILY_RECIPE_FAMILIES = ["food", "wood", "rock"];
 
 function dailyQuetesDebloquees() {
-  return (Array.isArray(etat.itemsEtudies) && etat.itemsEtudies.includes("dailyPurpose")) ||
-    (Array.isArray(etat.itemsAppris) && etat.itemsAppris.includes("dailyPurpose"));
+  // Study only prepares the lesson. Daily quests unlock after the player
+  // completes the book's Learn mini-game and the book is truly learned.
+  return Array.isArray(etat.itemsAppris) && etat.itemsAppris.includes("dailyPurpose");
 }
 
 function cleDateParis(timestamp) {
@@ -2000,21 +2168,18 @@ function queteQuotidienneParDefaut(dateKey) {
     catLevelUps: 0,
     birdCaught: false,
     recipesCompleted: 0,
-    rewardClaimed: false,
-    scoutingCannedCatFood: {
-      raidSupermarketAgain: 3,
-      stealGasStationAgain: 2
-    }
+    rewardClaimed: false
   };
 }
 
 function initialiserQuetesQuotidiennes() {
+  if (!dailyQuetesDebloquees()) return false;
   const dateKey = cleDateParis(Date.now());
   const actuel = etat.dailyQuests;
   if (!actuel || actuel.dateKey !== dateKey || !DAILY_RECIPE_FAMILIES.includes(actuel.recipeFamily)
-      || !actuel.scoutingCannedCatFood
-      || !Number.isInteger(actuel.scoutingCannedCatFood.raidSupermarketAgain)
-      || !Number.isInteger(actuel.scoutingCannedCatFood.stealGasStationAgain)) {
+      || !Number.isInteger(actuel.scoutingSuccesses)
+      || !Number.isInteger(actuel.catLevelUps)
+      || !Number.isInteger(actuel.recipesCompleted)) {
     etat.dailyQuests = queteQuotidienneParDefaut(dateKey);
     return true;
   }
@@ -2193,11 +2358,14 @@ let objectifVueActive = "guide";
 
 function renduQuetesQuotidiennes() {
   const q = etat.dailyQuests || queteQuotidienneParDefaut(cleDateParis(Date.now()));
+  const familleRecette = (typeof WORK_FAMILIES !== "undefined" && WORK_FAMILIES[q.recipeFamily])
+    ? WORK_FAMILIES[q.recipeFamily].label
+    : ({ wood: "Wood", food: "Food", rock: "Rocks" }[q.recipeFamily] || "selected family");
   const lignes = [
     { label: "10 successful scouting missions", value: Math.min(10, q.scoutingSuccesses) + " / 10", done: q.scoutingSuccesses >= 10 },
     { label: "Level up one Cat", value: Math.min(1, q.catLevelUps) + " / 1", done: q.catLevelUps >= 1 },
     { label: "Catch a bird", value: (q.birdCaught ? 1 : 0) + " / 1", done: q.birdCaught },
-    { label: "Complete 10 recipes", value: Math.min(10, q.recipesCompleted) + " / 10", done: q.recipesCompleted >= 10 }
+    { label: "Complete 10 " + familleRecette + " recipes", value: Math.min(10, q.recipesCompleted) + " / 10", done: q.recipesCompleted >= 10 }
   ];
   const liste = document.getElementById("daily-quests-liste");
   if (!liste) return;
@@ -2355,6 +2523,8 @@ function allerObjectif(objectifId) {
     carteZoneSelectionnee = "D1";
     carteDirty = true;
     exploTabDirty = true;
+    explorationMobileVue = "zone";
+    explorationMobileTypeMission = "campaigns";
   }
   if (objectifId === "feedBernardo") {
     const bernardoIndex = etat.kittiesData.findIndex(function(k) { return k.nom === "Bernardo"; });
@@ -2466,7 +2636,105 @@ function marquerOngletVisite(id) {
 }
 
 // ── 9a. Resources bar
+const RESOURCE_BAR_ITEMS = Object.freeze([
+  { key: "cardboardPlanks", rowId: "row-cardboard-planks", label: "Cardboard Planks", icon: "img/resources/Cardboard Plank_Final.png", tier: "T1", unlocked: function(u) { return u.scierie; } },
+  { key: "basicWoodPlanks", rowId: "row-basic-wood-planks", label: "Basic Wood Planks", icon: "img/resources/Basic Wood Plank_Final.png", tier: "T2", unlocked: function(u) { return u.basicSawmill; } },
+  { key: "pebbleBricks", rowId: "row-pebble-bricks", label: "Pebble Bricks", icon: "img/resources/Pebble Brick_Final.png", tier: "T1", unlocked: function(u) { return u.brickfact; } },
+  { key: "rockBricks", rowId: "row-rock-bricks", label: "Rock Bricks", icon: "img/resources/Rock Brick_Final.png", tier: "T2", unlocked: function(u) { return u.rockfact; } },
+  { key: "salads", rowId: "row-salads", label: "Catnip Salad", icon: "img/resources/Catnip Salad_Final.png", tier: "T1", unlocked: function(u) { return u.catchen; } },
+  { key: "grilledAnchovy", rowId: "row-grilled-anchovy", label: "Grilled Anchovy", icon: "img/resources/Grilled Anchovy_Final.png?v=0.0029", tier: "T2", unlocked: function(u) { return u.grilledAnchovy; } },
+  { key: "humanLeftovers", rowId: "row-human-leftovers", label: "Human Leftovers", icon: "img/resources/Human Leftovers_Final.png?v=0.0029", tier: null, unlocked: function() { return etat.humanLeftovers > 0; } },
+  { key: "humanWorkersFood", rowId: "row-human-workers-food", label: "Workers Food", icon: "img/resources/Human Workers Food_Final.png?v=0.0029", tier: null, unlocked: function() { return etat.humanWorkersFood > 0; } },
+  { key: "cannedCatFood", rowId: "row-canned-cat-food", label: "Canned Cat Food", icon: "img/resources/Canned Cat Food_Final.png?v=0.0029", tier: null, unlocked: function() { return etat.cannedCatFood > 0; } }
+]);
+let dernierEtatDeblocageRessources = null;
+
+function ressourcesMasqueesBandeau() {
+  if (!Array.isArray(etat.resourceBarHidden)) etat.resourceBarHidden = [];
+  return etat.resourceBarHidden;
+}
+
+function ressourceFavoriteBandeau(key) {
+  return !ressourcesMasqueesBandeau().includes(key);
+}
+
+function ressourcesDisponiblesBandeau(u) {
+  u = u || dernierEtatDeblocageRessources || unlocks();
+  return RESOURCE_BAR_ITEMS.filter(function(item) { return !!item.unlocked(u); });
+}
+
+function rendreGestionRessources() {
+  const conteneur = document.getElementById("resource-bar-favorites");
+  if (!conteneur) return;
+  const disponibles = ressourcesDisponiblesBandeau();
+  if (!disponibles.length) {
+    conteneur.innerHTML = etatVideHtml("No resources yet", "Unlocked resources will appear here automatically.");
+    return;
+  }
+  conteneur.innerHTML = disponibles.map(function(item) {
+    const favorite = ressourceFavoriteBandeau(item.key);
+    const tier = item.tier
+      ? '<span class="resource-favorite-tier resource-favorite-tier-' + item.tier.toLowerCase() + '">' + item.tier + '</span>'
+      : '';
+    return '<button type="button" class="resource-favorite-card' + (favorite ? ' resource-favorite-card-active' : '') + '"'
+      + ' aria-pressed="' + (favorite ? 'true' : 'false') + '" onclick="basculerRessourceFavorite(\'' + item.key + '\')">'
+      + '<span class="resource-favorite-visual">' + tier + '<img src="' + item.icon + '" alt=""></span>'
+      + '<span class="resource-favorite-info"><strong>' + item.label + '</strong><small>' + formaterNombre(etat[item.key] || 0) + '</small></span>'
+      + '<span class="resource-favorite-star" aria-hidden="true">★</span>'
+      + '</button>';
+  }).join("");
+}
+
+function ouvrirGestionRessources() {
+  rendreGestionRessources();
+  ouvrirDialogueModal("resource-bar-modal", {
+    dismissible: true,
+    fermer: fermerGestionRessources,
+    focusSelector: ".resource-favorite-card, .resource-bar-done",
+    returnFocusSelector: ".ressources-gerer"
+  });
+}
+
+function fermerGestionRessources() {
+  fermerDialogueModal("resource-bar-modal");
+}
+
+function appliquerPreferencesRessourcesBandeau() {
+  const u = dernierEtatDeblocageRessources || unlocks();
+  RESOURCE_BAR_ITEMS.forEach(function(item) {
+    ecrireStyle(domParId(item.rowId), "display", item.unlocked(u) && ressourceFavoriteBandeau(item.key) ? "flex" : "none");
+  });
+}
+
+function basculerRessourceFavorite(key) {
+  if (!RESOURCE_BAR_ITEMS.some(function(item) { return item.key === key; })) return;
+  const masquees = ressourcesMasqueesBandeau();
+  const index = masquees.indexOf(key);
+  if (index >= 0) masquees.splice(index, 1);
+  else masquees.push(key);
+  appliquerPreferencesRessourcesBandeau();
+  rendreGestionRessources();
+  sauvegarder();
+}
+
+function afficherToutesRessourcesBandeau() {
+  etat.resourceBarHidden = [];
+  appliquerPreferencesRessourcesBandeau();
+  rendreGestionRessources();
+  sauvegarder();
+}
+
+function afficherRessourcesTierDeuxPlus() {
+  etat.resourceBarHidden = RESOURCE_BAR_ITEMS
+    .filter(function(item) { return item.tier === "T1"; })
+    .map(function(item) { return item.key; });
+  appliquerPreferencesRessourcesBandeau();
+  rendreGestionRessources();
+  sauvegarder();
+}
+
 function renduRessources(u) {
+  dernierEtatDeblocageRessources = u;
   [
     ["val-chatons", etat.chatons],
     ["val-cardboard-planks", etat.cardboardPlanks],
@@ -2499,19 +2767,7 @@ function renduRessources(u) {
   actualiserBadgeOnglet("logs", logsVisible);
   actualiserIndicateursExploration();
 
-  [
-    ["row-cardboard-planks", u.scierie, "flex"],
-    ["row-basic-wood-planks", u.basicSawmill, "flex"],
-    ["row-pebble-bricks", u.brickfact, "flex"],
-    ["row-rock-bricks", u.rockfact, "flex"],
-    ["row-salads", u.catchen, "flex"],
-    ["row-grilled-anchovy", u.grilledAnchovy, "flex"],
-    ["row-human-leftovers", etat.humanLeftovers > 0, "flex"],
-    ["row-human-workers-food", etat.humanWorkersFood > 0, "flex"],
-    ["row-canned-cat-food", etat.cannedCatFood > 0, "flex"]
-  ].forEach(function(entry) {
-    ecrireStyle(domParId(entry[0]), "display", entry[1] ? entry[2] : "none");
-  });
+  appliquerPreferencesRessourcesBandeau();
 
   var boostEl = domParId("work-boost-indicator");
   var boostActif = !!(etat.workBoostFinTs && Date.now() < etat.workBoostFinTs);
@@ -2626,6 +2882,10 @@ function renduStatsAttrapage() {
   const maisons     = bonusMaisonsAttrapage();
   const recruitPerk = gangLeaderRecruitMultiplier() > 1;
   const restant     = sequenceEstPrete() ? 0 : tempsRestantSequence() / taux;
+  const woodRow     = document.getElementById("stat-wood-row");
+  const stoneRow    = document.getElementById("stat-stone-row");
+  if (woodRow) woodRow.style.display = catHouseDebloquee() ? "" : "none";
+  if (stoneRow) stoneRow.style.display = stoneHousesDebloques() ? "" : "none";
 
   document.getElementById("stat-raw").textContent     = formaterTempsStat(raw);
   document.getElementById("stat-wood").textContent    = "+" + maisons.woodPerSecond.toFixed(2) + "s/s";
@@ -2758,13 +3018,13 @@ function manualFocusMultiplier() {
 
 function manualFocusSecondsPerClick() {
   return etat.spherePerks && etat.spherePerks['gl-manual-click'] === 'learned'
-    ? 3
+    ? 2
     : WORK_MANUAL_FOCUS_BASE_SECONDS_PER_CLICK;
 }
 
 function manualFocusMaxSeconds() {
   return etat.spherePerks && etat.spherePerks['gl-manual-capacity'] === 'learned'
-    ? 120
+    ? 60
     : WORK_MANUAL_FOCUS_BASE_MAX_SECONDS;
 }
 
@@ -2793,10 +3053,13 @@ function synchroniserReserveManualFocus(now) {
   return workManualFocus.reserveSeconds;
 }
 
+function manualFocusRecetteActif(familyId, slotIdx) {
+  if (!(synchroniserReserveManualFocus() > 0) || !workManualFocus) return false;
+  return workManualFocus.familyId === familyId && workManualFocus.slotIdx === slotIdx;
+}
+
 function manualFocusEstActif(familyId, slotIdx, phase) {
-  if (!(synchroniserReserveManualFocus() > 0)) return false;
-  return workManualFocus.familyId === familyId
-    && workManualFocus.slotIdx === slotIdx
+  return manualFocusRecetteActif(familyId, slotIdx)
     && workManualFocus.phase === phase;
 }
 
@@ -2875,13 +3138,33 @@ function activerManualFocus(familyId, slotIdx, phase, evt) {
 }
 
 function modificateursManualFocus(familyId, slotIdx, slot) {
-  const focused = synchroniserReserveManualFocus() > 0
-    && !!workManualFocus
-    && workManualFocus.familyId === familyId
-    && workManualFocus.slotIdx === slotIdx;
+  const focused = manualFocusRecetteActif(familyId, slotIdx);
   return {
     gatheringManualSpeed: focused ? manualFocusMultiplier() : 1,
     processingManualSpeed: focused ? manualFocusMultiplier() : 1
+  };
+}
+
+function vitessesManualFocusRecette(familyId, slotIdx) {
+  const focused = manualFocusRecetteActif(familyId, slotIdx);
+  const multiplier = focused ? manualFocusMultiplier() : 1;
+  return {
+    gathering: focused ? multiplier : 1,
+    processing: focused ? multiplier : 1
+  };
+}
+
+function dureesAffichageRecette(pair, kitty, familyId, slotIdx) {
+  if (!pair || !kitty) return { gathering: Infinity, processing: Infinity, cycle: Infinity, gatheringSpeed: 1, processingSpeed: 1 };
+  const manualSpeeds = vitessesManualFocusRecette(familyId, slotIdx);
+  const gathering = dureeGatheringRecette(pair, kitty) / manualSpeeds.gathering;
+  const processing = dureeProcessingRecette(pair, kitty) / manualSpeeds.processing;
+  return {
+    gathering: gathering,
+    processing: processing,
+    cycle: gathering + processing,
+    gatheringSpeed: manualSpeeds.gathering,
+    processingSpeed: manualSpeeds.processing
   };
 }
 
@@ -3012,7 +3295,10 @@ function renduWorkSummary(unlockedFamilies) {
         return;
       }
       const progress = progressionsSlotRecette(slot, pair).overall;
-      const ratePerMinute = tauxProductionSlotRecette(pair, slot) * 60;
+      const durations = dureesAffichageRecette(pair, kitty, familyId, slotIdx);
+      const ratePerMinute = Number.isFinite(durations.cycle) && durations.cycle > 0
+        ? productionProcBonus(kitty) / durations.cycle * 60
+        : 0;
       active.push({ pair: pair, slotIdx: slotIdx, kitty: kitty, progress: progress, ratePerMinute: ratePerMinute });
       stateParts.push(familyId, slotIdx, pair.recipeId, slot.kittyIndex, kitty.niveau,
         Math.floor(progress * 100), ratePerMinute.toFixed(3));
@@ -3099,6 +3385,12 @@ function renduSlotRecette(familyId, slotIdx) {
   const pair = paireRecette(slot.recipeId);
   const kitty = slot.kittyIndex === null ? null : etat.kittiesData[slot.kittyIndex];
   const progress = progressionsSlotRecette(slot, pair);
+  const focusReserveForRender = synchroniserReserveManualFocus();
+  const focusPhaseForRender = focusReserveForRender > 0 && workManualFocus
+    && workManualFocus.familyId === familyId
+    && workManualFocus.slotIdx === slotIdx
+    ? workManualFocus.phase
+    : "none";
   const stateKey = [slot.recipeId || "-", slot.kittyIndex, slot.phase,
     Math.floor(progress.gathering * 100), Math.floor(progress.processing * 100), Math.floor(progress.overall * 100),
     pair ? Math.floor((Number(slot.gatheredInputs[pair.rawRes]) || 0) * 10) : 0,
@@ -3107,7 +3399,8 @@ function renduSlotRecette(familyId, slotIdx) {
     pair ? multiplicateurCoutFamille(pair.procMultAction) : 1,
     pair ? multiplicateurFamille(pair.rawAction) : 1,
     pair ? multiplicateurFamille(pair.procMultAction) : 1,
-    workBoostMult(), gangLeaderBonus(), manualFocusDebloque() ? 1 : 0].join("|");
+    workBoostMult(), gangLeaderBonus(), manualFocusDebloque() ? 1 : 0,
+    focusPhaseForRender, manualFocusMultiplier()].join("|");
   if (el.dataset.recipeState === stateKey) return;
   el.dataset.recipeState = stateKey;
 
@@ -3123,12 +3416,15 @@ function renduSlotRecette(familyId, slotIdx) {
   const target = quantiteInputEffective(pair, input);
   const gathered = Math.min(target, Math.max(0, Number(slot.gatheredInputs[pair.rawRes]) || 0));
   const gatherRate = kitty ? tauxGatheringRecette(pair, kitty) : 0;
-  const gatherDuration = kitty ? dureeGatheringRecette(pair, kitty) : Infinity;
-  const gatherUnitDuration = kitty && gatherRate > 0 ? 1 / gatherRate : Infinity;
+  const durations = kitty ? dureesAffichageRecette(pair, kitty, familyId, slotIdx) : null;
+  const gatherDuration = durations ? durations.gathering : Infinity;
+  const gatherUnitDuration = kitty && gatherRate > 0
+    ? 1 / (gatherRate * durations.gatheringSpeed)
+    : Infinity;
   const outputPerCycle = kitty ? productionProcBonus(kitty) : 1;
-  const outputRate = kitty ? tauxProductionSlotRecette(pair, slot) : 0;
-  const processingDuration = kitty ? dureeProcessingRecette(pair, kitty) : Infinity;
-  const fullCycleDuration = kitty ? dureeCycleRecette(pair, kitty) : Infinity;
+  const outputRate = kitty && durations && durations.cycle > 0 ? outputPerCycle / durations.cycle : 0;
+  const processingDuration = durations ? durations.processing : Infinity;
+  const fullCycleDuration = durations ? durations.cycle : Infinity;
   const catHtml = kitty
     ? '<div class="work-recipe-cat-ring" style="--prog:' + progress.overall + '" role="progressbar" aria-label="Full recipe progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(progress.overall * 100) + '"><div class="work-recipe-cat-face"' + attributsActivationClavier("Change " + kitty.nom + " assigned to this recipe") + ' onclick="ouvrirModalWorkerRecette(\'' + familyId + '\',' + slotIdx + ')">' + kittyIconHtml(kitty) + '</div>'
       + '<button class="work-recipe-cat-remove" aria-label="Remove ' + echapperAttributHtml(kitty.nom) + ' from this recipe" onclick="retirerWorkerRecette(\'' + familyId + '\',' + slotIdx + ');event.stopPropagation()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button></div>'
@@ -3242,7 +3538,10 @@ function dureeCycleRecette(pair, kitty) {
 function tauxProductionSlotRecette(pair, slot) {
   if (!slot || slot.kittyIndex === null || slot.recipeId !== pair.recipeId) return 0;
   const kitty = etat.kittiesData[slot.kittyIndex];
-  const cycleDuration = dureeCycleRecette(pair, kitty);
+  const slotIdx = (etat.workRecipeSlots[pair.family] || []).indexOf(slot);
+  const cycleDuration = slotIdx >= 0
+    ? dureesAffichageRecette(pair, kitty, pair.family, slotIdx).cycle
+    : dureeCycleRecette(pair, kitty);
   return Number.isFinite(cycleDuration) && cycleDuration > 0 ? productionProcBonus(kitty) / cycleDuration : 0;
 }
 
@@ -3619,7 +3918,7 @@ let labRenderKey = null;
 
 function laboratoireKittysDisponibles() {
   return etat.kittiesData.reduce(function(acc, kitty, index) {
-    if (kitty && kitty.metier === null && !kittyIsBusy(index)) acc.push({ kitty: kitty, index: index });
+    if (kitty && kitty.metier === null && !kittyIsBusy(index) && !kittyIsInExplorationStaging(index)) acc.push({ kitty: kitty, index: index });
     return acc;
   }, []);
 }
@@ -3708,7 +4007,7 @@ function renduLaboratoire() {
 }
 
 function selectionnerIngenieurLaboratoire(index) {
-  if (etat.formationIngenieurEnCours || !etat.kittiesData[index] || etat.kittiesData[index].metier !== null || kittyIsBusy(index)) return;
+  if (etat.formationIngenieurEnCours || !etat.kittiesData[index] || etat.kittiesData[index].metier !== null || kittyIsBusy(index) || kittyIsInExplorationStaging(index)) return;
   labEngineerKittySelectionne = index;
   labDirty = true;
   if (jcModalOuvert && jcModalOuvert.mode === "engineer") {
@@ -3728,7 +4027,7 @@ function selectionnerMetierIngenieur(jobId) {
 function lancerFormationIngenieur() {
   if (!etat.laboratoryConstruit || etat.formationIngenieurEnCours || etat.formationIngenieurTermineeEnAttente || !ingenieurPeutEtreForme(ENGINEER_JOB_ID) || labEngineerKittySelectionne === null || labEngineerMetierSelectionne !== ENGINEER_JOB_ID) return;
   const kitty = etat.kittiesData[labEngineerKittySelectionne];
-  if (!kitty || kitty.metier !== null || kittyIsBusy(labEngineerKittySelectionne)) return;
+  if (!kitty || kitty.metier !== null || kittyIsBusy(labEngineerKittySelectionne) || kittyIsInExplorationStaging(labEngineerKittySelectionne)) return;
   const engineerRank = rangIngenieurSuivant(ENGINEER_JOB_ID);
   etat.formationIngenieurEnCours = {
     kittyIndex: labEngineerKittySelectionne,
@@ -4152,6 +4451,39 @@ function toggleExperienceHelp(event) {
   button.setAttribute("aria-expanded", experienceHelpOuvert ? "true" : "false");
 }
 
+function fermerPanneauAides() {
+  document.querySelectorAll(".panneau-aide-popover").forEach(function(popup) {
+    popup.style.display = "none";
+    popup.setAttribute("aria-hidden", "true");
+  });
+  document.querySelectorAll(".panneau-aide-btn").forEach(function(button) {
+    button.setAttribute("aria-expanded", "false");
+  });
+}
+
+function togglePanneauAide(event) {
+  if (event) event.stopPropagation();
+  const button = event && event.currentTarget ? event.currentTarget : null;
+  if (!button) return;
+  const popup = document.getElementById(button.getAttribute("aria-controls"));
+  if (!popup) return;
+  const ouvert = popup.getAttribute("aria-hidden") !== "true";
+  fermerPanneauAides();
+  if (!ouvert) {
+    popup.style.display = "block";
+    popup.setAttribute("aria-hidden", "false");
+    button.setAttribute("aria-expanded", "true");
+  }
+}
+
+document.addEventListener("click", function(event) {
+  if (!event.target.closest || !event.target.closest(".panneau-aide-wrap")) fermerPanneauAides();
+});
+
+document.addEventListener("keydown", function(event) {
+  if (event.key === "Escape") fermerPanneauAides();
+});
+
 document.addEventListener("click", function(event) {
   if (!experienceHelpOuvert) return;
   const wrapper = document.getElementById("experience-help-wrap");
@@ -4564,10 +4896,15 @@ function renduManagement() {
 
   avecJob.forEach(function(e) { liste.appendChild(creerCarteKitty(e.kitty, e.i)); });
   if (sansJob.length > 0) {
-    const entete = document.createElement("div");
-    entete.className   = "kitty-section-titre";
-    entete.textContent = "JOBLESS";
-    liste.appendChild(entete);
+    // Before the Job Center exists, cats are simply part of the roster. The
+    // JOBLESS category is introduced with the job system, so do not expose
+    // that label prematurely.
+    if (jobCenterDebloquee()) {
+      const entete = document.createElement("div");
+      entete.className   = "kitty-section-titre";
+      entete.textContent = "JOBLESS";
+      liste.appendChild(entete);
+    }
     sansJob.forEach(function(e) { liste.appendChild(creerCarteKitty(e.kitty, e.i)); });
   }
 
@@ -4807,12 +5144,20 @@ window.addEventListener("blur", function() {
 });
 
 function rendu() {
+  // Action mini-games own the foreground while they are open. The simulation
+  // keeps ticking, but rebuilding the game UI behind a translucent modal every
+  // 100 ms competes with their animation on mobile WebKit.
+  if (typeof miniJeuRuntimeActif === "function" && miniJeuRuntimeActif()) {
+    miniJeuRuntime.renduEnAttente = true;
+    return;
+  }
   if (renduVerrouilleParInteraction()) {
     renduInteractionEnAttente = true;
     planifierRenduApresInteraction();
     return;
   }
   renduInteractionEnAttente = false;
+  if (typeof normaliserOccupationsChatons === "function" && normaliserOccupationsChatons()) sauvegarder();
   const u = unlocks();
   renduRessources(u);
   renduSequence();
@@ -4862,6 +5207,108 @@ let carteZoneSelectionnee = "D1"; // Home is always accessible — show its miss
 let carteExploSlots       = {};  // { zoneId: Array<kittyIndex|null> }
 let _zoneInfoKey          = null; // cache key to skip innerHTML rebuild when nothing changed
 let _tcKey                = null; // same pattern for Training Center
+let explorationMobileVue  = "map";
+let explorationMobileTypeMission = "campaigns";
+
+function estExplorationMobile() {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches;
+}
+
+function campagnesAfficheesPourZone(zoneId) {
+  return Object.values(CONFIG.campaigns).filter(function(campaign) {
+    if (campaign.zone !== zoneId) return false;
+    if (campaign.unlockAfterCampaign) return etat.campaignsCompletees.includes(campaign.unlockAfterCampaign);
+    return true;
+  });
+}
+
+function scoutingsAffichesPourZone(zoneId) {
+  return Object.values(CONFIG.scoutings).filter(function(scouting) {
+    return scouting.zone === zoneId && scoutingDebloquee(scouting);
+  });
+}
+
+function synchroniserNavigationExplorationMobile() {
+  const contenu = document.getElementById("contenu-explorations");
+  const entete = document.getElementById("exploration-mobile-zone-header");
+  if (!contenu || !entete) return;
+
+  const zone = carteZoneSelectionnee ? ZONES_CARTE[carteZoneSelectionnee] : null;
+  const mobile = estExplorationMobile();
+  const zoneOuverte = mobile && explorationMobileVue === "zone" && !!zone;
+  contenu.classList.toggle("exploration-mobile-zone-open", zoneOuverte);
+  contenu.classList.toggle("exploration-mobile-tab-scoutings", zoneOuverte && explorationMobileTypeMission === "scoutings");
+  contenu.classList.toggle("exploration-mobile-tab-campaigns", zoneOuverte && explorationMobileTypeMission !== "scoutings");
+  entete.setAttribute("aria-hidden", zoneOuverte ? "false" : "true");
+
+  if (!zone) return;
+  const exploree = zone.type === "home" || etat.zonesExplorees.includes(zone.id);
+  const campagnes = campagnesAfficheesPourZone(zone.id);
+  const scoutings = scoutingsAffichesPourZone(zone.id);
+  const titre = document.getElementById("exploration-mobile-zone-title");
+  const coordonnee = document.getElementById("exploration-mobile-zone-coordinate");
+  const statut = document.getElementById("exploration-mobile-zone-status");
+  const onglets = document.getElementById("exploration-mobile-mission-tabs");
+  const boutonCampaigns = document.getElementById("exploration-mobile-campaigns-tab");
+  const boutonScoutings = document.getElementById("exploration-mobile-scoutings-tab");
+
+  ecrireTexte(coordonnee, exploree ? zone.id : "");
+  if (coordonnee) coordonnee.style.display = exploree ? "" : "none";
+  ecrireTexte(titre, exploree ? zone.nom : "Unknown zone");
+  ecrireTexte(statut, exploree ? "Explored" : "Unexplored");
+  if (statut) statut.classList.toggle("exploration-mobile-zone-status-explored", exploree);
+  ecrireTexte(document.getElementById("exploration-mobile-campaigns-count"), String(campagnes.length));
+  ecrireTexte(document.getElementById("exploration-mobile-scoutings-count"), String(scoutings.length));
+
+  if (onglets) onglets.style.display = exploree ? "" : "none";
+  if (boutonCampaigns) {
+    const selectionne = explorationMobileTypeMission !== "scoutings";
+    boutonCampaigns.classList.toggle("actif", selectionne);
+    boutonCampaigns.setAttribute("aria-selected", selectionne ? "true" : "false");
+  }
+  if (boutonScoutings) {
+    const selectionne = explorationMobileTypeMission === "scoutings";
+    boutonScoutings.classList.toggle("actif", selectionne);
+    boutonScoutings.setAttribute("aria-selected", selectionne ? "true" : "false");
+  }
+}
+
+function ouvrirZoneExplorationMobile() {
+  if (!estExplorationMobile() || !carteZoneSelectionnee || !ZONES_CARTE[carteZoneSelectionnee]) return;
+  const zone = ZONES_CARTE[carteZoneSelectionnee];
+  const exploree = zone.type === "home" || etat.zonesExplorees.includes(zone.id);
+  if (exploree) {
+    const campagnes = campagnesAfficheesPourZone(zone.id);
+    const scoutings = scoutingsAffichesPourZone(zone.id);
+    if (campagnes.length === 0 && scoutings.length > 0) explorationMobileTypeMission = "scoutings";
+  }
+  explorationMobileVue = "zone";
+  renderCampaignCards();
+  synchroniserNavigationExplorationMobile();
+  requestAnimationFrame(function() {
+    const entete = document.getElementById("exploration-mobile-zone-header");
+    if (entete) entete.scrollIntoView({ block: "start" });
+  });
+}
+
+function retourCarteExplorationMobile() {
+  explorationMobileVue = "map";
+  synchroniserNavigationExplorationMobile();
+  requestAnimationFrame(function() {
+    const carte = document.getElementById("section-explo-map");
+    if (carte) carte.scrollIntoView({ block: "start" });
+  });
+}
+
+function selectionnerTypeMissionExplorationMobile(type) {
+  if (type !== "campaigns" && type !== "scoutings") return;
+  explorationMobileTypeMission = type;
+  synchroniserNavigationExplorationMobile();
+  requestAnimationFrame(function() {
+    const entete = document.getElementById("exploration-mobile-zone-header");
+    if (entete) entete.scrollIntoView({ block: "start" });
+  });
+}
 
 function totalKittiesSelectionnees() {
   return Object.values(exploKittiesSelectionnees).reduce(function(s, slots) {
@@ -4971,6 +5418,7 @@ function renderCampaignCards() {
   if (!listeEl) return;
 
   const zoneId = carteZoneSelectionnee;
+  synchroniserNavigationExplorationMobile();
 
   // No zone selected
   if (!zoneId) {
@@ -5465,7 +5913,7 @@ function renduCarteGrille() {
         if (selected)   cls += " carte-selectionnee";
         if (locked)     cls += " carte-verrouillee";
 
-        html += '<div class="' + cls + '" style="' + getPartGridStyle(p, ROWS) + bgStyle(p) + '"'
+        html += '<div class="' + cls + '" style="' + getPartGridStyle(p, ROWS) + bgStyle(p) + '" data-zone-part-id="' + zoneId + '"'
           + (isPrimary
             ? attributsActivationClavier(zone.nom + ", " + zoneEtatLabel) + ' data-zone-id="' + zoneId + '" aria-pressed="' + (selected ? "true" : "false") + '"'
             : ' aria-hidden="true"')
@@ -5629,7 +6077,23 @@ function renduZoneInfo() {
         return CONFIG.scoutings[id] && CONFIG.scoutings[id].zone === zoneId;
       }).sort().join(',')
     : '';
-  const key = (zoneId || '') + '|' + exploree + '|' + completedCamps + '|' + activeScouts;
+  const pendingCampaignResults = zoneId
+    ? Object.keys(etat.resultatsCampaigns).filter(function(id) {
+        return CONFIG.campaigns[id] && CONFIG.campaigns[id].zone === zoneId;
+      }).sort().join(',')
+    : '';
+  const pendingZoneResult = zoneId && etat.resultatsExplorationZones[zoneId]
+    ? (etat.resultatsExplorationZones[zoneId].success ? 'success' : 'failure')
+    : '';
+  const scoutingRewards = zoneId
+    ? Object.keys(etat.butinsScouting).filter(function(id) {
+        const scouting = CONFIG.scoutings[id];
+        const pool = etat.butinsScouting[id];
+        return scouting && scouting.zone === zoneId && pool && Object.values(pool.rewards || {}).some(function(qty) { return qty > 0; });
+      }).sort().join(',')
+    : '';
+  const key = (zoneId || '') + '|' + exploree + '|' + completedCamps + '|' + activeScouts
+    + '|' + pendingCampaignResults + '|' + pendingZoneResult + '|' + scoutingRewards;
   if (key === _zoneInfoKey) return;
   _zoneInfoKey = key;
 
@@ -5639,6 +6103,49 @@ function renduZoneInfo() {
 
   let html = '<div class="zone-info-titre">' + (exploree ? zone.nom : 'Unknown zone') + '</div>';
   if (zone.description) html += '<div class="zone-description">' + zone.description + '</div>';
+
+  const zoneAccessible = zone.type === "home" || exploree;
+  const campagnesZone = campagnesAfficheesPourZone(zoneId);
+  const scoutingsZone = scoutingsAffichesPourZone(zoneId);
+  const campaignsDoneCount = campagnesZone.filter(function(campaign) {
+    return etat.campaignsCompletees.includes(campaign.id);
+  }).length;
+  const campaignsAvailableCount = campagnesZone.filter(function(campaign) {
+    if (etat.campaignsCompletees.includes(campaign.id)) return false;
+    const requiredItemMissing = campaign.requiredItem && !etat.itemsAcquis.includes(campaign.requiredItem);
+    const storyLock = campaign.unlockAfterStory && !storyEstVue(campaign.unlockAfterStory);
+    const campaignLocked = (storyLock && campaign.lockedReason)
+      || requiredItemMissing
+      || (!campaign.unlockAfterStory && campaign.lockedReason);
+    return !campaignLocked;
+  }).length;
+  const activeScoutingCount = scoutingsZone.filter(function(scouting) {
+    return !!etat.scoutingsEnCours[scouting.id];
+  }).length;
+  const inactiveScoutingCount = Math.max(0, scoutingsZone.length - activeScoutingCount);
+  let mobileSummary = '<span><strong>1</strong> Exploration mission</span>';
+  if (zoneAccessible) {
+    if (campagnesZone.length === 0 && scoutingsZone.length === 0) {
+      mobileSummary = '<span class="zone-info-mobile-empty">Empty</span>';
+    } else {
+      mobileSummary = '<span class="zone-info-mobile-done"><strong>' + campaignsDoneCount + '</strong> Campaign'
+        + (campaignsDoneCount === 1 ? '' : 's') + ' done</span>';
+      if (campaignsAvailableCount > 0) {
+        mobileSummary += '<span class="zone-info-mobile-available"><strong>' + campaignsAvailableCount + '</strong> Campaign'
+          + (campaignsAvailableCount === 1 ? '' : 's') + ' avail</span>';
+      }
+      if (inactiveScoutingCount > 0) {
+        mobileSummary += '<span class="zone-info-mobile-inactive"><strong>' + inactiveScoutingCount + '</strong> Scouting'
+          + (inactiveScoutingCount === 1 ? '' : 's') + ' inactive</span>';
+      }
+      if (activeScoutingCount > 0) {
+        mobileSummary += '<span class="zone-info-mobile-active"><strong>' + activeScoutingCount + '</strong> Scouting'
+          + (activeScoutingCount === 1 ? '' : 's') + ' active</span>';
+      }
+    }
+  }
+  html += '<div class="zone-info-mobile-summary">' + mobileSummary + '</div>';
+  html += '<button type="button" class="zone-info-open-btn" onclick="ouvrirZoneExplorationMobile()">Open zone</button>';
 
   html += '<div class="zone-info-ligne"><span>Exploration Status ' + (exploree ? CHECK_ICON : '<img class="icon-close-inline" src="img/interface/Red Cross_Final.png?v=0.0029" alt="not explored">') + '</span></div>';
 
@@ -5684,6 +6191,7 @@ function renduExplorations(u) {
     renderCampaignCards();
     exploTabDirty = false;
   }
+  synchroniserNavigationExplorationMobile();
 
   // Campaign timers
   etat.exploEnCours.forEach(function(explo) {
@@ -5884,7 +6392,7 @@ function selectionnerKittySlot(kittyIndex) {
 // Pulls a busy kitty (worker or manager) out of its current role, then assigns it to the
 // exploration slot/campaign/scouting currently open in the modal.
 function forcerKittySlot(kittyIndex) {
-  if (estIngenieur(etat.kittiesData[kittyIndex])) return;
+  if (estIngenieur(etat.kittiesData[kittyIndex]) || kittyHasNonReplaceableAction(kittyIndex)) return;
   retirerKittyDeSesRoles(kittyIndex);
   selectionnerKittySlot(kittyIndex);
 }
@@ -5898,6 +6406,14 @@ function retirerKittySlot(campId, slotIndex) {
 
 // ── Zone exploration ─────────────────────────────────────────
 
+function actualiserSelectionCarte() {
+  document.querySelectorAll('#carte-grille .carte-cellule[data-zone-part-id]').forEach(function(cellule) {
+    const selectionnee = cellule.dataset.zonePartId === carteZoneSelectionnee;
+    cellule.classList.toggle("carte-selectionnee", selectionnee);
+    if (cellule.dataset.zoneId) cellule.setAttribute("aria-pressed", selectionnee ? "true" : "false");
+  });
+}
+
 function clicZoneCarte(zoneId) {
   const z = ZONES_CARTE[zoneId];
   if (!z) return;
@@ -5906,14 +6422,20 @@ function clicZoneCarte(zoneId) {
     return;
   }
   const conserverFocus = document.activeElement && document.activeElement.dataset.zoneId === zoneId;
-  carteZoneSelectionnee = (carteZoneSelectionnee === zoneId) ? null : zoneId;
+  const mobile = estExplorationMobile();
+  carteZoneSelectionnee = (!mobile && carteZoneSelectionnee === zoneId) ? null : zoneId;
+  if (mobile) explorationMobileVue = "map";
   if (carteZoneSelectionnee && !carteExploSlots[zoneId]) {
     carteExploSlots[zoneId] = new Array(z.slots).fill(null);
   }
-  carteDirty = true;
   exploTabDirty = true;
-  renduCarte(unlocks());
+  // Selecting a zone only changes its outline and adjacent information. Keep
+  // the existing map and global fog SVG alive so its animations never restart
+  // or jump after returning from another tab.
+  actualiserSelectionCarte();
+  renduZoneInfo();
   renderCampaignCards();
+  synchroniserNavigationExplorationMobile();
   if (conserverFocus) {
     requestAnimationFrame(function() {
       const cellule = document.querySelector('.carte-cellule[data-zone-id="' + zoneId + '"]');
@@ -5935,6 +6457,9 @@ function lancerExploZone() {
   if (!z || etat.zonesExplorees.includes(zoneId)) return;
   const slots = carteExploSlots[zoneId] || [];
   if (!slots.every(function(k) { return k !== null; })) return;
+  if (new Set(slots).size !== slots.length || slots.some(function(ki) {
+    return !Number.isInteger(ki) || !etat.kittiesData[ki] || kittyIsBusy(ki);
+  })) return;
   if (!estExplorateurDeZone(slots[0])) {
     afficherNotification("An Explorator is required in the first slot.");
     return;
@@ -6011,12 +6536,15 @@ function reessayerExploZone(zoneId) {
 function lancerExplo(id) {
   const slots = exploKittiesSelectionnees[id];
   const camp  = CONFIG.campaigns[id];
-  if (!camp || !slots || etat.resultatsCampaigns[id]) return;
+  if (!camp || !slots || etat.resultatsCampaigns[id] || etat.exploEnCours.some(function(mission) { return mission.id === id; })) return;
   if (camp.unlockAfterStory && !storyEstVue(camp.unlockAfterStory)) return;
   if (camp.unlockAfterCampaign && !etat.campaignsCompletees.includes(camp.unlockAfterCampaign)) return;
   if (camp.requiredItem && !etat.itemsAcquis.includes(camp.requiredItem)) return;
   const kittyIndices = slots.filter(function(x) { return x !== null; });
   if (kittyIndices.length < camp.slots) return;
+  if (new Set(kittyIndices).size !== kittyIndices.length || kittyIndices.some(function(ki) {
+    return !Number.isInteger(ki) || !etat.kittiesData[ki] || kittyIsBusy(ki);
+  })) return;
   if (kittyIndices.length > chatonsLibres()) {
     afficherNotification("⚠️ Not enough free cats!");
     return;
@@ -6128,15 +6656,15 @@ function exploratorDoubleChance(kittyIndex) {
   var k = etat.kittiesData[kittyIndex];
   if (!k || k.metier !== 'explorator') return 0;
   if (!etat.spherePerks) return 0;
-  return etat.spherePerks['ex-luck-2'] === 'learned' ? 0.30
-    : etat.spherePerks['ex-luck'] === 'learned' ? 0.15 : 0;
+  return etat.spherePerks['ex-luck-2'] === 'learned' ? 0.40
+    : etat.spherePerks['ex-luck'] === 'learned' ? 0.20 : 0;
 }
 
 function exploratorTripleChance(kittyIndex) {
   var k = etat.kittiesData[kittyIndex];
   if (!k || k.metier !== 'explorator' || !etat.spherePerks) return 0;
-  return etat.spherePerks['ex-triple-2'] === 'learned' ? 0.20
-    : etat.spherePerks['ex-triple'] === 'learned' ? 0.10 : 0;
+  return etat.spherePerks['ex-triple-2'] === 'learned' ? 0.30
+    : etat.spherePerks['ex-triple'] === 'learned' ? 0.15 : 0;
 }
 
 function exploratorLuckyFoodChance(kittyIndex) {
@@ -6355,7 +6883,7 @@ function workMultiplierLabel(value) {
   return "×" + Number(value).toFixed(2);
 }
 
-function workResourceDetails(pair, slot, phase) {
+function workResourceDetails(pair, slot, phase, familyId, slotIdx) {
   const gather = phase === "gather";
   const kitty = slot && slot.kittyIndex !== null ? etat.kittiesData[slot.kittyIndex] : null;
   const managerFamily = MAP_FAMILLE[gather ? pair.rawAction : pair.procMultAction];
@@ -6380,6 +6908,11 @@ function workResourceDetails(pair, slot, phase) {
   if (devWorkSpeed > 1) {
     speedBonuses.push({ label: "Dev Work Boost", value: devWorkSpeed });
     speedMultiplier *= devWorkSpeed;
+  }
+  if (kitty && slot && familyId !== undefined && slotIdx !== undefined
+      && manualFocusRecetteActif(familyId, slotIdx)) {
+    speedBonuses.push({ label: "Manual Focus", value: manualFocusMultiplier() });
+    speedMultiplier *= manualFocusMultiplier();
   }
 
   if (kitty && kitty.niveau > 0) {
@@ -6465,7 +6998,7 @@ function showWorkResourcePopup(el) {
   const slot = slotRecette(familyId, slotIdx);
   const pair = slot && paireRecette(slot.recipeId);
   if (!pair || !phase) return;
-  const details = workResourceDetails(pair, slot, phase);
+  const details = workResourceDetails(pair, slot, phase, familyId, slotIdx);
   if (_resPopupTarget && _resPopupTarget !== el) _resPopupTarget.setAttribute("aria-expanded", "false");
   _resPopupTarget = el;
   _workPopupContext = { familyId: familyId, slotIdx: slotIdx, phase: phase };
@@ -6627,6 +7160,7 @@ function bernardoEstEnExploration(kittyIdx) {
 function demarrerEtudeLivre(itemId, kittyIdx) {
   const item = ITEMS[itemId];
   if (!item || !item.learningGame || etat.itemsAppris.includes(itemId) || etat.itemsEtudies.includes(itemId)) return;
+  if (!etat.kittiesData[kittyIdx] || kittyIsBusy(kittyIdx) || kittyIsInExplorationStaging(kittyIdx)) return;
   const duree = item.studyDuration || 60000;
   etat.learningEnCours = { itemId: itemId, kittyIndex: kittyIdx, startTs: Date.now(), duree: duree };
   jouerSonAffectation();
@@ -6652,7 +7186,7 @@ function preparerEtudeLivre(itemId) {
     afficherNotification("Bernardo is currently exploring and cannot study this book.");
     return;
   }
-  if (kittyIsInTraining(kittyIdx) || estIngenieur(etat.kittiesData[kittyIdx])) {
+  if (kittyHasNonReplaceableAction(kittyIdx) || kittyIsInExplorationStaging(kittyIdx)) {
     afficherNotification("Bernardo is busy with another assignment and cannot study this book right now.");
     return;
   }
@@ -6697,11 +7231,6 @@ function terminerApprentissage(itemId) {
     if (!etat.itemsEtudies.includes(itemId)) etat.itemsEtudies.push(itemId);
     etat.learningEnCours = null;
     inventaireDirty = true;
-    if (itemId === "dailyPurpose") {
-      initialiserQuetesQuotidiennes();
-      afficherNotification("Daily quests unlocked! Open the guide to see today's goals.");
-      ajouterLog("unlock", "The Daily Purpose studied — daily quests are now available.");
-    }
     afficherNotification("📖 " + item.nom + " studied! Complete its lesson to learn it.");
     ajouterLog("event", item.nom + " study complete — its lesson is ready in Inventory.");
     sauvegarder(); rendu(); renduManagement();
@@ -6763,7 +7292,12 @@ function apprendreLivre(itemId) {
     ajouterLog("unlock", "Sturdy House Plans learned. Solid Stone Cathouse is now available in Houses.");
   }
   if (itemId === "dailyPurpose") {
+    // Any quest state created by the old Study-time unlock was premature.
+    // Start the first legitimate set when the lesson is actually learned.
+    etat.dailyQuests = null;
     initialiserQuetesQuotidiennes();
+    afficherNotification("Daily quests unlocked! Open the guide to see today's goals.");
+    ajouterLog("unlock", "The Daily Purpose learned. Daily quests are now available in the guide.");
   }
   etat.learningEnCours = null;
   inventaireDirty = true;
@@ -6791,6 +7325,7 @@ function ouvrirMiniJeuLivre(itemId) {
   const item = ITEMS[itemId];
   const jeu = item && item.learningGame;
   if (!jeu || etat.itemsAppris.includes(itemId) || !etat.itemsEtudies.includes(itemId)) return;
+  if (!ouvrirSessionMiniJeu("book")) return;
 
   livreMiniJeuItemId = itemId;
   livreMiniJeuMots = melangerMotsLivre(jeu.answers);
@@ -6807,6 +7342,7 @@ function ouvrirMiniJeuLivre(itemId) {
 
 function fermerMiniJeuLivre() {
   fermerDialogueModal("book-learning-modal");
+  fermerSessionMiniJeu("book");
   livreMiniJeuItemId = null;
   livreMiniJeuMots = [];
   livreMiniJeuTrous = [];
@@ -7350,8 +7886,7 @@ function renduModalJC() {
         const tier     = TIERS_KITTIES[k.tier] || "Kitty";
         const busy     = kittyIsBusy(idx);
         const enWorker = kittyIsInWorkerSlot(idx);
-        const forcable = busy && enWorker && !kittyIsOnExpedition(idx) && !kittyIsOnZoneExplo(idx) &&
-                         !kittyIsOnScouting(idx) && !kittyIsInScoutingStaging(idx) && !kittyIsInTraining(idx);
+        const forcable = busy && enWorker && !kittyHasNonReplaceableAction(idx) && !kittyIsInExplorationStaging(idx);
         const busyLbl  = busy ? kittyAllocationLabel(idx).text : "";
         html += '<div class="jc-modal-kitty' + (busy ? ' jc-modal-kitty-disabled' : '') + '"' +
                 (busy ? ' aria-disabled="true"' : attributsActivationClavier("Select " + k.nom + " for job training") + ' onclick="selectionnerKittyFormation(' + idx + ')"') + '>';
@@ -7389,8 +7924,10 @@ function renduModalJC() {
           const onZoneExplo = kittyIsOnZoneExplo(idx);
           const onScouting  = kittyIsOnScouting(idx) || kittyIsInScoutingStaging(idx);
           const inTraining  = kittyIsInTraining(idx);
-          const forcable = (enWorker || !!autreFamille) && !onExplo && !onZoneExplo && !onScouting && !inTraining;
-          const occupe   = enWorker || !!autreFamille || onExplo || onZoneExplo || onScouting || inTraining;
+          const isLearning = kittyIsLearningBook(idx);
+          const inExplorationStaging = kittyIsInExplorationStaging(idx);
+          const forcable = (enWorker || !!autreFamille) && !kittyHasNonReplaceableAction(idx) && !inExplorationStaging;
+          const occupe   = enWorker || !!autreFamille || onExplo || onZoneExplo || onScouting || inTraining || isLearning || inExplorationStaging;
           const statutTxt = occupe ? " — " + kittyAllocationLabel(idx).text : "";
           html += '<div class="jc-modal-kitty' + (occupe ? ' jc-modal-kitty-disabled' : '') + '"' +
                   (occupe ? ' aria-disabled="true"' : attributsActivationClavier("Assign " + k.nom + " as manager") + ' onclick="assignerManager(\'' + famille + '\',' + idx + ')"') + '>';
@@ -7436,7 +7973,7 @@ function renduModalJC() {
 }
 
 function selectionnerKittyFormation(kittyIndex) {
-  if (!etat.kittiesData[kittyIndex] || estIngenieur(etat.kittiesData[kittyIndex])) return;
+  if (!etat.kittiesData[kittyIndex] || estIngenieur(etat.kittiesData[kittyIndex]) || kittyIsBusy(kittyIndex) || kittyIsInExplorationStaging(kittyIndex)) return;
   jcFormationKittySelectionne = kittyIndex;
   jouerSonAffectation();
   fermerModalJC();
@@ -7459,7 +7996,7 @@ function selectionnerKittySpec(kittyIndex) {
 }
 
 function forcerKittyFormation(kittyIndex) {
-  if (estIngenieur(etat.kittiesData[kittyIndex])) return;
+  if (estIngenieur(etat.kittiesData[kittyIndex]) || kittyHasNonReplaceableAction(kittyIndex) || kittyIsInExplorationStaging(kittyIndex)) return;
   retirerKittyDeSesRoles(kittyIndex);
   selectionnerKittyFormation(kittyIndex);
 }
@@ -7480,7 +8017,7 @@ function lancerFormation() {
   if (jcFormationKittySelectionne === null || !jcMetierSelectionne) return;
   if (!explorateurPresent() && jcMetierSelectionne !== "explorator") return;
   if (metierDejaAttribue(jcMetierSelectionne)) return;
-  if (kittyIsBusy(jcFormationKittySelectionne)) return;
+  if (kittyIsBusy(jcFormationKittySelectionne) || kittyIsInExplorationStaging(jcFormationKittySelectionne)) return;
   const metier = METIERS[jcMetierSelectionne];
   etat.formationEnCours = {
     kittyIndex: jcFormationKittySelectionne,
@@ -7546,7 +8083,7 @@ function validerFormation() {
 }
 
 function assignerManager(famille, kittyIndex) {
-  if (estIngenieur(etat.kittiesData[kittyIndex])) return;
+  if (!etat.kittiesData[kittyIndex] || estIngenieur(etat.kittiesData[kittyIndex]) || kittyIsBusy(kittyIndex) || kittyIsInExplorationStaging(kittyIndex)) return;
   etat.managers[famille] = kittyIndex;
   jouerSonAffectation();
   fermerModalJC();
@@ -7573,7 +8110,7 @@ function retirerKittyDeSesRoles(kittyIdx) {
 }
 
 function forcerWorkerRecette(kittyIdx, familyId, slotIdx) {
-  if (estIngenieur(etat.kittiesData[kittyIdx])) return;
+  if (estIngenieur(etat.kittiesData[kittyIdx]) || kittyHasNonReplaceableAction(kittyIdx) || kittyIsInExplorationStaging(kittyIdx)) return;
   retirerKittyDeSesRoles(kittyIdx);
   const slot = slotRecette(familyId, slotIdx);
   if (!slot || !slot.recipeId) return;
@@ -7585,7 +8122,7 @@ function forcerWorkerRecette(kittyIdx, familyId, slotIdx) {
 }
 
 function forcerManager(famille, kittyIdx) {
-  if (estIngenieur(etat.kittiesData[kittyIdx])) return;
+  if (estIngenieur(etat.kittiesData[kittyIdx]) || kittyHasNonReplaceableAction(kittyIdx) || kittyIsInExplorationStaging(kittyIdx)) return;
   retirerKittyDeSesRoles(kittyIdx);
   etat.managers[famille] = kittyIdx;
   jouerSonAffectation();
@@ -7851,8 +8388,9 @@ function renduModalWorker() {
     const inTraining  = kittyIsInTraining(i);
     const isManager   = kittyEstManager(i);
     const isLearning  = kittyIsLearningBook(i);
-    const disabled    = onExplo || onZoneExplo || onScouting || inWorker || inTraining || isLearning || isManager;
-    const forcable    = !isLearning && (inWorker || isManager);
+    const inExplorationStaging = kittyIsInExplorationStaging(i);
+    const disabled    = onExplo || onZoneExplo || onScouting || inExplorationStaging || inWorker || inTraining || isLearning || isManager;
+    const forcable    = !isLearning && !onExplo && !onZoneExplo && !onScouting && !inExplorationStaging && !inTraining && (inWorker || isManager);
     const status      = disabled ? kittyAllocationLabel(i).text : "";
     html += '<div class="worker-modal-kitty' + (disabled ? ' worker-modal-kitty-disabled' : '') + '"' +
             (disabled ? ' aria-disabled="true"' : attributsActivationClavier("Assign " + k.nom + " to this work slot") + ' onclick="assignerWorkerSlot(' + i + ')"') + '>';
@@ -7875,6 +8413,7 @@ function assignerWorkerSlot(kittyIndex) {
   if (!workerModalOuvert) return;
   if (estIngenieur(etat.kittiesData[kittyIndex])) return;
   if (kittyIsBusy(kittyIndex)) return;
+  if (kittyIsInExplorationStaging(kittyIndex)) return;
   const slot = slotRecette(workerModalOuvert.familyId, workerModalOuvert.slotIdx);
   if (!slot || !slot.recipeId) return;
   annulerFocusManuelWork(workerModalOuvert.familyId, workerModalOuvert.slotIdx);
@@ -7941,7 +8480,7 @@ function renduJobCenter(u) {
       html += '</div>';
     } else {
       // Auto-clear if selected kitty went on expedition or into a worker slot
-      if (jcFormationKittySelectionne !== null && kittyIsBusy(jcFormationKittySelectionne)) {
+      if (jcFormationKittySelectionne !== null && (kittyIsBusy(jcFormationKittySelectionne) || kittyIsInExplorationStaging(jcFormationKittySelectionne))) {
         jcFormationKittySelectionne = null;
       }
       // Kitty slot
@@ -8053,7 +8592,7 @@ function terminerSequence() {
     afficherNotification("🌿 Food recipes unlocked! Catnip Salad can now be produced in Work.");
     ajouterLog("unlock", "Food recipes unlocked. Catnip Salad is now available in Work.");
   }
-  if (etat.chatons === 6) {
+  if (etat.chatons === 8) {
     afficherNotification("🗺️ Explorations unlocked! Send your cats on expeditions.");
     ajouterLog("unlock", "Explorations unlocked — send cats on campaigns and scoutings.");
   }
@@ -8449,7 +8988,10 @@ function tick() {
     afficherModal("ecran-story-basic-wood");
     renduStories();
   }
-  if (cardboardPlanksAvant < 1 && etat.cardboardPlanks >= 1) {
+  // The Houses unlock is permanent once the first-plank objective is
+  // completed. Do not re-announce it every time stock returns from 0 to 1.
+  if (cardboardPlanksAvant < 1 && etat.cardboardPlanks >= 1
+      && !etat.objectifsComplis.includes("firstPlank")) {
     afficherNotification("🏗️ Houses unlocked! Build your first Cardboard Box.");
     ajouterLog("unlock", "Houses unlocked. Build your first Cardboard Box.");
   }
@@ -8767,7 +9309,16 @@ function afficherNotesVersion(suite) {
     return;
   }
   releaseNotesSuite = typeof suite === "function" ? suite : null;
-  if (titre) titre.textContent = "What's new in v" + GAME_RELEASE_VERSION;
+  const currentRelease = GAME_CHANGELOG[0];
+  const currentReleaseDate = currentRelease && currentRelease.date
+    ? new Intl.DateTimeFormat("en-US", {
+        year: "numeric", month: "long", day: "numeric"
+      }).format(new Date(currentRelease.date + "T00:00:00"))
+    : "";
+  if (titre) {
+    titre.textContent = "What's new in v" + GAME_RELEASE_VERSION
+      + (currentReleaseDate ? " · " + currentReleaseDate : "");
+  }
   liste.innerHTML = "";
   GAME_RELEASE_NOTES.forEach(function(category) {
     const bloc = document.createElement("section");
@@ -8983,6 +9534,7 @@ function preparerStoryExplorator(kittyIndex) {
 
 function ouvrirCarteExplorationsDepuisStory(storyId) {
   fermerModal(storyId);
+  explorationMobileVue = "map";
   carteDirty = true;
   exploTabDirty = true;
   changerOnglet("explorations");
@@ -9042,6 +9594,7 @@ function ouvrirMaisonDepuisStory() {
 function ouvrirMaisonVoisineGaucheDepuisStory() {
   fermerModal("ecran-story-left-house");
   carteZoneSelectionnee = "C1";
+  explorationMobileVue = "map";
   carteDirty = true;
   exploTabDirty = true;
   changerOnglet("explorations");
@@ -9181,7 +9734,6 @@ document.getElementById("bouton-intro").addEventListener("click", function() {
 function changerOnglet(id) {
   if (!IDS_ONGLETS.includes(id)) return;
   if (id === "logs" && etat.chatons < 3) return;
-  if (id !== "work") annulerFocusManuelWork();
   const estMobile = window.matchMedia("(max-width: 768px)").matches;
   // On mobile, the Gang tab is the list landing view. Returning to it from
   // another tab must not reopen the kitty profile that was previously open.
@@ -9380,17 +9932,123 @@ function initialiserRessourcesAccessibles() {
       fermerTooltipRessource();
     }
   });
-  const barreRessources = document.querySelector(".ressources");
+  const barreRessources = document.getElementById("ressources-liste");
   if (barreRessources) barreRessources.addEventListener("scroll", fermerTooltipRessource, { passive: true });
   window.addEventListener("resize", fermerTooltipRessource);
 }
 
 
 // ════════════════════════════════════════════════════════════
+// 13a-bis. SHARED MINI-GAME RUNTIME
+// ════════════════════════════════════════════════════════════
+
+const MINI_JEU_FRAME_DT_MAX = 0.05;
+const miniJeuRuntime = {
+  actif: null,
+  generation: 0,
+  animations: new Map(),
+  layoutVersion: 0,
+  renduEnAttente: false
+};
+
+function miniJeuRuntimeActif(id) {
+  return id ? miniJeuRuntime.actif === id : miniJeuRuntime.actif !== null;
+}
+
+function ouvrirSessionMiniJeu(id) {
+  if (!id || miniJeuRuntime.actif) return false;
+  miniJeuRuntime.actif = id;
+  miniJeuRuntime.generation += 1;
+  miniJeuRuntime.layoutVersion += 1;
+  miniJeuRuntime.renduEnAttente = false;
+  if (document.body) {
+    document.body.classList.add("mini-game-runtime-active");
+    document.body.dataset.activeMiniGame = id;
+  }
+  return true;
+}
+
+function arreterAnimationMiniJeu(id) {
+  const animation = miniJeuRuntime.animations.get(id);
+  if (!animation) return;
+  if (animation.raf !== null) cancelAnimationFrame(animation.raf);
+  miniJeuRuntime.animations.delete(id);
+}
+
+function demarrerAnimationMiniJeu(id, callback) {
+  if (!miniJeuRuntimeActif(id) || typeof callback !== "function") return false;
+  arreterAnimationMiniJeu(id);
+  const generation = miniJeuRuntime.generation;
+  const animation = {
+    raf: null,
+    last: performance.now(),
+    layoutVersion: -1
+  };
+
+  function frame(timestamp) {
+    if (!miniJeuRuntimeActif(id) || generation !== miniJeuRuntime.generation) {
+      miniJeuRuntime.animations.delete(id);
+      return;
+    }
+    const dt = Math.min(MINI_JEU_FRAME_DT_MAX, Math.max(0, (timestamp - animation.last) / 1000));
+    const layoutChanged = animation.layoutVersion !== miniJeuRuntime.layoutVersion;
+    animation.last = timestamp;
+    animation.layoutVersion = miniJeuRuntime.layoutVersion;
+    const continuer = callback(dt, { layoutChanged: layoutChanged, timestamp: timestamp });
+    if (continuer === false || !miniJeuRuntimeActif(id) || generation !== miniJeuRuntime.generation) {
+      miniJeuRuntime.animations.delete(id);
+      return;
+    }
+    animation.raf = requestAnimationFrame(frame);
+  }
+
+  animation.raf = requestAnimationFrame(frame);
+  miniJeuRuntime.animations.set(id, animation);
+  return true;
+}
+
+function fermerSessionMiniJeu(id) {
+  arreterAnimationMiniJeu(id);
+  if (!miniJeuRuntimeActif(id)) return;
+  miniJeuRuntime.actif = null;
+  miniJeuRuntime.generation += 1;
+  if (document.body) {
+    document.body.classList.remove("mini-game-runtime-active");
+    delete document.body.dataset.activeMiniGame;
+  }
+  const renduRequis = miniJeuRuntime.renduEnAttente;
+  miniJeuRuntime.renduEnAttente = false;
+  requestAnimationFrame(function() {
+    // One clean foreground refresh replaces every skipped background render.
+    if (renduRequis || !miniJeuRuntimeActif()) rendu();
+  });
+}
+
+function reinitialiserHorlogesMiniJeux() {
+  miniJeuRuntime.layoutVersion += 1;
+  const maintenant = performance.now();
+  miniJeuRuntime.animations.forEach(function(animation) {
+    animation.last = maintenant;
+  });
+}
+
+document.addEventListener("visibilitychange", function() {
+  if (document.visibilityState === "visible") reinitialiserHorlogesMiniJeux();
+});
+window.addEventListener("pageshow", reinitialiserHorlogesMiniJeux);
+window.addEventListener("focus", reinitialiserHorlogesMiniJeux);
+window.addEventListener("resize", reinitialiserHorlogesMiniJeux, { passive: true });
+
+function positionnerCurseurMiniJeu(cursor, largeurPiste, pourcentage) {
+  if (!cursor) return;
+  const x = Math.max(0, Math.min(100, pourcentage)) / 100 * Math.max(0, largeurPiste || 0);
+  cursor.style.transform = "translate3d(" + x.toFixed(2) + "px, 0, 0) translateX(-50%)";
+}
+
+// ════════════════════════════════════════════════════════════
 // 13b. FIRST THREE CATS CATCH MINI-GAME
 // ════════════════════════════════════════════════════════════
 
-var _catCatchMiniJeuRaf = null;
 var _catCatchCursorPct = 0;
 var _catCatchDir = 1;
 var _catCatchActif = false;
@@ -9398,13 +10056,12 @@ var _catCatchNom = "";
 const CAT_CATCH_SPEEDS = [60, 80, 100];
 
 function arreterAnimationMiniJeuCatch() {
-  if (!_catCatchMiniJeuRaf) return;
-  cancelAnimationFrame(_catCatchMiniJeuRaf);
-  _catCatchMiniJeuRaf = null;
+  arreterAnimationMiniJeu("catch-cat");
 }
 
 function ouvrirMiniJeuCatch() {
   if (etat.chatons >= 3 || !sequenceEstPrete() || _catCatchActif) return;
+  if (!ouvrirSessionMiniJeu("catch-cat")) return;
   _catCatchNom = nomProchainChat();
   const vitesseCatch = CAT_CATCH_SPEEDS[etat.chatons] || 100;
   const visage = assurerVisageProchainChat();
@@ -9427,19 +10084,19 @@ function ouvrirMiniJeuCatch() {
     returnFocusSelector: "#bouton-sequence"
   });
 
-  var last = performance.now();
-  function frame(ts) {
-    if (!_catCatchActif) return;
-    var dt = (ts - last) / 1000;
-    last = ts;
+  const cursor = document.getElementById("cat-catch-cursor");
+  const track = cursor ? cursor.closest(".bird-track") : null;
+  let largeurPiste = track ? track.clientWidth : 0;
+  positionnerCurseurMiniJeu(cursor, largeurPiste, _catCatchCursorPct);
+  demarrerAnimationMiniJeu("catch-cat", function(dt, frameInfo) {
+    if (!_catCatchActif) return false;
+    if (frameInfo.layoutChanged && track) largeurPiste = track.clientWidth;
     _catCatchCursorPct += _catCatchDir * vitesseCatch * dt;
     if (_catCatchCursorPct >= 100) { _catCatchCursorPct = 100; _catCatchDir = -1; }
     if (_catCatchCursorPct <= 0)   { _catCatchCursorPct = 0;   _catCatchDir =  1; }
-    var cursor = document.getElementById("cat-catch-cursor");
-    if (cursor) cursor.style.left = _catCatchCursorPct + "%";
-    _catCatchMiniJeuRaf = requestAnimationFrame(frame);
-  }
-  _catCatchMiniJeuRaf = requestAnimationFrame(frame);
+    positionnerCurseurMiniJeu(cursor, largeurPiste, _catCatchCursorPct);
+    return true;
+  });
 }
 
 function echouerMiniJeuCatch() {
@@ -9447,6 +10104,7 @@ function echouerMiniJeuCatch() {
   _catCatchActif = false;
   arreterAnimationMiniJeuCatch();
   fermerDialogueModal("cat-catch-minijeu");
+  fermerSessionMiniJeu("catch-cat");
   demarrerRechargeCatch();
   afficherNotification("" + _catCatchNom + " got away. Try again when the timer is ready!");
   ajouterLog("event", "Failed to catch " + _catCatchNom + ".");
@@ -9464,6 +10122,7 @@ function clickerCatCatch() {
   _catCatchActif = false;
   arreterAnimationMiniJeuCatch();
   fermerDialogueModal("cat-catch-minijeu");
+  fermerSessionMiniJeu("catch-cat");
   terminerSequence();
 }
 
@@ -9528,7 +10187,6 @@ const RECRUIT_DIALOGUES = [
     bernardo: "It is - but organized work, with meals, shelter, and promotion opportunities."
   }
 ];
-var _recruitMiniJeuRaf = null;
 var _recruitMiniJeuActif = false;
 var _recruitPitchActif = false;
 var _recruitTimerDemarre = false;
@@ -9539,6 +10197,7 @@ var _recruitNom = "";
 var _recruitDifficulty = 1;
 var _recruitSpeedMultiplier = 1;
 var _recruitDialoguePrecedent = -1;
+var _recruitTrackWidth = 0;
 
 function choisirDialogueRecruit() {
   var index = Math.floor(Math.random() * RECRUIT_DIALOGUES.length);
@@ -9550,9 +10209,7 @@ function choisirDialogueRecruit() {
 }
 
 function arreterAnimationMiniJeuRecruit() {
-  if (!_recruitMiniJeuRaf) return;
-  cancelAnimationFrame(_recruitMiniJeuRaf);
-  _recruitMiniJeuRaf = null;
+  arreterAnimationMiniJeu("recruit");
 }
 
 function mettreAJourMiniJeuRecruit() {
@@ -9562,8 +10219,14 @@ function mettreAJourMiniJeuRecruit() {
   const time = document.getElementById("recruit-time-left");
   const progress = document.getElementById("recruit-hold-progress");
   const pct = Math.max(0, Math.min(100, _recruitTrust));
-  if (fill) fill.style.width = pct.toFixed(2) + "%";
-  if (marker) marker.style.left = pct.toFixed(2) + "%";
+  if (fill) {
+    fill.style.width = "100%";
+    fill.style.transform = "scaleX(" + (pct / 100).toFixed(4) + ")";
+  }
+  if (marker) {
+    marker.style.left = "0";
+    positionnerCurseurMiniJeu(marker, _recruitTrackWidth, pct);
+  }
   if (track) track.setAttribute("aria-valuenow", Math.round(pct));
   if (time) time.textContent = Math.max(0, _recruitTimeLeft).toFixed(1) + "s";
   if (progress) progress.textContent = "Keep their interest: " + Math.min(RECRUIT_HOLD_TARGET, _recruitGoodTime).toFixed(1) + " / " + RECRUIT_HOLD_TARGET.toFixed(1) + "s";
@@ -9580,11 +10243,12 @@ function demarrerTimerMiniJeuRecruit() {
   _recruitTimerDemarre = true;
   const bouton = document.getElementById("recruit-pitch-btn");
   if (bouton) bouton.textContent = "HOLD TO MAKE YOUR PITCH";
-  var last = performance.now();
-  function frame(ts) {
-    if (!_recruitMiniJeuActif) return;
-    var dt = Math.min(0.05, (ts - last) / 1000);
-    last = ts;
+  demarrerAnimationMiniJeu("recruit", function(dt, frameInfo) {
+    if (!_recruitMiniJeuActif) return false;
+    if (frameInfo.layoutChanged) {
+      const track = document.getElementById("recruit-trust-track");
+      _recruitTrackWidth = track ? track.clientWidth : 0;
+    }
     _recruitTimeLeft -= dt;
     const vitesse = (_recruitPitchActif ? RECRUIT_RISE_SPEED : -RECRUIT_FALL_SPEED) * _recruitSpeedMultiplier;
     _recruitTrust += vitesse * dt;
@@ -9594,19 +10258,18 @@ function demarrerTimerMiniJeuRecruit() {
 
     if (_recruitTrust >= RECRUIT_GOOD_MAX) {
       echouerMiniJeuRecruit("too-pushy");
-      return;
+      return false;
     }
     if (_recruitGoodTime >= RECRUIT_HOLD_TARGET) {
       reussirMiniJeuRecruit();
-      return;
+      return false;
     }
     if (_recruitTimeLeft <= 0) {
       echouerMiniJeuRecruit("timeout");
-      return;
+      return false;
     }
-    _recruitMiniJeuRaf = requestAnimationFrame(frame);
-  }
-  _recruitMiniJeuRaf = requestAnimationFrame(frame);
+    return true;
+  });
 }
 
 function commencerPitchRecruit(event) {
@@ -9628,6 +10291,7 @@ function gererClavierPitchRecruit(event, actif) {
 
 function ouvrirMiniJeuRecruit() {
   if (etat.chatons < 3 || !sequenceEstPrete() || _recruitMiniJeuActif) return;
+  if (!ouvrirSessionMiniJeu("recruit")) return;
   _recruitNom = nomProchainChat();
   const portrait = document.getElementById("recruit-target-portrait");
   const nom = document.getElementById("recruit-target-name");
@@ -9658,14 +10322,15 @@ function ouvrirMiniJeuRecruit() {
   const bouton = document.getElementById("recruit-pitch-btn");
   if (difficulty) difficulty.textContent = "Difficulty " + _recruitDifficulty + " · Cursor speed ×" + _recruitSpeedMultiplier.toFixed(2);
   if (bouton) bouton.textContent = "HOLD TO START YOUR PITCH";
-  mettreAJourMiniJeuRecruit();
   ouvrirDialogueModal("recruit-minijeu", {
     dismissible: true,
     fermer: function() { echouerMiniJeuRecruit("closed"); },
     focusSelector: "#recruit-pitch-btn",
     returnFocusSelector: "#bouton-sequence"
   });
-
+  const trustTrack = document.getElementById("recruit-trust-track");
+  _recruitTrackWidth = trustTrack ? trustTrack.clientWidth : 0;
+  mettreAJourMiniJeuRecruit();
 }
 
 function echouerMiniJeuRecruit(raison) {
@@ -9674,6 +10339,7 @@ function echouerMiniJeuRecruit(raison) {
   definirPitchRecruitActif(false);
   arreterAnimationMiniJeuRecruit();
   fermerDialogueModal("recruit-minijeu");
+  fermerSessionMiniJeu("recruit");
   const visage = assurerVisageProchainChat();
   demarrerRechargeCatch();
   ajouterLog("event", "Failed to recruit " + _recruitNom + ".");
@@ -9688,6 +10354,7 @@ function reussirMiniJeuRecruit() {
   definirPitchRecruitActif(false);
   arreterAnimationMiniJeuRecruit();
   fermerDialogueModal("recruit-minijeu");
+  fermerSessionMiniJeu("recruit");
   manualFocusStoryApresRecruit = etat.chatons === 3 && !storyEstVue("storyManualFocusVue");
   const resultat = terminerSequence();
   ouvrirPopupRecruitResult(true, resultat.nom, resultat.visage);
@@ -9739,7 +10406,6 @@ document.addEventListener("selectstart", function(event) {
 // ════════════════════════════════════════════════════════════
 
 var _birdTimerId        = null;
-var _birdMiniJeuRaf     = null;
 var _birdCursorPct      = 0;
 var _birdDir            = 1;
 var _birdMiniJeuPending = false;
@@ -9778,21 +10444,14 @@ function montrerOiseau() {
   jouerSonAilesOiseau();
   var el = document.getElementById("bird-btn");
   if (el) el.style.display = "inline-flex";
-  // The Bird action is the first item in the horizontal mobile resource rail.
-  // Always bring it back into view when it appears, even if the player left
-  // the rail scrolled toward the later resources.
-  if (window.matchMedia("(max-width: 768px)").matches) {
-    var ressources = document.querySelector(".ressources");
-    if (ressources) {
-      ressources.scrollLeft = 0;
-      requestAnimationFrame(function() { ressources.scrollLeft = 0; });
-    }
-  }
+  // The Bird action lives in the fixed part of the resource rail, so it stays
+  // visible regardless of the player's horizontal resource position.
   var dbg = document.getElementById("bird-debug-btn");
   if (dbg) dbg.style.display = "none";
 }
 
 function demarrerBirdMiniJeu() {
+  if (!ouvrirSessionMiniJeu("bird")) return;
   var premiere = !etat.birdPremiereReussie;
   var el = document.getElementById("bird-btn");
   if (el) el.style.display = "none";
@@ -9821,18 +10480,18 @@ function demarrerBirdMiniJeu() {
     }
   }
   var speed = premiere ? 35 : 150 * multiplicateurPityOiseau();
-  var last = performance.now();
-  function frame(ts) {
-    var dt = (ts - last) / 1000;
-    last = ts;
+  const cursor = document.getElementById("bird-cursor");
+  const track = cursor ? cursor.closest(".bird-track") : null;
+  let largeurPiste = track ? track.clientWidth : 0;
+  positionnerCurseurMiniJeu(cursor, largeurPiste, _birdCursorPct);
+  demarrerAnimationMiniJeu("bird", function(dt, frameInfo) {
+    if (frameInfo.layoutChanged && track) largeurPiste = track.clientWidth;
     _birdCursorPct += _birdDir * speed * dt;
     if (_birdCursorPct >= 100) { _birdCursorPct = 100; _birdDir = -1; }
     if (_birdCursorPct <= 0)   { _birdCursorPct = 0;   _birdDir =  1; }
-    var cursor = document.getElementById("bird-cursor");
-    if (cursor) cursor.style.left = _birdCursorPct + "%";
-    _birdMiniJeuRaf = requestAnimationFrame(frame);
-  }
-  _birdMiniJeuRaf = requestAnimationFrame(frame);
+    positionnerCurseurMiniJeu(cursor, largeurPiste, _birdCursorPct);
+    return true;
+  });
 }
 
 function ouvrirBirdMiniJeu() {
@@ -9865,8 +10524,9 @@ function clickerBird() {
     if (desc) desc.textContent = "Almost! The first lesson is forgiving. Try CATCH! again when the cursor is closer.";
     return;
   }
-  if (_birdMiniJeuRaf) { cancelAnimationFrame(_birdMiniJeuRaf); _birdMiniJeuRaf = null; }
+  arreterAnimationMiniJeu("bird");
   fermerDialogueModal("bird-minijeu");
+  fermerSessionMiniJeu("bird");
   if (success) {
     if (premiere) etat.birdPremiereReussie = true;
     etat.birdPityEchecs = 0;
@@ -9898,8 +10558,9 @@ function fermerBirdSuccessPopup() {
 
 function skipBird() {
   if (!etat.birdPremiereReussie) return;
-  if (_birdMiniJeuRaf) { cancelAnimationFrame(_birdMiniJeuRaf); _birdMiniJeuRaf = null; }
+  arreterAnimationMiniJeu("bird");
   fermerDialogueModal("bird-minijeu");
+  fermerSessionMiniJeu("bird");
   ajouterLog("event", "A bird flew past... and nobody noticed.");
   _apresMinijeuOiseau();
 }

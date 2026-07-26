@@ -4,11 +4,85 @@
   const CatInc = root.CatInc = root.CatInc || {};
   CatInc.data = CatInc.data || {};
 
+  const release0034Categories = Object.freeze([
+      Object.freeze({
+        label: "New Features",
+        changes: Object.freeze([
+          "The top resource bar can now be customized with persistent resource favorites and a T2+ preset.",
+          "Mobile Exploration now opens selected zones in a dedicated Campaigns or Scoutings workspace after a compact map preview."
+        ])
+      }),
+      Object.freeze({
+        label: "Balancing",
+        changes: Object.freeze([
+          "Explorator reward perks now reach 40% Double chance and a conditional 30% Triple chance.",
+          "Wood Builder BOX BOOST now adds 5% per Cardboard Box instead of compounding multiplicatively.",
+          "Gang Leader Daily Boost perks now cost 3 and 5 Canned Cat Food, while the first Supermarket campaign grants 2.",
+          "Bernardo's Manual Focus power upgrades now cost 2 and 4 Canned Cat Food, with 60 seconds of capacity and 2 seconds per click."
+        ])
+      }),
+      Object.freeze({
+        label: "Quality of Life",
+        changes: Object.freeze([
+          "The top resource rail now uses larger desktop icons, a compact two-row mobile layout and fixed Cat, Bird and management controls.",
+          "Manual Focus remains active across tabs and updates Gathering, Processing, full-cycle timing and production projections while active.",
+          "Manual Focus text, active outlines and animations are clearer and smoother.",
+          "House, Facilities and Inventory explanations now open from compact contextual help buttons.",
+          "Daily scouting Canned Cat Food stocks now reset at Paris midnight independently from Daily Quests.",
+          "Recruiting details hide Wood and Stone House bonuses until the corresponding House family is unlocked.",
+          "JOBLESS remains hidden in Gang until the Job Center is built.",
+          "Cat portraits are now centered safely inside circular badges throughout the game.",
+          "Long presses no longer select or open game icons on mobile.",
+          "Release dates are now displayed in the launch notes and Settings changelog."
+        ])
+      }),
+      Object.freeze({
+        label: "Bug Fixes",
+        changes: Object.freeze([
+          "A Cat can no longer be assigned to more than one action, and conflicting legacy assignments are repaired when a save loads.",
+          "Daily Quests now unlock only after The Daily Purpose is fully learned, and recipe objectives display their required family.",
+          "The Explorations unlock notification now appears at 8 Cats instead of 6.",
+          "The Houses unlock notification no longer repeats whenever Plank stock returns from 0 to 1.",
+          "The Exploration fog animation no longer jumps after changing tabs or selecting a zone.",
+          "Bird, Catch, Recruit and Book mini-games now share a mobile-safe foreground runtime that prevents duplicate animation loops and reduces severe iOS frame drops."
+        ])
+      }),
+      Object.freeze({
+        label: "Other",
+        changes: Object.freeze([
+          "Story dialogue now gives Bernardo, Mochi and Luna clearer personalities and more natural conversations.",
+          "Undiscovered mobile zones no longer reveal their internal identifier before exploration.",
+          "The Laboratory now uses its dedicated building artwork in Facilities."
+        ])
+      })
+  ]);
+
+  // Local changes made after the latest published release live here.
+  // On publication, promote this entry to `releases`, assign its version/date,
+  // then replace these categories with a fresh empty pending release.
+  const pendingRelease = Object.freeze({
+    baseVersion: "0.0034",
+    categories: Object.freeze([
+      Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
+      Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
+      Object.freeze({ label: "Quality of Life", changes: Object.freeze([]) }),
+      Object.freeze({ label: "Bug Fixes", changes: Object.freeze([]) }),
+      Object.freeze({ label: "Other", changes: Object.freeze([]) })
+    ])
+  });
+
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
     Object.freeze({
+      version: "0.0034",
+      date: "2026-07-26",
+      categories: release0034Categories
+    }),
+    Object.freeze({
       version: "0.0033",
+      // ISO format keeps the release history sortable and easy to localize.
+      date: "2026-07-25",
       categories: Object.freeze([
         Object.freeze({
           label: "New Features",
@@ -71,6 +145,7 @@
 
   CatInc.data.changelog = Object.freeze({
     currentVersion: releases[0].version,
-    releases: Object.freeze(releases)
+    releases: Object.freeze(releases),
+    pendingRelease: pendingRelease
   });
 })(typeof window !== "undefined" ? window : globalThis);
