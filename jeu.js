@@ -628,6 +628,7 @@ var ACTION_DISPLAY = { fishcatting: "Anchovy", grilledAnchovy: "Grilled Anchovy"
 
 function kittyAllocationLabel(kittyIdx) {
   const kittyForLabel = etat.kittiesData[kittyIdx];
+  const missionZoneLabel = function(type, zoneId) { return type + ": " + (zoneId || "Unknown zone"); };
   if (kittyIsLearningBook(kittyIdx)) {
     const book = etat.learningEnCours && ITEMS[etat.learningEnCours.itemId];
     return { text: "Studying: " + (book ? book.nom : "a book"), cls: "kitty-statut-training" };
@@ -662,7 +663,8 @@ function kittyAllocationLabel(kittyIdx) {
     var explorationZoneId = etat.exploZoneEnCours.zoneId;
     var z = ZONES_CARTE[explorationZoneId];
     var explorationZoneRevealed = Array.isArray(etat.zonesExplorees) && etat.zonesExplorees.includes(explorationZoneId);
-    return { text: "Exploring: " + (explorationZoneRevealed && z ? z.nom : "Unknown zone"), cls: "kitty-statut-explo" };
+    var explorationZoneLabel = explorationZoneRevealed && z ? explorationZoneId : null;
+    return { text: missionZoneLabel("Exploration", explorationZoneLabel), cls: "kitty-statut-explo" };
   }
   // Zone exploration (staged)
   var stagedZone = Object.keys(carteExploSlots).find(function(zoneId) {
@@ -671,13 +673,14 @@ function kittyAllocationLabel(kittyIdx) {
   if (stagedZone) {
     var zs = ZONES_CARTE[stagedZone];
     var stagedZoneRevealed = Array.isArray(etat.zonesExplorees) && etat.zonesExplorees.includes(stagedZone);
-    return { text: "Ready: " + (stagedZoneRevealed && zs ? zs.nom : "Unknown zone"), cls: "kitty-statut-explo" };
+    var stagedZoneLabel = stagedZoneRevealed && zs ? stagedZone : null;
+    return { text: missionZoneLabel("Exploration", stagedZoneLabel), cls: "kitty-statut-explo" };
   }
   // Campaign (running)
   var runningCamp = etat.exploEnCours.find(function(e) { return e.kittyIndices.includes(kittyIdx); });
   if (runningCamp) {
     var camp = CONFIG.campaigns[runningCamp.id];
-    return { text: "On campaign: " + (camp ? camp.nom : runningCamp.id), cls: "kitty-statut-explo" };
+    return { text: missionZoneLabel("Campaign", camp ? camp.zone : null), cls: "kitty-statut-explo" };
   }
   // Campaign (staged)
   var stagedCamp = Object.keys(exploKittiesSelectionnees).find(function(campId) {
@@ -685,7 +688,7 @@ function kittyAllocationLabel(kittyIdx) {
   });
   if (stagedCamp) {
     var sc2 = CONFIG.campaigns[stagedCamp];
-    return { text: "Ready: " + (sc2 ? sc2.nom : stagedCamp), cls: "kitty-statut-explo" };
+    return { text: missionZoneLabel("Campaign", sc2 ? sc2.zone : null), cls: "kitty-statut-explo" };
   }
   // Scouting (running)
   var runningScouting = Object.keys(etat.scoutingsEnCours).find(function(id) {
@@ -693,7 +696,7 @@ function kittyAllocationLabel(kittyIdx) {
   });
   if (runningScouting) {
     var sd = CONFIG.scoutings[runningScouting];
-    return { text: "Scouting: " + (sd ? sd.nom : runningScouting), cls: "kitty-statut-explo" };
+    return { text: missionZoneLabel("Scouting", sd ? sd.zone : null), cls: "kitty-statut-explo" };
   }
   // Scouting (staged)
   var stagedScouting = Object.keys(scoutingsStagingKitty).find(function(id) {
@@ -701,7 +704,7 @@ function kittyAllocationLabel(kittyIdx) {
   });
   if (stagedScouting) {
     var sds = CONFIG.scoutings[stagedScouting];
-    return { text: "Ready: " + (sds ? sds.nom : stagedScouting), cls: "kitty-statut-explo" };
+    return { text: missionZoneLabel("Scouting", sds ? sds.zone : null), cls: "kitty-statut-explo" };
   }
   return { text: "Free", cls: "kitty-statut-free" };
 }
@@ -732,6 +735,16 @@ function obtenirButinScouting(scoutingId) {
   const butin = etat.butinsScouting[scoutingId];
   if (!Number.isInteger(butin.tripled) || butin.tripled < 0) butin.tripled = 0;
   return butin;
+}
+
+function scoutingIdsAvecButinZone(zoneId) {
+  if (!zoneId || !etat.butinsScouting) return [];
+  return Object.keys(etat.butinsScouting).filter(function(scoutingId) {
+    const scouting = CONFIG.scoutings[scoutingId];
+    const butin = etat.butinsScouting[scoutingId];
+    return scouting && scouting.zone === zoneId && butin
+      && Object.values(butin.rewards || {}).some(function(qty) { return Number(qty) > 0; });
+  });
 }
 
 function categorieRecompenseScouting(entries, selected) {
@@ -1376,6 +1389,79 @@ function recupererButinScouting(scoutingId) {
   carteDirty = true;
   exploTabDirty = true;
   sauvegarder(); rendu();
+}
+
+function recupererButinsScoutingZone(zoneId) {
+  scoutingIdsAvecButinZone(zoneId).forEach(function(scoutingId) {
+    recupererButinScouting(scoutingId);
+  });
+}
+
+function donneesResumeButinsScoutingZone(zoneId) {
+  const totals = { successful: 0, failed: 0, regular: 0, lucky: 0, superLucky: 0, doubled: 0, tripled: 0, rewards: {} };
+  const ids = scoutingIdsAvecButinZone(zoneId);
+  ids.forEach(function(scoutingId) {
+    const butin = etat.butinsScouting[scoutingId];
+    if (!butin) return;
+    totals.successful += Number(butin.successful) || 0;
+    totals.failed += Number(butin.failed) || 0;
+    totals.regular += Number(butin.regular) || 0;
+    totals.lucky += Number(butin.lucky) || 0;
+    totals.superLucky += Number(butin.superLucky) || 0;
+    totals.doubled += Number(butin.doubled) || 0;
+    totals.tripled += Number(butin.tripled) || 0;
+    Object.keys(butin.rewards || {}).forEach(function(recompenseId) {
+      totals.rewards[recompenseId] = (totals.rewards[recompenseId] || 0) + (Number(butin.rewards[recompenseId]) || 0);
+    });
+  });
+  return { ids: ids, totals: totals };
+}
+
+function renduPopupButinsScoutingZone(zoneId) {
+  const content = document.getElementById("scouting-reward-summary-content");
+  if (!content) return;
+  const data = donneesResumeButinsScoutingZone(zoneId);
+  const totals = data.totals;
+  const rewardsText = Object.keys(totals.rewards).filter(function(recompenseId) {
+    return totals.rewards[recompenseId] > 0;
+  }).map(function(recompenseId) {
+    return echapperAttributHtml(RESOURCE_DISPLAY_NAMES[recompenseId] || recompenseId) + ' ×' + formaterNombre(totals.rewards[recompenseId]);
+  }).join(' · ');
+  const extraLuck = (totals.doubled > 0 ? '<strong class="scouting-doubled">Doubled ' + totals.doubled + '</strong>' : '')
+    + (totals.tripled > 0 ? '<strong class="scouting-tripled">Tripled ' + totals.tripled + '</strong>' : '');
+  content.innerHTML = '<div class="scouting-accumulator scouting-reward-summary-accumulator">'
+    + '<div class="scouting-runs"><span class="scouting-metric-label">Scouting Runs:</span><strong class="scouting-successful">Successful ' + totals.successful + '</strong><span class="scouting-failed">Failed ' + totals.failed + '</span></div>'
+    + '<div class="scouting-luck"><span class="scouting-metric-label">Rewards Luck:</span><span>Regular ' + totals.regular + '</span><span class="scouting-lucky">Lucky ' + totals.lucky + '</span><strong class="scouting-super-lucky">Super Lucky ' + totals.superLucky + '</strong>' + extraLuck + '</div>'
+    + '<div class="scouting-rewards">' + (rewardsText || 'No rewards collected yet') + '</div>'
+    + '</div>';
+}
+
+function ouvrirPopupButinsScoutingZone(zoneId) {
+  const modal = document.getElementById("scouting-reward-summary-modal");
+  const data = donneesResumeButinsScoutingZone(zoneId);
+  if (!modal || !data.ids.length) return;
+  modal.dataset.zoneId = zoneId;
+  renduPopupButinsScoutingZone(zoneId);
+  const claimButton = document.getElementById("scouting-reward-summary-claim");
+  if (claimButton) claimButton.setAttribute("aria-label", "Claim " + data.ids.length + " scouting " + (data.ids.length === 1 ? "reward" : "rewards"));
+  ouvrirDialogueModal("scouting-reward-summary-modal", {
+    dismissible: true,
+    fermer: fermerPopupButinsScoutingZone,
+    focusSelector: "#scouting-reward-summary-claim",
+    returnFocusSelector: ".zone-info-mobile-reward"
+  });
+}
+
+function fermerPopupButinsScoutingZone() {
+  fermerDialogueModal("scouting-reward-summary-modal");
+}
+
+function recupererButinsScoutingZoneDepuisPopup() {
+  const modal = document.getElementById("scouting-reward-summary-modal");
+  const zoneId = modal && modal.dataset.zoneId;
+  if (!zoneId) return;
+  fermerPopupButinsScoutingZone();
+  recupererButinsScoutingZone(zoneId);
 }
 
 function sequenceEstPrete() {
@@ -3341,8 +3427,8 @@ function renduWorkSummary(unlockedFamilies) {
     const rowsHtml = active.map(function(item) {
       const progressPct = Math.round(item.progress * 100);
       const rateLabel = libelleNombreDecimal(item.ratePerMinute, 2) + "/min";
-      return '<button type="button" class="work-summary-row" onclick="ouvrirSlotDepuisResume(\'' + familyId + '\',' + item.slotIdx + ')" aria-label="Open ' + echapperAttributHtml(item.pair.procLabel) + ' produced by ' + echapperAttributHtml(item.kitty.nom) + ', ' + rateLabel + '">'
-        + '<span class="work-summary-recipe"><span class="work-summary-tier work-tier-badge work-tier-badge-tier-' + item.pair.tier + '" aria-hidden="true">T' + item.pair.tier + '</span><img src="' + item.pair.procIcon + '" alt=""><strong>' + item.pair.procLabel + '</strong></span>'
+      return '<button type="button" class="work-summary-row" data-work-family="' + familyId + '" data-work-slot="' + item.slotIdx + '" onclick="ouvrirSlotDepuisResume(\'' + familyId + '\',' + item.slotIdx + ')" aria-label="Open ' + echapperAttributHtml(item.pair.procLabel) + ' produced by ' + echapperAttributHtml(item.kitty.nom) + ', ' + rateLabel + '">'
+        + '<span class="work-summary-recipe"><span class="work-summary-tier work-tier-badge work-tier-badge-tier-' + item.pair.tier + '" aria-hidden="true">T' + item.pair.tier + '</span><img src="' + item.pair.procIcon + '" alt=""></span>'
         + '<span class="work-summary-worker">'
         +   '<span class="work-summary-ring" style="--prog:' + item.progress + '" role="progressbar" aria-label="Full recipe cycle progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + progressPct + '"><span class="work-summary-face">' + kittyIconHtml(item.kitty) + '</span></span>'
         +   '<span>' + echapperAttributHtml(item.kitty.nom) + ' (lvl ' + item.kitty.niveau + ')</span>'
@@ -3424,6 +3510,7 @@ function renduSlotRecette(familyId, slotIdx) {
     focusPhaseForRender, manualFocusMultiplier()].join("|");
   if (el.dataset.recipeState === stateKey) return;
   el.dataset.recipeState = stateKey;
+  el.dataset.recipePhase = slot.phase;
 
   if (!pair) {
     el.innerHTML = '<div class="work-recipe-slot-top work-recipe-slot-top-empty"><span class="work-recipe-slot-number" aria-label="Recipe slot ' + (slotIdx + 1) + '">' + (slotIdx + 1) + '</span></div>'
@@ -3476,9 +3563,9 @@ function renduSlotRecette(familyId, slotIdx) {
     + '<button type="button" class="work-recipe-selected" aria-label="Change recipe in slot ' + (slotIdx + 1) + ', currently Tier ' + pair.tier + ' ' + echapperAttributHtml(pair.procLabel) + '" onclick="ouvrirModalRecette(\'' + familyId + '\',' + slotIdx + ')"><span class="work-recipe-tier work-tier-badge work-tier-badge-tier-' + pair.tier + '" aria-hidden="true">T' + pair.tier + '</span><img src="' + pair.procIcon + '" alt=""><span><small>RECIPE</small><strong>' + pair.procLabel + '</strong></span><span class="work-recipe-change">Change</span></button>'
     + '</div>'
     + '<div class="work-recipe-flow">'
-    + '<section class="work-recipe-resource work-recipe-resource-input' + (gatherFocusable ? ' work-manual-focus-available' : '') + (gatherFocusActive ? ' work-manual-focus-active' : '') + '" data-manual-family="' + familyId + '" data-manual-slot="' + slotIdx + '" data-manual-phase="gathering"' + gatherTrigger + ' style="--fill:' + Math.round(progress.gathering * 100) + '%">' + gatherInfo + manualFocusBadgeHtml(gatherFocusActive, manualFocusReserve) + '<span class="work-recipe-node-kicker">GATHERING</span><img src="' + pair.rawIcon + '" alt=""><strong>' + pair.rawLabel + '</strong><span>' + libelleNombreDecimal(gathered, 1) + ' / ' + libelleNombreDecimal(target, 1) + '</span><small>' + (kitty ? formaterTemps(gatherDuration) + ' (1 every ' + formaterTemps(gatherUnitDuration) + ')' : 'Input') + '</small></section>'
+    + '<section class="work-recipe-resource work-recipe-resource-input' + (gatherFocusable ? ' work-manual-focus-available' : '') + (gatherFocusActive ? ' work-manual-focus-active' : '') + '" data-manual-family="' + familyId + '" data-manual-slot="' + slotIdx + '" data-manual-phase="gathering"' + gatherTrigger + ' style="--fill:' + Math.round(progress.gathering * 100) + '%">' + gatherInfo + manualFocusBadgeHtml(gatherFocusActive, manualFocusReserve) + '<span class="work-recipe-node-kicker">GATHERING</span><img src="' + pair.rawIcon + '" alt=""><strong>' + pair.rawLabel + '</strong><span class="work-recipe-gathered">' + libelleNombreDecimal(gathered, 1) + ' / ' + libelleNombreDecimal(target, 1) + '</span><small>' + (kitty ? formaterTemps(gatherDuration) + ' (1 every ' + formaterTemps(gatherUnitDuration) + ')' : 'Input') + '</small></section>'
       + '<section class="work-recipe-cat">' + catHtml + '</section>'
-    + '<section class="work-recipe-resource work-recipe-resource-output' + (processFocusable ? ' work-manual-focus-available' : '') + (processFocusActive ? ' work-manual-focus-active' : '') + '" data-manual-family="' + familyId + '" data-manual-slot="' + slotIdx + '" data-manual-phase="processing"' + produceTrigger + ' style="--fill:' + Math.round(progress.processing * 100) + '%">' + processInfo + manualFocusBadgeHtml(processFocusActive, manualFocusReserve) + '<span class="work-recipe-node-kicker">PROCESSING</span><img src="' + pair.procIcon + '" alt=""><strong>' + pair.procLabel + '</strong><span class="work-recipe-output-progress">' + Math.round(progress.processing * 100) + '%</span>' + (kitty ? '<small>' + formaterTemps(processingDuration) + ' for ' + libelleNombreDecimal(outputPerCycle, 2) + ' · Stock ' + formaterNombre(etat[pair.procRes]) + '</small>' : '<small>Output</small>') + '</section>'
+    + '<section class="work-recipe-resource work-recipe-resource-output' + (processFocusable ? ' work-manual-focus-available' : '') + (processFocusActive ? ' work-manual-focus-active' : '') + '" data-manual-family="' + familyId + '" data-manual-slot="' + slotIdx + '" data-manual-phase="processing"' + produceTrigger + ' style="--fill:' + Math.round(progress.processing * 100) + '%">' + processInfo + manualFocusBadgeHtml(processFocusActive, manualFocusReserve) + '<span class="work-recipe-node-kicker">PROCESSING</span><img src="' + pair.procIcon + '" alt=""><strong>' + pair.procLabel + '</strong><span class="work-recipe-output-progress">' + Math.round(progress.processing * 100) + '%</span>' + (kitty ? '<small class="work-recipe-output-details">' + formaterTemps(processingDuration) + ' for ' + libelleNombreDecimal(outputPerCycle, 2) + ' · Stock ' + formaterNombre(etat[pair.procRes]) + '</small>' : '<small class="work-recipe-output-details">Output</small>') + '</section>'
     + '</div>';
   if (_workPopupContext && _workPopupContext.familyId === familyId && _workPopupContext.slotIdx === slotIdx) {
     const trigger = el.querySelector('.work-recipe-info-btn[data-work-phase="' + _workPopupContext.phase + '"]');
@@ -5206,16 +5293,16 @@ window.addEventListener("blur", function() {
 });
 
 function rendu() {
+  if (renduVerrouilleParInteraction()) {
+    renduInteractionEnAttente = true;
+    planifierRenduApresInteraction();
+    return;
+  }
   // Action mini-games own the foreground while they are open. The simulation
   // keeps ticking, but rebuilding the game UI behind a translucent modal every
   // 100 ms competes with their animation on mobile WebKit.
   if (typeof miniJeuRuntimeActif === "function" && miniJeuRuntimeActif()) {
     miniJeuRuntime.renduEnAttente = true;
-    return;
-  }
-  if (renduVerrouilleParInteraction()) {
-    renduInteractionEnAttente = true;
-    planifierRenduApresInteraction();
     return;
   }
   renduInteractionEnAttente = false;
@@ -5229,6 +5316,154 @@ function rendu() {
   if (ongletActif === "facilities")   renduFacilities(u);
   if (ongletActif === "explorations") renduExplorations(u);
   if (ongletActif === "inventaire")   renduInventaire(u);
+}
+
+// The simulation clock stays at 100 ms, but it must not rebuild every active
+// screen at that cadence. This path updates timers, quantities and progress
+// in place, while structural changes continue to use the full rendu() path.
+// Keep this split explicit: future systems should add a cheap dynamic updater
+// here instead of adding another full render to tick().
+function renduDynamique() {
+  if (typeof miniJeuRuntimeActif === "function" && miniJeuRuntimeActif()) {
+    miniJeuRuntime.renduEnAttente = true;
+    return;
+  }
+  if (renduVerrouilleParInteraction()) {
+    renduInteractionEnAttente = true;
+    planifierRenduApresInteraction();
+    return;
+  }
+
+  const u = unlocks();
+  const ongletActif = document.body.dataset.ongletActif || "gang";
+
+  // These two sections are intentionally direct-DOM/timer updates and are
+  // needed even when the visible tab is not one of the gameplay panels.
+  renduRessources(u);
+  renduSequence();
+
+  // Completion and unlock paths mark their section dirty. Promote those
+  // transitions to one full render so result cards, buttons and assignments
+  // never remain stale.
+  if (ongletActif === "explorations" && (carteDirty || exploTabDirty)) {
+    rendu();
+    return;
+  }
+  if (ongletActif === "facilities" && (jcDirty || labDirty)) {
+    rendu();
+    return;
+  }
+  if (ongletActif === "inventaire" && inventaireDirty) {
+    rendu();
+    return;
+  }
+
+  if (ongletActif === "work")         renduWorkDynamique();
+  if (ongletActif === "buildings")    renduBuildings(u);
+  if (ongletActif === "facilities")   renduFacilities(u);
+  if (ongletActif === "explorations") renduExplorationsDynamique(u);
+  if (ongletActif === "inventaire")   renduInventaire(u);
+}
+
+let renduOngletPlanifie = false;
+let renduOngletCallback = null;
+
+function planifierRenduOnglet(callback) {
+  if (typeof callback === "function") renduOngletCallback = callback;
+  if (renduOngletPlanifie) return;
+  renduOngletPlanifie = true;
+  const afficher = function() {
+    renduOngletPlanifie = false;
+    const action = renduOngletCallback;
+    renduOngletCallback = null;
+    if (action) action();
+    else rendu();
+  };
+  if (typeof requestAnimationFrame === "function") requestAnimationFrame(afficher);
+  else setTimeout(afficher, 0);
+}
+
+function ecrireAttributDynamique(el, attribut, valeur) {
+  if (!el) return false;
+  const texte = String(valeur);
+  if (el.getAttribute(attribut) === texte) return false;
+  el.setAttribute(attribut, texte);
+  return true;
+}
+
+function actualiserProgressionSlotRecette(familyId, slotIdx) {
+  const el = domParId("recipe-slot-" + familyId + "-" + slotIdx);
+  const slot = slotRecette(familyId, slotIdx);
+  if (!el || !slot) return false;
+
+  const pair = paireRecette(slot.recipeId);
+  const kitty = slot.kittyIndex === null ? null : etat.kittiesData[slot.kittyIndex];
+  if (!pair || !kitty) return true;
+
+  // A phase change also changes which controls can receive Manual Focus. Let
+  // the structural renderer rebuild that slot once; ordinary progress stays
+  // entirely in place.
+  if (el.dataset.recipePhase !== slot.phase) return false;
+
+  const progress = progressionsSlotRecette(slot, pair);
+  const input = pair.inputs[0];
+  const target = quantiteInputEffective(pair, input);
+  const gathered = Math.min(target, Math.max(0, Number(slot.gatheredInputs[pair.rawRes]) || 0));
+  const outputProgress = Math.round(progress.processing * 100) + "%";
+  const ringProgress = Math.round(progress.overall * 100);
+  const inputEl = el.querySelector(".work-recipe-resource-input");
+  const outputEl = el.querySelector(".work-recipe-resource-output");
+  const ringEl = el.querySelector(".work-recipe-cat-ring");
+  if (!inputEl || !outputEl || !ringEl) return false;
+
+  ecrireVariableStyle(inputEl, "--fill", Math.round(progress.gathering * 100) + "%");
+  ecrireVariableStyle(outputEl, "--fill", Math.round(progress.processing * 100) + "%");
+  ecrireVariableStyle(ringEl, "--prog", progress.overall);
+  ecrireAttributDynamique(ringEl, "aria-valuenow", ringProgress);
+  ecrireTexte(inputEl.querySelector(".work-recipe-gathered"), libelleNombreDecimal(gathered, 1) + " / " + libelleNombreDecimal(target, 1));
+  ecrireTexte(outputEl.querySelector(".work-recipe-output-progress"), outputProgress);
+  const durations = dureesAffichageRecette(pair, kitty, familyId, slotIdx);
+  const outputPerCycle = productionProcBonus(kitty);
+  ecrireTexte(
+    outputEl.querySelector(".work-recipe-output-details"),
+    formaterTemps(durations.processing) + " for " + libelleNombreDecimal(outputPerCycle, 2) + " · Stock " + formaterNombre(etat[pair.procRes])
+  );
+  return true;
+}
+
+function actualiserProgressionWorkSummary() {
+  const summary = domParId("work-summary-all");
+  if (!summary || workFiltre !== "all") return true;
+  let stable = true;
+  ["wood", "food", "rock"].forEach(function(familyId) {
+    (etat.workRecipeSlots[familyId] || []).forEach(function(slot, slotIdx) {
+      if (!slot.recipeId || slot.kittyIndex === null) return;
+      const pair = paireRecette(slot.recipeId);
+      if (!pair) return;
+      const row = summary.querySelector('[data-work-family="' + familyId + '"][data-work-slot="' + slotIdx + '"]');
+      const ring = row && row.querySelector(".work-summary-ring");
+      if (!row || !ring) { stable = false; return; }
+      const progress = progressionsSlotRecette(slot, pair).overall;
+      ecrireVariableStyle(ring, "--prog", progress);
+      ecrireAttributDynamique(ring, "aria-valuenow", Math.round(progress * 100));
+    });
+  });
+  return stable;
+}
+
+function renduWorkDynamique() {
+  if (!workStructureInitialisee) { rendu(); return; }
+  let stable = true;
+  if (workFiltre === "all") {
+    stable = actualiserProgressionWorkSummary();
+  } else {
+    const slots = etat.workRecipeSlots[workFiltre] || [];
+    slots.forEach(function(slot, slotIdx) {
+      if (!actualiserProgressionSlotRecette(workFiltre, slotIdx)) stable = false;
+    });
+  }
+  actualiserFocusManuelWork();
+  if (!stable) rendu();
 }
 
 
@@ -5859,20 +6094,11 @@ function renduCarteGrille() {
   const region = REGIONS[etat.regionCourante] || {};
   const mapImg = region.mapImg || null;
 
-  function bgStyle(p) {
-    if (!mapImg) return '';
-    const colIdx = p.col;
-    const rowIdx = ROWS + 1 - p.row - (p.rowSpan || 1);
-    return ';background-image:url(\'' + mapImg + '\');'
-      + 'background-size:calc(var(--map-cell) * ' + COLS + ') calc(var(--map-cell) * ' + ROWS + ');'
-      + 'background-position:calc(var(--map-cell) * ' + (-colIdx) + ') calc(var(--map-cell) * ' + (-rowIdx) + ');';
-  }
-
   function renduFogGlobal() {
     const unit = 100;
     const mapWidth = COLS * unit;
     const mapHeight = ROWS * unit;
-    let mask = '<rect x="0" y="0" width="' + mapWidth + '" height="' + mapHeight + '" fill="white"></rect>';
+    let mask = '<rect x="0" y="0" width="' + mapWidth + '" height="' + mapHeight + '" fill="white" shape-rendering="crispEdges"></rect>';
 
     Object.values(ZONES_CARTE).forEach(function(zone) {
       const revealed = zone.type === "home" || etat.zonesExplorees.includes(zone.id);
@@ -5882,7 +6108,7 @@ function renduCarteGrille() {
         const y = (ROWS + 1 - part.row - (part.rowSpan || 1)) * unit;
         const width = (part.colSpan || 1) * unit;
         const height = (part.rowSpan || 1) * unit;
-        mask += '<rect x="' + x + '" y="' + y + '" width="' + width + '" height="' + height + '" fill="black"></rect>';
+        mask += '<rect x="' + x + '" y="' + y + '" width="' + width + '" height="' + height + '" fill="black" shape-rendering="crispEdges"></rect>';
       });
     });
 
@@ -5915,6 +6141,9 @@ function renduCarteGrille() {
 
   const rendered = new Set();
   let html = "";
+  if (mapImg) {
+    html += '<div class="carte-map-artwork" style="grid-column:2 / 9;grid-row:1 / 6;background-image:url(\'' + mapImg + '\')" aria-hidden="true"></div>';
+  }
 
   for (let row = ROWS; row >= 1; row--) {
     const cssRow = ROWS - row + 1; // grid row 1 = game row 5 (top)
@@ -5954,13 +6183,7 @@ function renduCarteGrille() {
           const camp = CONFIG.campaigns[campaignId];
           return camp && camp.zone === zoneId && !etat.resultatsCampaigns[campaignId].success;
         });
-      const scoutingRewardReady = Object.keys(etat.butinsScouting).some(function(scoutingId) {
-        const scouting = CONFIG.scoutings[scoutingId];
-        const butin = etat.butinsScouting[scoutingId];
-        return scouting && scouting.zone === zoneId && butin && Object.keys(butin.rewards).some(function(rewardId) {
-          return butin.rewards[rewardId] > 0;
-        });
-      });
+      const scoutingRewardReady = scoutingIdsAvecButinZone(zoneId).length > 0;
       const selected   = carteZoneSelectionnee === zoneId;
       const locked     = zone.type !== "home" && !explorateurOk;
       const zoneEtatLabel = locked ? "locked" : (inProgress ? "exploration in progress" : (exploree ? "explored" : "unexplored"));
@@ -5975,7 +6198,7 @@ function renduCarteGrille() {
         if (selected)   cls += " carte-selectionnee";
         if (locked)     cls += " carte-verrouillee";
 
-        html += '<div class="' + cls + '" style="' + getPartGridStyle(p, ROWS) + bgStyle(p) + '" data-zone-part-id="' + zoneId + '"'
+        html += '<div class="' + cls + '" style="' + getPartGridStyle(p, ROWS) + '" data-zone-part-id="' + zoneId + '"'
           + (isPrimary
             ? attributsActivationClavier(zone.nom + ", " + zoneEtatLabel) + ' data-zone-id="' + zoneId + '" aria-pressed="' + (selected ? "true" : "false") + '"'
             : ' aria-hidden="true"')
@@ -6147,13 +6370,14 @@ function renduZoneInfo() {
   const pendingZoneResult = zoneId && etat.resultatsExplorationZones[zoneId]
     ? (etat.resultatsExplorationZones[zoneId].success ? 'success' : 'failure')
     : '';
-  const scoutingRewards = zoneId
-    ? Object.keys(etat.butinsScouting).filter(function(id) {
-        const scouting = CONFIG.scoutings[id];
-        const pool = etat.butinsScouting[id];
-        return scouting && scouting.zone === zoneId && pool && Object.values(pool.rewards || {}).some(function(qty) { return qty > 0; });
-      }).sort().join(',')
-    : '';
+  const scoutingRewardIds = scoutingIdsAvecButinZone(zoneId).sort();
+  const scoutingRewardCount = scoutingRewardIds.reduce(function(total, scoutingId) {
+    const butin = etat.butinsScouting[scoutingId];
+    return total + Object.values((butin && butin.rewards) || {}).reduce(function(sum, qty) {
+      return sum + Math.max(0, Number(qty) || 0);
+    }, 0);
+  }, 0);
+  const scoutingRewards = scoutingRewardIds.join(',');
   const key = (zoneId || '') + '|' + exploree + '|' + completedCamps + '|' + activeScouts
     + '|' + pendingCampaignResults + '|' + pendingZoneResult + '|' + scoutingRewards;
   if (key === _zoneInfoKey) return;
@@ -6204,6 +6428,11 @@ function renduZoneInfo() {
         mobileSummary += '<span class="zone-info-mobile-active"><strong>' + activeScoutingCount + '</strong> Scouting'
           + (activeScoutingCount === 1 ? '' : 's') + ' active</span>';
       }
+      if (scoutingRewardCount > 0) {
+        const rewardLabel = scoutingRewardCount === 1 ? 'scouting reward' : 'scouting rewards';
+        const rewardCountLabel = scoutingRewardCount > 99 ? '99+' : String(scoutingRewardCount);
+        mobileSummary += '<button type="button" class="zone-info-mobile-reward" onclick="ouvrirPopupButinsScoutingZone(\'' + zoneId + '\')" aria-label="View ' + rewardCountLabel + ' ' + rewardLabel + '">🎁 <strong>' + rewardCountLabel + '</strong> ' + rewardLabel + '</button>';
+      }
     }
   }
   html += '<div class="zone-info-mobile-summary">' + mobileSummary + '</div>';
@@ -6244,17 +6473,7 @@ function renduZoneInfo() {
   el.innerHTML = html;
 }
 
-function renduExplorations(u) {
-  if (!u || !u.exploration) return;
-
-  renduCarte(u);
-
-  if (exploTabDirty) {
-    renderCampaignCards();
-    exploTabDirty = false;
-  }
-  synchroniserNavigationExplorationMobile();
-
+function actualiserTimersExplorations() {
   // Campaign timers
   etat.exploEnCours.forEach(function(explo) {
     const elapsed   = (Date.now() - explo.startTs) / 1000;
@@ -6292,6 +6511,24 @@ function renduExplorations(u) {
     ecrireStyle(barEl, "width", Math.round(progress * 100) + "%");
     ecrireTexte(timerEl, formaterTempsStat(Math.ceil(remaining)) + " remaining ↺ auto-repeats");
   });
+}
+
+function renduExplorations(u) {
+  if (!u || !u.exploration) return;
+
+  renduCarte(u);
+
+  if (exploTabDirty) {
+    renderCampaignCards();
+    exploTabDirty = false;
+  }
+  synchroniserNavigationExplorationMobile();
+  actualiserTimersExplorations();
+}
+
+function renduExplorationsDynamique(u) {
+  if (!u || !u.exploration) return;
+  actualiserTimersExplorations();
 }
 
 function ouvrirModalExplo(campId, slotIndex) {
@@ -7807,10 +8044,17 @@ function positionnerInfoMetierJC(anchor, popup) {
   const pw = popup.offsetWidth || 300;
   const ph = popup.offsetHeight || 150;
   let left = rect ? rect.left : (window.innerWidth - pw) / 2;
-  let top = rect ? rect.bottom + mg : (window.innerHeight - ph) / 2;
+  const mobile = window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+  let top = rect
+    ? (mobile ? rect.top - ph - mg : rect.bottom + mg)
+    : (window.innerHeight - ph) / 2;
   if (left + pw > window.innerWidth - mg) left = window.innerWidth - pw - mg;
   if (left < mg) left = mg;
   if (top + ph > window.innerHeight - mg && rect) top = rect.top - ph - mg;
+  if (top < mg && rect) {
+    const belowTop = rect.bottom + mg;
+    top = belowTop + ph <= window.innerHeight - mg ? belowTop : mg;
+  }
   if (top < mg) top = mg;
   popup.style.left = Math.round(left) + "px";
   popup.style.top = Math.round(top) + "px";
@@ -9093,7 +9337,7 @@ function tick() {
   }
 
   verifierObjectifs();
-  rendu();
+  renduDynamique();
 }
 
 setInterval(tick, 100);
@@ -9110,6 +9354,9 @@ setInterval(sauvegarder, 30000);
 const VITESSE_HORS_LIGNE  = 0.1;
 const MAX_AFK_SECONDS     = 10 * 60 * 60;
 const ABSENCE_MIN_MS      = 60000; // ignore gaps shorter than 1 minute
+const AFK_RESUME_RELOAD_KEY = "catInc.afkResumeReload";
+let afkReloadProgramme = false;
+let resumeAbsenceRechargeEffectue = false;
 
 function maxAfkSeconds() {
   const bonusMinutes = ingenieursFormes().reduce(function(total, kitty) {
@@ -9344,6 +9591,42 @@ function afficherResumeAbsence(resume) {
   }
 
   afficherModal("ecran-absence");
+  if (arguments[1] && arguments[1].apresRechargement) return;
+  if (afkReloadProgramme) return;
+  try {
+    sessionStorage.setItem(AFK_RESUME_RELOAD_KEY, JSON.stringify(resume));
+    afkReloadProgramme = true;
+    setTimeout(function() {
+      const panneau = document.getElementById("ecran-absence");
+      if (panneau && panneau.getAttribute("aria-hidden") === "false") fermerResumeAbsenceEtRecharger();
+    }, 250);
+  } catch (e) {
+    // If sessionStorage is unavailable, keep the summary usable without risking a reload loop.
+  }
+}
+
+function recupererResumeAbsenceApresRechargement() {
+  try {
+    const raw = sessionStorage.getItem(AFK_RESUME_RELOAD_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(AFK_RESUME_RELOAD_KEY);
+    const resume = JSON.parse(raw);
+    return resume && typeof resume === "object" ? resume : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function fermerResumeAbsenceEtRecharger() {
+  if (resumeAbsenceRechargeEffectue) {
+    fermerModal("ecran-absence");
+    return;
+  }
+  sauvegarder();
+  sauvegardeVerrouillee = true;
+  const url = new URL(window.location.href);
+  url.searchParams.set("app-refresh", String(Date.now()));
+  window.location.replace(url.href);
 }
 
 let releaseNotesTimer = null;
@@ -9839,8 +10122,12 @@ function changerOnglet(id) {
   if (id === "explorations") { exploTabDirty  = true; }
   if (id === "inventaire")  { inventaireDirty = true; }
   if (id === "facilities")  { jcDirty = true; labDirty = true; }
-  rendu(); // render the newly visible tab immediately instead of waiting for the next 100 ms tick
-  if (id === "gang") renduManagement();
+  // Let the browser paint the new tab state before doing the heavier section
+  // render. Calls are coalesced so rapid taps only render the final tab.
+  planifierRenduOnglet(function() {
+    rendu(); // render the newly visible tab immediately instead of waiting for the next 100 ms tick
+    if (id === "gang") renduManagement();
+  });
   if (estMobile) {
     // Every tab opens from its own top. The guide is collapsed into its fixed
     // dock so it cannot retain an overlay or move the new section off-screen.
@@ -10666,6 +10953,8 @@ initialiserRessourcesAccessibles();
 const partieExistante = charger();
 synchroniserDeblocagesSpherePerks();
 const resumeAbsence    = partieExistante ? appliquerProgressionHorsLigne() : null;
+const resumeAbsenceApresRechargement = recupererResumeAbsenceApresRechargement();
+resumeAbsenceRechargeEffectue = !!resumeAbsenceApresRechargement;
 rendu();
 renduLogs();
 renduStories();
@@ -10688,6 +10977,7 @@ function lancerOuvertureInitiale() {
     }
   }
   if (resumeAbsence) afficherResumeAbsence(resumeAbsence);
+  else if (resumeAbsenceApresRechargement) afficherResumeAbsence(resumeAbsenceApresRechargement, { apresRechargement: true });
   planifierOiseau();
 }
 

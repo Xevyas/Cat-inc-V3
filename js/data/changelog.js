@@ -57,6 +57,41 @@
       })
   ]);
 
+  const release0036Categories = Object.freeze([
+    Object.freeze({
+      label: "New Features",
+      changes: Object.freeze([
+        "Mobile Exploration now lets players open a scouting reward summary directly from the map and claim all accumulated loot for the selected zone."
+      ])
+    }),
+    Object.freeze({
+      label: "Balancing",
+      changes: Object.freeze([])
+    }),
+    Object.freeze({
+      label: "Quality of Life",
+      changes: Object.freeze([
+        "Work All now uses the compact Tier and resource-icon view, leaving room for each worker's name and level.",
+        "Mobile Work manager cards now place Gathering and Processing side by side, with the remove control at the top right.",
+        "Gang activity labels now show only the mission type and map zone, such as Scouting: D1.",
+        "Job information popups open above their mobile action when space allows, keeping the training button accessible.",
+        "The AFK return flow refreshes the page once after the summary is prepared, so players receive the latest published version automatically.",
+        "Tab changes and live recipe progress now use lighter, coalesced updates on mobile while mini-games keep their foreground animation lifecycle."
+      ])
+    }),
+    Object.freeze({
+      label: "Bug Fixes",
+      changes: Object.freeze([
+        "The mobile map no longer shows faint grid lines caused by fractional artwork and fog-mask edges.",
+        "Map scouting indicators now display the total number of loot units available, using 99+ for larger pools."
+      ])
+    }),
+    Object.freeze({
+      label: "Other",
+      changes: Object.freeze([])
+    })
+  ]);
+
   const release0035Categories = Object.freeze([
     Object.freeze({
       label: "Quality of Life",
@@ -84,7 +119,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0035",
+    baseVersion: "0.0036",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -97,6 +132,11 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
+    Object.freeze({
+      version: "0.0036",
+      date: "2026-07-27",
+      categories: release0036Categories
+    }),
     Object.freeze({
       version: "0.0035",
       date: "2026-07-26",

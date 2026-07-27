@@ -1,0 +1,31 @@
+# Private working material and backups — never publish.
+Perso - pas pour github/
+img/Backupo/
+img/CHATGPT Instructions/
+img/To be converted/
+
+# Future art that is not used by the current game yet.
+img/Cat Souls/
+img/resources/Ancient Wood Plank_Final.png
+img/resources/Ancient Wood_Final.png
+img/resources/Copper Ingot_Final.png
+img/resources/Copper_Final.png
+img/resources/Dark Wood Plank_Final.png
+img/resources/Dark Wood_Final.png
+img/resources/Gold Ingot_Final.png
+img/resources/Gold_Final.png
+img/resources/Holy Wood Plank_Final.png
+img/resources/Holy Wood_Final.png
+img/resources/Rainbow Wood Plank_Final.png
+img/resources/Rainbow Wood_Final.png
+img/resources/Silver Ingot_Final.png
+img/resources/Silver_Final.png
+img/resources/Tin Ingot_Final.png
+img/resources/Tin_Final.png
+
+# Local test output and operating-system noise.
+ux-captures/
+.DS_Store
+Thumbs.db
+*.tmp
+*.log

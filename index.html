@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0112" />
+  <link rel="stylesheet" href="style.css?v=0.0114" />
 </head>
 <body>
 
@@ -377,7 +377,7 @@
     <div class="intro-boite release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
-        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0035 · July 26, 2026</h2>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0036 · July 27, 2026</h2>
         <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
           <div id="release-notes-list" class="release-notes-list"></div>
         <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
@@ -393,7 +393,7 @@
         <p class="intro-ligne intro-miaou">While you were away</p>
         <div id="absence-contenu" class="absence-contenu"></div>
       </div>
-      <button class="bouton-intro" onclick="fermerModal('ecran-absence')">Welcome back!</button>
+      <button class="bouton-intro" onclick="fermerResumeAbsenceEtRecharger()">Welcome back!</button>
     </div>
   </div>
 
@@ -923,7 +923,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0035</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0036</strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1004,6 +1004,21 @@
         <button class="explo-modal-close" aria-label="Close exploration selection" onclick="fermerModalExplo()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <div id="explo-modal-kitties"></div>
+    </div>
+  </div>
+
+  <!-- SCOUTING REWARD SUMMARY -->
+  <div id="scouting-reward-summary-modal" class="explo-modal scouting-reward-summary-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="scouting-reward-summary-title" style="display:none">
+    <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerPopupButinsScoutingZone()"></div>
+    <div class="explo-modal-panneau" role="document" tabindex="-1">
+      <div class="explo-modal-header">
+        <span class="explo-modal-titre" id="scouting-reward-summary-title">🎁 Scouting rewards</span>
+        <button class="explo-modal-close" aria-label="Close scouting reward summary" onclick="fermerPopupButinsScoutingZone()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
+      </div>
+      <div id="scouting-reward-summary-content"></div>
+      <div class="scouting-reward-summary-actions">
+        <button id="scouting-reward-summary-claim" type="button" class="explo-result-action explo-result-reward" onclick="recupererButinsScoutingZoneDepuisPopup()">🎁 Claim scouting rewards</button>
+      </div>
     </div>
   </div>
 
@@ -1103,13 +1118,13 @@
   <script src="js/cat-inc.js?v=0.0033"></script>
   <script src="js/data/config.js?v=0.0043"></script>
   <script src="js/data/content.js?v=0.0052"></script>
-  <script src="js/data/changelog.js?v=0.0035&build=1"></script>
+  <script src="js/data/changelog.js?v=0.0036&build=1"></script>
   <script src="js/core/state.js?v=0.0040"></script>
   <script src="js/core/save.js?v=0.0042"></script>
   <script src="js/core/production.js?v=0.0036"></script>
   <script src="js/ui/dom.js?v=0.0033"></script>
   <script src="js/ui/audio.js?v=0.0007"></script>
-  <script src="jeu.js?v=0.0127"></script>
+  <script src="jeu.js?v=0.0130"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

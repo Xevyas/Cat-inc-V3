@@ -37,3 +37,5 @@ Before publishing, follow [Documentation/RELEASE_VALIDATION.md](Documentation/RE
 - `img/`: runtime visual assets.
 - `tests/`: dependency-free Node.js regression suite.
 - `Documentation/`: design, maintenance and release notes.
+
+The rendering cadence and mobile performance rules are documented in [Documentation/rendering_and_performance.md](Documentation/rendering_and_performance.md). Read it before adding a recurring timer, animation or new screen.
