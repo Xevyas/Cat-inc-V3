@@ -6,13 +6,34 @@
   const GRID_HEIGHT = 30;
 
   const ITEM_TYPES = Object.freeze({
+    cardboardBox: Object.freeze({
+      id: "cardboardBox",
+      label: "Cardboard Box",
+      width: 2,
+      height: 1,
+      color: "cardboard",
+      category: "building",
+      rotatable: true,
+      asset: "img/Buildings/Camp%20Prototypes/Cardboard%20Box_Camp_TopDown_Game_v1.png?v=0.0038"
+    }),
+    jobCenter: Object.freeze({
+      id: "jobCenter",
+      label: "Job Center",
+      width: 5,
+      height: 6,
+      color: "job-center",
+      category: "building",
+      rotatable: true,
+      asset: "img/Buildings/Camp%20Prototypes/Job%20Center_Camp_TopDown_Game_v1.png?v=0.0038"
+    }),
     sawmill: Object.freeze({
       id: "sawmill",
       label: "Sawmill",
       width: 4,
       height: 4,
       color: "wood",
-      category: "building"
+      category: "building",
+      rotatable: true
     }),
     kitchen: Object.freeze({
       id: "kitchen",
@@ -20,7 +41,8 @@
       width: 3,
       height: 4,
       color: "food",
-      category: "building"
+      category: "building",
+      rotatable: true
     }),
     trainingCenter: Object.freeze({
       id: "trainingCenter",
@@ -28,7 +50,8 @@
       width: 4,
       height: 3,
       color: "training",
-      category: "building"
+      category: "building",
+      rotatable: true
     }),
     tree: Object.freeze({
       id: "tree",
@@ -62,14 +85,33 @@
     return Number.isFinite(number) ? Math.round(number) : NaN;
   }
 
+  function normaliserRotation(value) {
+    const angle = entier(value);
+    if (!Number.isFinite(angle)) return 0;
+    return ((Math.round(angle / 90) * 90) % 360 + 360) % 360;
+  }
+
+  function dimensionsType(typeOuId, rotation) {
+    const type = typeof typeOuId === "string" ? ITEM_TYPES[typeOuId] : typeOuId;
+    if (!type) return null;
+    const angle = type.rotatable ? normaliserRotation(rotation) : 0;
+    const permute = angle === 90 || angle === 270;
+    return {
+      width: permute ? type.height : type.width,
+      height: permute ? type.width : type.height,
+      rotation: angle
+    };
+  }
+
   function rectangleItem(item) {
     const type = item && ITEM_TYPES[item.type];
     if (!type) return null;
+    const dimensions = dimensionsType(type, item.rotation);
     return {
       x: entier(item.x),
       y: entier(item.y),
-      width: type.width,
-      height: type.height
+      width: dimensions.width,
+      height: dimensions.height
     };
   }
 
@@ -80,7 +122,7 @@
       && a.y + a.height > b.y;
   }
 
-  function testerPlacement(layout, typeId, x, y, ignoreUid) {
+  function testerPlacement(layout, typeId, x, y, ignoreUid, rotation) {
     const type = ITEM_TYPES[typeId];
     const positionX = entier(x);
     const positionY = entier(y);
@@ -89,11 +131,12 @@
       return { valide: false, raison: "Choose a grid position." };
     }
 
+    const dimensions = dimensionsType(type, rotation);
     const rectangle = {
       x: positionX,
       y: positionY,
-      width: type.width,
-      height: type.height
+      width: dimensions.width,
+      height: dimensions.height
     };
     if (
       rectangle.x < 0
@@ -132,8 +175,12 @@
       if (layout.some(function(existing) { return existing.uid === uid; })) return;
       const x = entier(item.x);
       const y = entier(item.y);
-      if (!testerPlacement(layout, item.type, x, y).valide) return;
-      layout.push({ uid: uid, type: item.type, x: x, y: y });
+      const type = ITEM_TYPES[item.type];
+      const rotation = type.rotatable ? normaliserRotation(item.rotation) : 0;
+      if (!testerPlacement(layout, item.type, x, y, null, rotation).valide) return;
+      const normalise = { uid: uid, type: item.type, x: x, y: y };
+      if (type.rotatable) normalise.rotation = rotation;
+      layout.push(normalise);
     });
     return layout;
   }
@@ -198,6 +245,8 @@
     GRID_WIDTH: GRID_WIDTH,
     GRID_HEIGHT: GRID_HEIGHT,
     ITEM_TYPES: ITEM_TYPES,
+    normaliserRotation: normaliserRotation,
+    dimensionsType: dimensionsType,
     rectangleItem: rectangleItem,
     rectanglesSeChevauchent: rectanglesSeChevauchent,
     testerPlacement: testerPlacement,

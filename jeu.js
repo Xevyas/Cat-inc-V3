@@ -10156,9 +10156,13 @@ document.getElementById("bouton-intro").addEventListener("click", function() {
 // 12e. BASE CAMP PLACEMENT PROTOTYPE (development mode only)
 // ════════════════════════════════════════════════════════════
 
-const CAMP_PROTOTYPE_STORAGE_KEY = "catIncCampPrototypeLayoutV1";
+const CAMP_PROTOTYPE_STORAGE_KEY = "catIncCampPrototypeLayoutV2";
+const CAMP_PROTOTYPE_LEGACY_STORAGE_KEY = "catIncCampPrototypeLayoutV1";
+const CAMP_PROTOTYPE_LONG_PRESS_MS = 450;
+const CAMP_PROTOTYPE_LONG_PRESS_MOVE_TOLERANCE = 8;
 let campPrototypeLayout = [];
 let campPrototypeTypeAPlacer = null;
+let campPrototypeRotationAPlacer = 0;
 let campPrototypeGommeRoutes = false;
 let campPrototypeSelectionUid = null;
 let campPrototypePointeur = null;
@@ -10167,6 +10171,7 @@ let campPrototypeInitialise = false;
 let campPrototypeModeEdition = false;
 let campPrototypeCategorieOuverte = null;
 let campPrototypeMessage = "Tap a camp element to interact with it.";
+let campPrototypeAppuiProlongeTimer = null;
 
 function typeCampPrototype(typeId) {
   return campPrototypeApi.ITEM_TYPES[typeId] || null;
@@ -10174,6 +10179,10 @@ function typeCampPrototype(typeId) {
 
 function itemCampPrototype(uid) {
   return campPrototypeLayout.find(function(item) { return item.uid === uid; }) || null;
+}
+
+function dimensionsCampPrototype(typeId, rotation) {
+  return campPrototypeApi.dimensionsType(typeId, rotation);
 }
 
 function definirMessageCampPrototype(message) {
@@ -10194,22 +10203,58 @@ function chargerCampPrototype() {
   campPrototypeLayout = [];
   if (!DEV_MODE || typeof localStorage === "undefined") return;
   try {
-    const brut = localStorage.getItem(CAMP_PROTOTYPE_STORAGE_KEY);
+    const courant = localStorage.getItem(CAMP_PROTOTYPE_STORAGE_KEY);
+    const legacy = courant === null
+      ? localStorage.getItem(CAMP_PROTOTYPE_LEGACY_STORAGE_KEY)
+      : null;
+    const brut = courant !== null ? courant : legacy;
     campPrototypeLayout = campPrototypeApi.normaliserLayout(brut ? JSON.parse(brut) : []);
+    if (legacy !== null) {
+      localStorage.setItem(CAMP_PROTOTYPE_STORAGE_KEY, JSON.stringify(campPrototypeLayout));
+      localStorage.removeItem(CAMP_PROTOTYPE_LEGACY_STORAGE_KEY);
+    }
   } catch (error) {
     campPrototypeLayout = [];
     try {
       localStorage.removeItem(CAMP_PROTOTYPE_STORAGE_KEY);
+      localStorage.removeItem(CAMP_PROTOTYPE_LEGACY_STORAGE_KEY);
     } catch (storageError) {}
   }
 }
 
-function appliquerCadreCampPrototype(element, type, x, y) {
+function appliquerCadreCampPrototype(element, type, x, y, rotation) {
   if (!element || !type) return;
+  const dimensions = dimensionsCampPrototype(type.id, rotation);
   element.style.left = (x / campPrototypeApi.GRID_WIDTH * 100) + "%";
   element.style.top = (y / campPrototypeApi.GRID_HEIGHT * 100) + "%";
-  element.style.width = (type.width / campPrototypeApi.GRID_WIDTH * 100) + "%";
-  element.style.height = (type.height / campPrototypeApi.GRID_HEIGHT * 100) + "%";
+  element.style.width = (dimensions.width / campPrototypeApi.GRID_WIDTH * 100) + "%";
+  element.style.height = (dimensions.height / campPrototypeApi.GRID_HEIGHT * 100) + "%";
+}
+
+function remplirItemCampPrototype(element, type, rotation) {
+  if (!element || !type) return;
+  const dimensions = dimensionsCampPrototype(type.id, rotation);
+  element.innerHTML = "";
+  if (type.asset) {
+    const image = document.createElement("img");
+    image.className = "camp-prototype-building-sprite";
+    image.src = type.asset;
+    image.alt = "";
+    image.draggable = false;
+    image.style.width = (type.width / dimensions.width * 100) + "%";
+    image.style.height = (type.height / dimensions.height * 100) + "%";
+    image.style.transform = "translate(-50%, -50%) rotate(" + dimensions.rotation + "deg)";
+    element.classList.add("camp-prototype-item-has-sprite");
+    element.appendChild(image);
+    const label = document.createElement("span");
+    label.className = "camp-prototype-accessible-label";
+    label.textContent = type.label;
+    element.appendChild(label);
+    return;
+  }
+  element.classList.remove("camp-prototype-item-has-sprite");
+  element.innerHTML = "<strong>" + type.label + "</strong><span>"
+    + dimensions.width + " × " + dimensions.height + "</span>";
 }
 
 function actualiserCommandesCampPrototype() {
@@ -10222,7 +10267,13 @@ function actualiserCommandesCampPrototype() {
     });
   }
   const supprimer = document.getElementById("camp-prototype-delete");
-  if (supprimer) supprimer.disabled = !itemCampPrototype(campPrototypeSelectionUid);
+  const selection = itemCampPrototype(campPrototypeSelectionUid);
+  if (supprimer) supprimer.disabled = !selection;
+  const tourner = document.getElementById("camp-prototype-rotate");
+  if (tourner) {
+    const typeSelectionne = selection && typeCampPrototype(selection.type);
+    tourner.disabled = !(typeSelectionne && typeSelectionne.rotatable);
+  }
   const gomme = document.getElementById("camp-prototype-road-erase");
   if (gomme) {
     gomme.classList.toggle("camp-prototype-action-active", campPrototypeGommeRoutes);
@@ -10238,6 +10289,7 @@ function actualiserCommandesCampPrototype() {
     bouton.setAttribute("aria-pressed", actif ? "true" : "false");
   });
   const panneau = document.getElementById("camp-prototype-panel");
+  const board = document.getElementById("camp-prototype-board");
   const menu = document.getElementById("camp-prototype-category-sheet");
   if (panneau) {
     if (campPrototypeModeEdition) {
@@ -10249,6 +10301,11 @@ function actualiserCommandesCampPrototype() {
       panneau.removeAttribute("aria-modal");
       panneau.removeAttribute("aria-label");
     }
+  }
+  if (board) {
+    const outilContinu = campPrototypeGommeRoutes
+      || Boolean(typeActif && typeActif.continuous);
+    board.classList.toggle("camp-prototype-tool-continuous", outilContinu);
   }
   document.body.classList.toggle("camp-prototype-editing", campPrototypeModeEdition);
   if (menu) menu.hidden = !campPrototypeModeEdition || !campPrototypeCategorieOuverte;
@@ -10273,10 +10330,14 @@ function rendrePaletteCampPrototype() {
     bouton.dataset.campType = typeId;
     bouton.className = "camp-prototype-palette-item camp-prototype-color-" + type.color;
     bouton.setAttribute("aria-pressed", "false");
-    bouton.innerHTML = "<strong>" + type.label + "</strong><span>"
-      + type.width + " × " + type.height + " cells</span>";
+    bouton.innerHTML = (type.asset
+      ? '<img class="camp-prototype-palette-sprite" src="' + type.asset + '" alt="" draggable="false">'
+      : "")
+      + '<span class="camp-prototype-palette-copy"><strong>' + type.label + "</strong><span>"
+      + type.width + " × " + type.height + " cells</span></span>";
     bouton.addEventListener("click", function() {
       campPrototypeTypeAPlacer = campPrototypeTypeAPlacer === typeId ? null : typeId;
+      campPrototypeRotationAPlacer = 0;
       campPrototypeGommeRoutes = false;
       campPrototypeSelectionUid = null;
       campPrototypeCategorieOuverte = null;
@@ -10323,6 +10384,7 @@ function entrerEditionCampPrototype() {
   campPrototypeModeEdition = true;
   campPrototypeCategorieOuverte = null;
   campPrototypeTypeAPlacer = null;
+  campPrototypeRotationAPlacer = 0;
   campPrototypeGommeRoutes = false;
   campPrototypeSelectionUid = null;
   campPrototypeMessage = "Choose Buildings, Decorations or Paths below.";
@@ -10338,9 +10400,11 @@ function quitterEditionCampPrototype(restaurerFocus) {
   campPrototypeModeEdition = false;
   campPrototypeCategorieOuverte = null;
   campPrototypeTypeAPlacer = null;
+  campPrototypeRotationAPlacer = 0;
   campPrototypeGommeRoutes = false;
   campPrototypeSelectionUid = null;
   campPrototypePointeur = null;
+  annulerAppuiProlongeCampPrototype();
   masquerApercuCampPrototype();
   campPrototypeMessage = "Tap a camp element to interact with it.";
   renduCampPrototype();
@@ -10358,6 +10422,7 @@ function rendreItemsCampPrototype() {
   campPrototypeLayout.forEach(function(item) {
     const type = typeCampPrototype(item.type);
     if (!type) return;
+    const dimensions = dimensionsCampPrototype(item.type, item.rotation);
     const bouton = document.createElement("button");
     bouton.type = "button";
     bouton.className = "camp-prototype-item camp-prototype-color-" + type.color;
@@ -10375,16 +10440,18 @@ function rendreItemsCampPrototype() {
     bouton.classList.toggle("camp-prototype-item-selected", selectionne);
     bouton.setAttribute("aria-pressed", selectionne ? "true" : "false");
     bouton.setAttribute("aria-label", type.label + ", column " + (item.x + 1)
-      + ", row " + (item.y + 1) + ", " + type.width + " by " + type.height + " cells");
-    bouton.innerHTML = type.category === "road"
-      ? '<i class="camp-prototype-road-center" aria-hidden="true"></i>'
+      + ", row " + (item.y + 1) + ", " + dimensions.width + " by "
+      + dimensions.height + " cells, rotation " + dimensions.rotation + " degrees");
+    if (type.category === "road") {
+      bouton.innerHTML = '<i class="camp-prototype-road-center" aria-hidden="true"></i>'
         + '<i class="camp-prototype-road-segment camp-prototype-road-segment-north" aria-hidden="true"></i>'
         + '<i class="camp-prototype-road-segment camp-prototype-road-segment-east" aria-hidden="true"></i>'
         + '<i class="camp-prototype-road-segment camp-prototype-road-segment-south" aria-hidden="true"></i>'
-        + '<i class="camp-prototype-road-segment camp-prototype-road-segment-west" aria-hidden="true"></i>'
-      : "<strong>" + type.label + "</strong><span>"
-        + type.width + " × " + type.height + "</span>";
-    appliquerCadreCampPrototype(bouton, type, item.x, item.y);
+        + '<i class="camp-prototype-road-segment camp-prototype-road-segment-west" aria-hidden="true"></i>';
+    } else {
+      remplirItemCampPrototype(bouton, type, item.rotation);
+    }
+    appliquerCadreCampPrototype(bouton, type, item.x, item.y, item.rotation);
     conteneur.appendChild(bouton);
   });
 }
@@ -10402,26 +10469,27 @@ function nouvelleUidCampPrototype() {
   return "camp-" + Date.now().toString(36) + "-" + campPrototypeUidCompteur.toString(36);
 }
 
-function positionCampDepuisPointeur(event, typeId, decalageX, decalageY) {
+function positionCampDepuisPointeur(event, typeId, decalageX, decalageY, rotation) {
   const board = document.getElementById("camp-prototype-board");
   const type = typeCampPrototype(typeId);
   if (!board || !type) return null;
+  const dimensions = dimensionsCampPrototype(typeId, rotation);
   const cadre = board.getBoundingClientRect();
   if (cadre.width <= 0 || cadre.height <= 0) return null;
   const colonne = Math.floor((event.clientX - cadre.left) / cadre.width * campPrototypeApi.GRID_WIDTH);
   const ligne = Math.floor((event.clientY - cadre.top) / cadre.height * campPrototypeApi.GRID_HEIGHT);
   const x = Math.max(0, Math.min(
-    campPrototypeApi.GRID_WIDTH - type.width,
-    colonne - (Number.isFinite(decalageX) ? decalageX : Math.floor(type.width / 2))
+    campPrototypeApi.GRID_WIDTH - dimensions.width,
+    colonne - (Number.isFinite(decalageX) ? decalageX : Math.floor(dimensions.width / 2))
   ));
   const y = Math.max(0, Math.min(
-    campPrototypeApi.GRID_HEIGHT - type.height,
-    ligne - (Number.isFinite(decalageY) ? decalageY : Math.floor(type.height / 2))
+    campPrototypeApi.GRID_HEIGHT - dimensions.height,
+    ligne - (Number.isFinite(decalageY) ? decalageY : Math.floor(dimensions.height / 2))
   ));
   return { x: x, y: y };
 }
 
-function afficherApercuCampPrototype(typeId, x, y, ignoreUid) {
+function afficherApercuCampPrototype(typeId, x, y, ignoreUid, rotation) {
   const ghost = document.getElementById("camp-prototype-ghost");
   const type = typeCampPrototype(typeId);
   if (!ghost || !type) return null;
@@ -10430,14 +10498,14 @@ function afficherApercuCampPrototype(typeId, x, y, ignoreUid) {
     typeId,
     x,
     y,
-    ignoreUid
+    ignoreUid,
+    rotation
   );
   ghost.hidden = false;
   ghost.className = "camp-prototype-item camp-prototype-ghost camp-prototype-color-"
     + type.color + (resultat.valide ? " camp-prototype-ghost-valid" : " camp-prototype-ghost-invalid");
-  ghost.innerHTML = "<strong>" + type.label + "</strong><span>"
-    + type.width + " × " + type.height + "</span>";
-  appliquerCadreCampPrototype(ghost, type, x, y);
+  remplirItemCampPrototype(ghost, type, rotation);
+  appliquerCadreCampPrototype(ghost, type, x, y, rotation);
   return resultat;
 }
 
@@ -10447,20 +10515,78 @@ function masquerApercuCampPrototype() {
   document.querySelectorAll(".camp-prototype-item-dragging").forEach(function(item) {
     item.classList.remove("camp-prototype-item-dragging");
   });
+  document.querySelectorAll(".camp-prototype-item-hold-pending").forEach(function(item) {
+    item.classList.remove("camp-prototype-item-hold-pending");
+  });
 }
 
-function placerItemCampPrototype(typeId, x, y) {
+function annulerAppuiProlongeCampPrototype() {
+  if (campPrototypeAppuiProlongeTimer !== null) {
+    clearTimeout(campPrototypeAppuiProlongeTimer);
+    campPrototypeAppuiProlongeTimer = null;
+  }
+  document.querySelectorAll(".camp-prototype-item-hold-pending").forEach(function(item) {
+    item.classList.remove("camp-prototype-item-hold-pending");
+  });
+}
+
+function selectionnerItemParAppuiProlongeCampPrototype(uid) {
+  const item = itemCampPrototype(uid);
+  const interaction = campPrototypePointeur;
+  if (
+    !campPrototypeModeEdition
+    || !item
+    || !interaction
+    || interaction.mode !== "hold-select"
+    || interaction.uid !== uid
+  ) return;
+  campPrototypeAppuiProlongeTimer = null;
+  campPrototypeSelectionUid = uid;
+  campPrototypeTypeAPlacer = null;
+  campPrototypeRotationAPlacer = 0;
+  campPrototypeGommeRoutes = false;
+  interaction.mode = "hold-selected";
+  const board = document.getElementById("camp-prototype-board");
+  if (board) {
+    board.querySelectorAll("[data-camp-uid]").forEach(function(element) {
+      const selectionne = element.dataset.campUid === uid;
+      element.classList.toggle("camp-prototype-item-selected", selectionne);
+      element.classList.remove("camp-prototype-item-hold-pending");
+      element.setAttribute("aria-pressed", selectionne ? "true" : "false");
+    });
+  }
+  actualiserCommandesCampPrototype();
+  definirMessageCampPrototype(typeCampPrototype(item.type).label
+    + " selected. Drag it to move it, use the arrow keys, or press R to rotate.");
+  if (navigator.vibrate) navigator.vibrate(20);
+}
+
+function placerItemCampPrototype(typeId, x, y, rotation) {
   if (!campPrototypeModeEdition) return false;
   const type = typeCampPrototype(typeId);
-  const resultat = campPrototypeApi.testerPlacement(campPrototypeLayout, typeId, x, y);
+  const angle = type && type.rotatable
+    ? campPrototypeApi.normaliserRotation(rotation)
+    : 0;
+  const resultat = campPrototypeApi.testerPlacement(
+    campPrototypeLayout,
+    typeId,
+    x,
+    y,
+    null,
+    angle
+  );
   if (!type || !resultat.valide) {
     definirMessageCampPrototype(resultat.raison || "This placeholder cannot be placed here.");
     return false;
   }
   const item = { uid: nouvelleUidCampPrototype(), type: typeId, x: x, y: y };
+  if (type.rotatable) item.rotation = angle;
   campPrototypeLayout.push(item);
   campPrototypeSelectionUid = type.continuous ? null : item.uid;
-  if (!type.continuous) campPrototypeTypeAPlacer = null;
+  if (!type.continuous) {
+    campPrototypeTypeAPlacer = null;
+    campPrototypeRotationAPlacer = 0;
+  }
   sauvegarderCampPrototype();
   definirMessageCampPrototype(type.label + " placed at column " + (x + 1) + ", row " + (y + 1) + ".");
   rendreItemsCampPrototype();
@@ -10520,6 +10646,7 @@ function basculerGommeRoutesCampPrototype() {
   if (!DEV_MODE || !campPrototypeModeEdition) return;
   campPrototypeGommeRoutes = !campPrototypeGommeRoutes;
   campPrototypeTypeAPlacer = null;
+  campPrototypeRotationAPlacer = 0;
   campPrototypeSelectionUid = null;
   campPrototypeCategorieOuverte = null;
   masquerApercuCampPrototype();
@@ -10534,7 +10661,14 @@ function deplacerItemCampPrototype(uid, x, y) {
   if (!campPrototypeModeEdition) return false;
   const item = itemCampPrototype(uid);
   if (!item) return false;
-  const resultat = campPrototypeApi.testerPlacement(campPrototypeLayout, item.type, x, y, uid);
+  const resultat = campPrototypeApi.testerPlacement(
+    campPrototypeLayout,
+    item.type,
+    x,
+    y,
+    uid,
+    item.rotation
+  );
   if (!resultat.valide) {
     definirMessageCampPrototype(resultat.raison);
     return false;
@@ -10553,11 +10687,40 @@ function selectionnerItemCampPrototype(uid) {
   if (!campPrototypeModeEdition) return;
   campPrototypeSelectionUid = itemCampPrototype(uid) ? uid : null;
   campPrototypeTypeAPlacer = null;
+  campPrototypeRotationAPlacer = 0;
   campPrototypeGommeRoutes = false;
   rendreItemsCampPrototype();
   actualiserCommandesCampPrototype();
   const item = itemCampPrototype(uid);
-  if (item) definirMessageCampPrototype(typeCampPrototype(item.type).label + " selected. Drag or use the arrow keys to move it.");
+  if (item) definirMessageCampPrototype(typeCampPrototype(item.type).label
+    + " selected. Drag it, use the arrow keys, or press R to rotate.");
+}
+
+function tournerSelectionCampPrototype() {
+  const item = itemCampPrototype(campPrototypeSelectionUid);
+  const type = item && typeCampPrototype(item.type);
+  if (!DEV_MODE || !campPrototypeModeEdition || !item || !type || !type.rotatable) return false;
+  const rotation = campPrototypeApi.normaliserRotation((item.rotation || 0) + 90);
+  const resultat = campPrototypeApi.testerPlacement(
+    campPrototypeLayout,
+    item.type,
+    item.x,
+    item.y,
+    item.uid,
+    rotation
+  );
+  if (!resultat.valide) {
+    definirMessageCampPrototype("Not enough free space to rotate " + type.label + " here.");
+    return false;
+  }
+  item.rotation = rotation;
+  sauvegarderCampPrototype();
+  const dimensions = dimensionsCampPrototype(item.type, rotation);
+  definirMessageCampPrototype(type.label + " rotated to " + rotation + "°. Footprint: "
+    + dimensions.width + " × " + dimensions.height + ".");
+  rendreItemsCampPrototype();
+  actualiserCommandesCampPrototype();
+  return true;
 }
 
 function supprimerSelectionCampPrototype() {
@@ -10579,6 +10742,7 @@ function reinitialiserCampPrototype() {
   campPrototypeLayout = [];
   campPrototypeSelectionUid = null;
   campPrototypeTypeAPlacer = null;
+  campPrototypeRotationAPlacer = 0;
   campPrototypeGommeRoutes = false;
   sauvegarderCampPrototype();
   masquerApercuCampPrototype();
@@ -10607,16 +10771,29 @@ function demarrerInteractionCampPrototype(event) {
     return;
   }
   if (campPrototypeTypeAPlacer) {
-    const position = positionCampDepuisPointeur(event, campPrototypeTypeAPlacer);
+    const position = positionCampDepuisPointeur(
+      event,
+      campPrototypeTypeAPlacer,
+      undefined,
+      undefined,
+      campPrototypeRotationAPlacer
+    );
     if (!position) return;
     campPrototypePointeur = {
       pointerId: event.pointerId,
       mode: "place",
       type: campPrototypeTypeAPlacer,
+      rotation: campPrototypeRotationAPlacer,
       x: position.x,
       y: position.y
     };
-    afficherApercuCampPrototype(campPrototypeTypeAPlacer, position.x, position.y);
+    afficherApercuCampPrototype(
+      campPrototypeTypeAPlacer,
+      position.x,
+      position.y,
+      null,
+      campPrototypeRotationAPlacer
+    );
     board.setPointerCapture(event.pointerId);
     event.preventDefault();
     return;
@@ -10627,15 +10804,34 @@ function demarrerInteractionCampPrototype(event) {
     const cadre = board.getBoundingClientRect();
     const colonne = Math.floor((event.clientX - cadre.left) / cadre.width * campPrototypeApi.GRID_WIDTH);
     const ligne = Math.floor((event.clientY - cadre.top) / cadre.height * campPrototypeApi.GRID_HEIGHT);
+    if (item.uid !== campPrototypeSelectionUid) {
+      annulerAppuiProlongeCampPrototype();
+      campPrototypePointeur = {
+        pointerId: event.pointerId,
+        mode: "hold-select",
+        uid: item.uid,
+        departX: event.clientX,
+        departY: event.clientY
+      };
+      cible.classList.add("camp-prototype-item-hold-pending");
+      campPrototypeAppuiProlongeTimer = setTimeout(function() {
+        selectionnerItemParAppuiProlongeCampPrototype(item.uid);
+      }, CAMP_PROTOTYPE_LONG_PRESS_MS);
+      board.setPointerCapture(event.pointerId);
+      return;
+    }
     campPrototypeSelectionUid = item.uid;
     campPrototypeTypeAPlacer = null;
+    campPrototypeRotationAPlacer = 0;
+    const dimensions = dimensionsCampPrototype(item.type, item.rotation);
     campPrototypePointeur = {
       pointerId: event.pointerId,
       mode: "move",
       uid: item.uid,
       type: item.type,
-      decalageX: Math.max(0, Math.min(typeCampPrototype(item.type).width - 1, colonne - item.x)),
-      decalageY: Math.max(0, Math.min(typeCampPrototype(item.type).height - 1, ligne - item.y)),
+      rotation: item.rotation || 0,
+      decalageX: Math.max(0, Math.min(dimensions.width - 1, colonne - item.x)),
+      decalageY: Math.max(0, Math.min(dimensions.height - 1, ligne - item.y)),
       x: item.x,
       y: item.y,
       departX: event.clientX,
@@ -10665,16 +10861,43 @@ function deplacerInteractionCampPrototype(event) {
   if (!DEV_MODE || !campPrototypeModeEdition) return;
   if (!campPrototypePointeur) {
     if (campPrototypeTypeAPlacer && event.pointerType === "mouse") {
-      const positionSurvol = positionCampDepuisPointeur(event, campPrototypeTypeAPlacer);
+      const positionSurvol = positionCampDepuisPointeur(
+        event,
+        campPrototypeTypeAPlacer,
+        undefined,
+        undefined,
+        campPrototypeRotationAPlacer
+      );
       if (positionSurvol) afficherApercuCampPrototype(
         campPrototypeTypeAPlacer,
         positionSurvol.x,
-        positionSurvol.y
+        positionSurvol.y,
+        null,
+        campPrototypeRotationAPlacer
       );
     }
     return;
   }
   if (event.pointerId !== campPrototypePointeur.pointerId) return;
+  if (campPrototypePointeur.mode === "hold-select") {
+    const distance = Math.hypot(
+      event.clientX - campPrototypePointeur.departX,
+      event.clientY - campPrototypePointeur.departY
+    );
+    if (distance > CAMP_PROTOTYPE_LONG_PRESS_MOVE_TOLERANCE) {
+      annulerAppuiProlongeCampPrototype();
+      const board = document.getElementById("camp-prototype-board");
+      if (board && board.hasPointerCapture(event.pointerId)) {
+        board.releasePointerCapture(event.pointerId);
+      }
+      campPrototypePointeur = null;
+    }
+    return;
+  }
+  if (campPrototypePointeur.mode === "hold-selected") {
+    event.preventDefault();
+    return;
+  }
   if (
     campPrototypePointeur.mode === "paint-road"
     || campPrototypePointeur.mode === "erase-road"
@@ -10700,7 +10923,8 @@ function deplacerInteractionCampPrototype(event) {
     event,
     campPrototypePointeur.type,
     campPrototypePointeur.mode === "move" ? campPrototypePointeur.decalageX : undefined,
-    campPrototypePointeur.mode === "move" ? campPrototypePointeur.decalageY : undefined
+    campPrototypePointeur.mode === "move" ? campPrototypePointeur.decalageY : undefined,
+    campPrototypePointeur.rotation
   );
   if (!position) return;
   campPrototypePointeur.x = position.x;
@@ -10714,7 +10938,8 @@ function deplacerInteractionCampPrototype(event) {
     campPrototypePointeur.type,
     position.x,
     position.y,
-    campPrototypePointeur.mode === "move" ? campPrototypePointeur.uid : null
+    campPrototypePointeur.mode === "move" ? campPrototypePointeur.uid : null,
+    campPrototypePointeur.rotation
   );
   event.preventDefault();
 }
@@ -10723,9 +10948,22 @@ function terminerInteractionCampPrototype(event, annulee) {
   if (!campPrototypePointeur || event.pointerId !== campPrototypePointeur.pointerId) return;
   const interaction = campPrototypePointeur;
   campPrototypePointeur = null;
+  annulerAppuiProlongeCampPrototype();
+  const board = document.getElementById("camp-prototype-board");
+  if (board && board.hasPointerCapture(event.pointerId)) board.releasePointerCapture(event.pointerId);
+  if (interaction.mode === "hold-select") return;
+  if (interaction.mode === "hold-selected") {
+    event.preventDefault();
+    return;
+  }
   if (!annulee) {
     if (interaction.mode === "place") {
-      placerItemCampPrototype(interaction.type, interaction.x, interaction.y);
+      placerItemCampPrototype(
+        interaction.type,
+        interaction.x,
+        interaction.y,
+        interaction.rotation
+      );
     } else if (interaction.mode === "paint-road" || interaction.mode === "erase-road") {
       definirMessageCampPrototype(interaction.mode === "paint-road"
         ? "Road tool active. Keep dragging to extend paths."
@@ -10737,8 +10975,6 @@ function terminerInteractionCampPrototype(event, annulee) {
     }
   }
   masquerApercuCampPrototype();
-  const board = document.getElementById("camp-prototype-board");
-  if (board && board.hasPointerCapture(event.pointerId)) board.releasePointerCapture(event.pointerId);
   event.preventDefault();
 }
 
@@ -10753,6 +10989,11 @@ function gererClavierCampPrototype(event) {
   if (!item) return;
   if (event.key === "Delete" || event.key === "Backspace") {
     supprimerSelectionCampPrototype();
+    event.preventDefault();
+    return;
+  }
+  if (event.key === "r" || event.key === "R") {
+    tournerSelectionCampPrototype();
     event.preventDefault();
     return;
   }

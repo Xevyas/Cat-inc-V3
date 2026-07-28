@@ -5,8 +5,8 @@
 The v0.0038 development Camp prototype and changelog-display update were validated on 2026-07-28 against the working copy `V3 - ChatGPT`.
 
 - Release status: published as game version v0.0038.
-- Interface references: CSS `0.0118`, JavaScript `0.0135`, Camp module `0.0002`, production module `0.0036`, save module `0.0042`, state module `0.0040`, audio module `0.0007`, config data `0.0043`, content data `0.0052`.
-- Automated suite: 181/181 tests passing.
+- Interface references: CSS `0.0120`, JavaScript `0.0137`, Camp module `0.0003`, production module `0.0036`, save module `0.0042`, state module `0.0040`, audio module `0.0007`, config data `0.0043`, content data `0.0052`.
+- Automated suite: 183/183 tests passing.
 - Browser load: no JavaScript exception and no missing runtime asset.
 
 This file is the release gate for future changes. A release is ready only when every automated gate passes and the relevant manual journeys have been replayed.
@@ -19,7 +19,7 @@ From the game folder, run:
 node --test --test-reporter=spec tests\*.test.js
 ```
 
-Required result: zero failed, cancelled, skipped or todo tests (181 tests currently).
+Required result: zero failed, cancelled, skipped or todo tests (183 tests currently).
 
 The suite currently validates:
 

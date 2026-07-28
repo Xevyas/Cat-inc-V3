@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0118" />
+  <link rel="stylesheet" href="style.css?v=0.0120" />
 </head>
 <body>
 
@@ -605,7 +605,10 @@
           <div id="camp-prototype-ghost" class="camp-prototype-item camp-prototype-ghost" aria-hidden="true" hidden></div>
         </div>
       </div>
-      <button id="camp-prototype-delete" class="camp-prototype-edit-only camp-prototype-delete" type="button" onclick="supprimerSelectionCampPrototype()" disabled>Remove selected</button>
+      <div class="camp-prototype-selection-actions camp-prototype-edit-only">
+        <button id="camp-prototype-rotate" class="camp-prototype-rotate" type="button" onclick="tournerSelectionCampPrototype()" disabled>Rotate 90°</button>
+        <button id="camp-prototype-delete" class="camp-prototype-delete" type="button" onclick="supprimerSelectionCampPrototype()" disabled>Remove selected</button>
+      </div>
       <section id="camp-prototype-category-sheet" class="camp-prototype-category-sheet camp-prototype-edit-only" aria-label="Camp item menu" hidden>
         <div class="camp-prototype-category-sheet-heading">
           <h3 id="camp-prototype-category-title">Buildings</h3>
@@ -627,7 +630,7 @@
           <span>Paths</span>
         </button>
       </nav>
-      <p class="camp-prototype-help camp-prototype-edit-only">Choose a category below. Drag placed buildings and decorations to move them; use Escape or Done to leave Edit mode.</p>
+      <p class="camp-prototype-help camp-prototype-edit-only">Choose a category below. Press and hold an item to select it, then drag it to move it; use Escape or Done to leave Edit mode.</p>
     </section>
   </div>
 
@@ -1176,8 +1179,8 @@
   <script src="js/core/production.js?v=0.0036"></script>
   <script src="js/ui/dom.js?v=0.0033"></script>
   <script src="js/ui/audio.js?v=0.0007"></script>
-  <script src="js/ui/camp.js?v=0.0002"></script>
-  <script src="jeu.js?v=0.0135"></script>
+  <script src="js/ui/camp.js?v=0.0003"></script>
+  <script src="jeu.js?v=0.0137"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

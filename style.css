@@ -2621,6 +2621,10 @@ body:not([data-dev-mode="true"]) .onglet-camp-dev { display: none !important; }
   gap: 8px;
 }
 .camp-prototype-palette-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   min-height: 52px;
   padding: 7px 10px;
   border: 2px solid color-mix(in srgb, var(--camp-prototype-color) 55%, #6b5542);
@@ -2632,6 +2636,17 @@ body:not([data-dev-mode="true"]) .onglet-camp-dev { display: none !important; }
 .camp-prototype-palette-item strong,
 .camp-prototype-palette-item span {
   display: block;
+}
+.camp-prototype-palette-copy {
+  min-width: 0;
+  margin-top: 0 !important;
+}
+.camp-prototype-palette-sprite {
+  width: 48px;
+  height: 38px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  pointer-events: none;
 }
 .camp-prototype-palette-item strong { font-size: .78rem; }
 .camp-prototype-palette-item span { margin-top: 2px; color: #705b49; font-size: .64rem; }
@@ -2678,6 +2693,13 @@ body:not([data-dev-mode="true"]) .onglet-camp-dev { display: none !important; }
 }
 body:not(.camp-prototype-editing) .camp-prototype-item {
   touch-action: manipulation;
+}
+body.camp-prototype-editing .camp-prototype-item:not(.camp-prototype-item-selected) {
+  touch-action: pan-y;
+}
+body.camp-prototype-editing .camp-prototype-board.camp-prototype-tool-continuous,
+body.camp-prototype-editing .camp-prototype-board.camp-prototype-tool-continuous .camp-prototype-item {
+  touch-action: none;
 }
 body:not(.camp-prototype-editing) .camp-prototype-grid {
   opacity: .55;
@@ -2731,6 +2753,38 @@ body:not(.camp-prototype-editing) .camp-prototype-grid {
   font-size: clamp(.42rem, 1.3vw, .6rem);
   opacity: .75;
 }
+.camp-prototype-item-has-sprite {
+  padding: 0;
+  overflow: visible;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+.camp-prototype-building-sprite {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  pointer-events: none;
+  transform-origin: center;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.camp-prototype-accessible-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px !important;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.camp-prototype-ghost .camp-prototype-building-sprite {
+  opacity: .55;
+}
 .camp-prototype-item:hover { filter: brightness(1.04); }
 .camp-prototype-item:active { transform: none; }
 .camp-prototype-item-selected {
@@ -2739,6 +2793,10 @@ body:not(.camp-prototype-editing) .camp-prototype-grid {
   box-shadow: 0 0 0 3px rgba(189, 62, 39, .28), 0 4px 8px rgba(53, 40, 28, .25);
 }
 .camp-prototype-item-dragging { opacity: .42; }
+.camp-prototype-item-hold-pending {
+  filter: brightness(1.06);
+  box-shadow: 0 0 0 3px rgba(189, 74, 8, .18), 0 4px 8px rgba(53, 40, 28, .25);
+}
 .camp-prototype-ghost {
   z-index: 5;
   pointer-events: none;
@@ -2755,6 +2813,8 @@ body:not(.camp-prototype-editing) .camp-prototype-grid {
   background: rgba(220, 84, 74, .62);
 }
 .camp-prototype-color-wood { --camp-prototype-color: #d2a16d; }
+.camp-prototype-color-cardboard { --camp-prototype-color: #d99757; }
+.camp-prototype-color-job-center { --camp-prototype-color: #d6aa65; }
 .camp-prototype-color-food { --camp-prototype-color: #89b971; }
 .camp-prototype-color-training { --camp-prototype-color: #83a8cc; }
 .camp-prototype-color-nature { --camp-prototype-color: #72a45f; }
@@ -2968,7 +3028,8 @@ body.camp-prototype-editing .camp-prototype-edit-copy {
   display: block;
 }
 body.camp-prototype-editing .camp-prototype-edit-done,
-body.camp-prototype-editing .camp-prototype-clear {
+body.camp-prototype-editing .camp-prototype-clear,
+body.camp-prototype-editing .camp-prototype-selection-actions {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2981,28 +3042,40 @@ body.camp-prototype-editing .camp-prototype-viewport {
   justify-content: center;
   overflow: auto;
   background: #d8ccb9;
+  -webkit-overflow-scrolling: touch;
 }
 body.camp-prototype-editing .camp-prototype-board {
   width: min(100%, calc((100dvh - 190px) * .666667), 700px);
   flex: 0 0 auto;
   margin: 0 auto;
-  touch-action: none;
+  touch-action: pan-y;
 }
-body.camp-prototype-editing .camp-prototype-delete {
+body.camp-prototype-editing .camp-prototype-selection-actions {
   position: absolute;
   right: max(16px, env(safe-area-inset-right));
   bottom: max(102px, calc(90px + env(safe-area-inset-bottom)));
   z-index: 3;
+  gap: 8px;
+}
+body.camp-prototype-editing .camp-prototype-rotate,
+body.camp-prototype-editing .camp-prototype-delete {
   min-height: 42px;
   padding: 8px 12px;
-  border: 1px solid #bc4738;
   border-radius: 999px;
-  background: #fff7f4;
-  color: #9b3024;
   font-weight: 900;
   box-shadow: 0 4px 14px rgba(74, 40, 31, .18);
 }
-body.camp-prototype-editing .camp-prototype-delete:disabled {
+body.camp-prototype-editing .camp-prototype-rotate {
+  border: 1px solid #bd6a2d;
+  background: #fff7ea;
+  color: #8d440f;
+}
+body.camp-prototype-editing .camp-prototype-delete {
+  border: 1px solid #bc4738;
+  background: #fff7f4;
+  color: #9b3024;
+}
+body.camp-prototype-editing .camp-prototype-selection-actions button:disabled {
   display: none;
 }
 body.camp-prototype-editing .camp-prototype-category-sheet {
@@ -8272,7 +8345,7 @@ body.camp-prototype-editing .camp-prototype-help {
     padding: 6px 12px;
   }
   body.camp-prototype-editing .camp-prototype-board {
-    width: min(100%, calc((100dvh - 145px) * .666667));
+    width: 100%;
     border-radius: 6px;
   }
   body.camp-prototype-editing .camp-prototype-category-sheet {
@@ -8282,9 +8355,13 @@ body.camp-prototype-editing .camp-prototype-help {
     padding: 10px;
     border-radius: 14px;
   }
-  body.camp-prototype-editing .camp-prototype-delete {
+  body.camp-prototype-editing .camp-prototype-selection-actions {
     right: max(10px, env(safe-area-inset-right));
     bottom: max(88px, calc(78px + env(safe-area-inset-bottom)));
+    gap: 6px;
+  }
+  body.camp-prototype-editing .camp-prototype-rotate,
+  body.camp-prototype-editing .camp-prototype-delete {
     min-height: 38px;
     padding: 6px 10px;
     font-size: .68rem;

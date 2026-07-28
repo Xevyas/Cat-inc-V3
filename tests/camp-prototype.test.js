@@ -35,8 +35,18 @@ test('Camp prototype exposes a 20 by 30 collision-safe placement model', functio
   assert.equal(Object.isFrozen(camp.ITEM_TYPES), true);
   assert.deepEqual(
     Array.from(Object.keys(camp.ITEM_TYPES)),
-    ['sawmill', 'kitchen', 'trainingCenter', 'tree', 'catToy', 'road']
+    ['cardboardBox', 'jobCenter', 'sawmill', 'kitchen', 'trainingCenter', 'tree', 'catToy', 'road']
   );
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(camp.dimensionsType('cardboardBox', 90))),
+    { width: 1, height: 2, rotation: 90 }
+  );
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(camp.dimensionsType('jobCenter', 270))),
+    { width: 6, height: 5, rotation: 270 }
+  );
+  assert.equal(camp.testerPlacement([], 'jobCenter', 15, 24, null, 0).valide, true);
+  assert.equal(camp.testerPlacement([], 'jobCenter', 15, 25, null, 90).valide, false);
 
   const layout = [{ uid: 'one', type: 'sawmill', x: 2, y: 3 }];
   assert.equal(camp.testerPlacement(layout, 'kitchen', 8, 3).valide, true);
@@ -72,16 +82,24 @@ test('Camp prototype normalizes persisted layouts without overlaps or invalid it
     { uid: 'overlap', type: 'kitchen', x: 2, y: 2 },
     { uid: 'outside', type: 'trainingCenter', x: 19, y: 29 },
     { uid: 'unknown', type: 'pond', x: 10, y: 10 },
-    { uid: 'second', type: 'kitchen', x: 10, y: 10 }
+    { uid: 'second', type: 'kitchen', x: 10, y: 10 },
+    { uid: 'rotated', type: 'jobCenter', x: 14, y: 20, rotation: 90 }
   ]);
   assert.deepEqual(
     Array.from(normalized, function(item) { return item.uid; }),
-    ['valid', 'second']
+    ['valid', 'second', 'rotated']
+  );
+  assert.equal(normalized[0].rotation, 0);
+  assert.equal(normalized[2].rotation, 90);
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(camp.rectangleItem(normalized[2]))),
+    { x: 14, y: 20, width: 6, height: 5 }
   );
 });
 
 test('Camp prototype uses pointer controls and separate debug-only persistence', function() {
-  assert.match(gameSource, /const CAMP_PROTOTYPE_STORAGE_KEY = "catIncCampPrototypeLayoutV1"/);
+  assert.match(gameSource, /const CAMP_PROTOTYPE_STORAGE_KEY = "catIncCampPrototypeLayoutV2"/);
+  assert.match(gameSource, /const CAMP_PROTOTYPE_LEGACY_STORAGE_KEY = "catIncCampPrototypeLayoutV1"/);
   assert.match(gameSource, /localStorage\.setItem\(CAMP_PROTOTYPE_STORAGE_KEY, JSON\.stringify\(campPrototypeLayout\)\)/);
   assert.match(gameSource, /pointerdown[\s\S]*?pointermove[\s\S]*?pointerup[\s\S]*?pointercancel/);
   assert.match(gameSource, /mode: effacer \? "erase-road" : "paint-road"/);
@@ -90,6 +108,29 @@ test('Camp prototype uses pointer controls and separate debug-only persistence',
   assert.match(gameSource, /function gererClavierCampPrototype\(event\)[\s\S]*?ArrowLeft[\s\S]*?ArrowRight[\s\S]*?ArrowUp[\s\S]*?ArrowDown/);
   assert.match(cssSource, /\.camp-prototype-board\s*\{[\s\S]*?aspect-ratio:\s*2\s*\/\s*3/);
   assert.match(cssSource, /\.camp-prototype-grid\s*\{[\s\S]*?background-size:\s*5% 3\.333333%/);
+});
+
+test('Camp uses the optimized Cardboard Box and Job Center sprites with rotatable footprints', function() {
+  assert.match(campSource, /cardboardBox:[\s\S]*?width:\s*2[\s\S]*?height:\s*1[\s\S]*?Cardboard%20Box_Camp_TopDown_Game_v1\.png/);
+  assert.match(campSource, /jobCenter:[\s\S]*?width:\s*5[\s\S]*?height:\s*6[\s\S]*?Job%20Center_Camp_TopDown_Game_v1\.png/);
+  assert.equal(fs.existsSync(path.join(
+    root,
+    'img',
+    'Buildings',
+    'Camp Prototypes',
+    'Cardboard Box_Camp_TopDown_Game_v1.png'
+  )), true);
+  assert.equal(fs.existsSync(path.join(
+    root,
+    'img',
+    'Buildings',
+    'Camp Prototypes',
+    'Job Center_Camp_TopDown_Game_v1.png'
+  )), true);
+  assert.match(htmlSource, /id="camp-prototype-rotate"[\s\S]*?tournerSelectionCampPrototype\(\)/);
+  assert.match(gameSource, /function tournerSelectionCampPrototype\(\)[\s\S]*?normaliserRotation[\s\S]*?testerPlacement[\s\S]*?item\.rotation = rotation/);
+  assert.match(gameSource, /function remplirItemCampPrototype\([\s\S]*?camp-prototype-building-sprite[\s\S]*?rotate\(/);
+  assert.match(cssSource, /\.camp-prototype-building-sprite\s*\{[\s\S]*?object-fit:\s*contain[\s\S]*?pointer-events:\s*none/);
 });
 
 test('Camp layout editing is isolated in a full-screen mode with category menus', function() {
@@ -106,4 +147,17 @@ test('Camp layout editing is isolated in a full-screen mode with category menus'
   assert.match(cssSource, /body\.camp-prototype-editing \.camp-prototype-panel\s*\{[\s\S]*?position:\s*fixed[\s\S]*?inset:\s*0[\s\S]*?height:\s*100dvh/);
   assert.match(cssSource, /body\.camp-prototype-editing \.camp-prototype-edit-dock\s*\{[\s\S]*?position:\s*absolute[\s\S]*?bottom:/);
   assert.match(cssSource, /\.camp-prototype-edit-dock > button\s*\{[\s\S]*?width:\s*70px[\s\S]*?height:\s*70px[\s\S]*?border-radius:\s*50%/);
+});
+
+test('Camp edit navigation keeps vertical scrolling and requires a long press to select items', function() {
+  assert.match(gameSource, /const CAMP_PROTOTYPE_LONG_PRESS_MS = 450/);
+  assert.match(gameSource, /const CAMP_PROTOTYPE_LONG_PRESS_MOVE_TOLERANCE = 8/);
+  assert.match(gameSource, /mode: "hold-select"[\s\S]*?setTimeout\(function\(\)[\s\S]*?selectionnerItemParAppuiProlongeCampPrototype\(item\.uid\)[\s\S]*?CAMP_PROTOTYPE_LONG_PRESS_MS/);
+  assert.match(gameSource, /function selectionnerItemParAppuiProlongeCampPrototype\(uid\)[\s\S]*?interaction\.mode = "hold-selected"[\s\S]*?selected\. Drag it to move it/);
+  assert.match(gameSource, /campPrototypePointeur\.mode === "hold-select"[\s\S]*?Math\.hypot[\s\S]*?CAMP_PROTOTYPE_LONG_PRESS_MOVE_TOLERANCE[\s\S]*?annulerAppuiProlongeCampPrototype\(\)/);
+  assert.match(gameSource, /if \(item\.uid !== campPrototypeSelectionUid\)[\s\S]*?mode: "hold-select"[\s\S]*?return;[\s\S]*?campPrototypeSelectionUid = item\.uid/);
+  assert.match(cssSource, /body\.camp-prototype-editing \.camp-prototype-item:not\(\.camp-prototype-item-selected\)\s*\{\s*touch-action:\s*pan-y/);
+  assert.match(cssSource, /body\.camp-prototype-editing \.camp-prototype-board\.camp-prototype-tool-continuous[\s\S]*?touch-action:\s*none/);
+  assert.match(cssSource, /body\.camp-prototype-editing \.camp-prototype-board\s*\{[\s\S]*?touch-action:\s*pan-y/);
+  assert.match(cssSource, /@media \(max-width: 768px\)[\s\S]*?body\.camp-prototype-editing \.camp-prototype-board\s*\{[\s\S]*?width:\s*100%/);
 });
