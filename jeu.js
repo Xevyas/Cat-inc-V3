@@ -10164,7 +10164,9 @@ let campPrototypeSelectionUid = null;
 let campPrototypePointeur = null;
 let campPrototypeUidCompteur = 0;
 let campPrototypeInitialise = false;
-let campPrototypeMessage = "Choose a camp item or road tool.";
+let campPrototypeModeEdition = false;
+let campPrototypeCategorieOuverte = null;
+let campPrototypeMessage = "Tap a camp element to interact with it.";
 
 function typeCampPrototype(typeId) {
   return campPrototypeApi.ITEM_TYPES[typeId] || null;
@@ -10226,54 +10228,127 @@ function actualiserCommandesCampPrototype() {
     gomme.classList.toggle("camp-prototype-action-active", campPrototypeGommeRoutes);
     gomme.setAttribute("aria-pressed", campPrototypeGommeRoutes ? "true" : "false");
   }
+  const typeActif = typeCampPrototype(campPrototypeTypeAPlacer);
+  document.querySelectorAll("[data-camp-category]").forEach(function(bouton) {
+    const categorie = bouton.dataset.campCategory;
+    const actif = campPrototypeCategorieOuverte === categorie
+      || (typeActif && typeActif.category === categorie)
+      || (categorie === "road" && campPrototypeGommeRoutes);
+    bouton.classList.toggle("camp-prototype-category-active", Boolean(actif));
+    bouton.setAttribute("aria-pressed", actif ? "true" : "false");
+  });
+  const panneau = document.getElementById("camp-prototype-panel");
+  const menu = document.getElementById("camp-prototype-category-sheet");
+  if (panneau) {
+    if (campPrototypeModeEdition) {
+      panneau.setAttribute("role", "dialog");
+      panneau.setAttribute("aria-modal", "true");
+      panneau.setAttribute("aria-label", "Edit Base Camp");
+    } else {
+      panneau.removeAttribute("role");
+      panneau.removeAttribute("aria-modal");
+      panneau.removeAttribute("aria-label");
+    }
+  }
+  document.body.classList.toggle("camp-prototype-editing", campPrototypeModeEdition);
+  if (menu) menu.hidden = !campPrototypeModeEdition || !campPrototypeCategorieOuverte;
 }
 
 function rendrePaletteCampPrototype() {
   const palette = document.getElementById("camp-prototype-palette");
-  if (!palette || palette.childElementCount > 0) {
+  if (!palette) return;
+  palette.innerHTML = "";
+  const categorie = campPrototypeCategorieOuverte;
+  if (!campPrototypeModeEdition || !categorie) {
     actualiserCommandesCampPrototype();
     return;
   }
-  [
-    { id: "building", label: "Buildings" },
-    { id: "decoration", label: "Decorations" },
-    { id: "road", label: "Paths" }
-  ].forEach(function(categorie) {
-    const groupe = document.createElement("section");
-    groupe.className = "camp-prototype-palette-group";
-    const titre = document.createElement("h3");
-    titre.textContent = categorie.label;
-    groupe.appendChild(titre);
-    const actions = document.createElement("div");
-    actions.className = "camp-prototype-palette-group-items";
-    Object.keys(campPrototypeApi.ITEM_TYPES).forEach(function(typeId) {
-      const type = typeCampPrototype(typeId);
-      if (type.category !== categorie.id) return;
-      const bouton = document.createElement("button");
-      bouton.type = "button";
-      bouton.dataset.campType = typeId;
-      bouton.className = "camp-prototype-palette-item camp-prototype-color-" + type.color;
-      bouton.setAttribute("aria-pressed", "false");
-      bouton.innerHTML = "<strong>" + type.label + "</strong><span>"
-        + type.width + " × " + type.height + " cells</span>";
-      bouton.addEventListener("click", function() {
-        campPrototypeTypeAPlacer = campPrototypeTypeAPlacer === typeId ? null : typeId;
-        campPrototypeGommeRoutes = false;
-        campPrototypeSelectionUid = null;
-        masquerApercuCampPrototype();
-        actualiserCommandesCampPrototype();
-        definirMessageCampPrototype(campPrototypeTypeAPlacer
-          ? (type.continuous
-              ? "Drag across the grid to paint roads."
-              : "Tap the grid to place " + type.label + ".")
-          : "Placement cancelled.");
-      });
-      actions.appendChild(bouton);
+  const labels = { building: "Buildings", decoration: "Decorations", road: "Paths" };
+  ecrireTexte(document.getElementById("camp-prototype-category-title"), labels[categorie] || "Camp items");
+  Object.keys(campPrototypeApi.ITEM_TYPES).forEach(function(typeId) {
+    const type = typeCampPrototype(typeId);
+    if (type.category !== categorie) return;
+    const bouton = document.createElement("button");
+    bouton.type = "button";
+    bouton.dataset.campType = typeId;
+    bouton.className = "camp-prototype-palette-item camp-prototype-color-" + type.color;
+    bouton.setAttribute("aria-pressed", "false");
+    bouton.innerHTML = "<strong>" + type.label + "</strong><span>"
+      + type.width + " × " + type.height + " cells</span>";
+    bouton.addEventListener("click", function() {
+      campPrototypeTypeAPlacer = campPrototypeTypeAPlacer === typeId ? null : typeId;
+      campPrototypeGommeRoutes = false;
+      campPrototypeSelectionUid = null;
+      campPrototypeCategorieOuverte = null;
+      masquerApercuCampPrototype();
+      rendreItemsCampPrototype();
+      actualiserCommandesCampPrototype();
+      definirMessageCampPrototype(campPrototypeTypeAPlacer
+        ? (type.continuous
+            ? "Drag across the grid to paint roads."
+            : "Tap the grid to place " + type.label + ".")
+        : "Placement cancelled.");
     });
-    groupe.appendChild(actions);
-    palette.appendChild(groupe);
+    palette.appendChild(bouton);
   });
+  if (categorie === "road") {
+    const gomme = document.createElement("button");
+    gomme.id = "camp-prototype-road-erase";
+    gomme.type = "button";
+    gomme.className = "camp-prototype-palette-item camp-prototype-road-eraser";
+    gomme.setAttribute("aria-pressed", "false");
+    gomme.innerHTML = "<strong>Road eraser</strong><span>Drag over paths to remove them</span>";
+    gomme.addEventListener("click", basculerGommeRoutesCampPrototype);
+    palette.appendChild(gomme);
+  }
   actualiserCommandesCampPrototype();
+}
+
+function ouvrirCategorieCampPrototype(categorie) {
+  if (!DEV_MODE || !campPrototypeModeEdition) return;
+  if (!["building", "decoration", "road"].includes(categorie)) return;
+  campPrototypeCategorieOuverte = campPrototypeCategorieOuverte === categorie ? null : categorie;
+  rendrePaletteCampPrototype();
+  actualiserCommandesCampPrototype();
+}
+
+function fermerCategorieCampPrototype() {
+  campPrototypeCategorieOuverte = null;
+  rendrePaletteCampPrototype();
+  actualiserCommandesCampPrototype();
+}
+
+function entrerEditionCampPrototype() {
+  if (!DEV_MODE || campPrototypeModeEdition) return;
+  campPrototypeModeEdition = true;
+  campPrototypeCategorieOuverte = null;
+  campPrototypeTypeAPlacer = null;
+  campPrototypeGommeRoutes = false;
+  campPrototypeSelectionUid = null;
+  campPrototypeMessage = "Choose Buildings, Decorations or Paths below.";
+  renduCampPrototype();
+  requestAnimationFrame(function() {
+    const done = document.getElementById("camp-prototype-edit-done");
+    if (done) done.focus();
+  });
+}
+
+function quitterEditionCampPrototype(restaurerFocus) {
+  if (!campPrototypeModeEdition) return;
+  campPrototypeModeEdition = false;
+  campPrototypeCategorieOuverte = null;
+  campPrototypeTypeAPlacer = null;
+  campPrototypeGommeRoutes = false;
+  campPrototypeSelectionUid = null;
+  campPrototypePointeur = null;
+  masquerApercuCampPrototype();
+  campPrototypeMessage = "Tap a camp element to interact with it.";
+  renduCampPrototype();
+  if (restaurerFocus === false) return;
+  requestAnimationFrame(function() {
+    const edit = document.getElementById("camp-prototype-edit-open");
+    if (edit) edit.focus();
+  });
 }
 
 function rendreItemsCampPrototype() {
@@ -10296,8 +10371,9 @@ function rendreItemsCampPrototype() {
       });
       bouton.dataset.roadConnections = String(connexions.mask);
     }
-    bouton.classList.toggle("camp-prototype-item-selected", item.uid === campPrototypeSelectionUid);
-    bouton.setAttribute("aria-pressed", item.uid === campPrototypeSelectionUid ? "true" : "false");
+    const selectionne = campPrototypeModeEdition && item.uid === campPrototypeSelectionUid;
+    bouton.classList.toggle("camp-prototype-item-selected", selectionne);
+    bouton.setAttribute("aria-pressed", selectionne ? "true" : "false");
     bouton.setAttribute("aria-label", type.label + ", column " + (item.x + 1)
       + ", row " + (item.y + 1) + ", " + type.width + " by " + type.height + " cells");
     bouton.innerHTML = type.category === "road"
@@ -10374,6 +10450,7 @@ function masquerApercuCampPrototype() {
 }
 
 function placerItemCampPrototype(typeId, x, y) {
+  if (!campPrototypeModeEdition) return false;
   const type = typeCampPrototype(typeId);
   const resultat = campPrototypeApi.testerPlacement(campPrototypeLayout, typeId, x, y);
   if (!type || !resultat.valide) {
@@ -10392,6 +10469,7 @@ function placerItemCampPrototype(typeId, x, y) {
 }
 
 function modifierRoutesCampPrototype(cellules, effacer) {
+  if (!campPrototypeModeEdition) return false;
   const uniques = [];
   const dejaVues = new Set();
   (cellules || []).forEach(function(cellule) {
@@ -10439,10 +10517,11 @@ function modifierRoutesCampPrototype(cellules, effacer) {
 }
 
 function basculerGommeRoutesCampPrototype() {
-  if (!DEV_MODE) return;
+  if (!DEV_MODE || !campPrototypeModeEdition) return;
   campPrototypeGommeRoutes = !campPrototypeGommeRoutes;
   campPrototypeTypeAPlacer = null;
   campPrototypeSelectionUid = null;
+  campPrototypeCategorieOuverte = null;
   masquerApercuCampPrototype();
   rendreItemsCampPrototype();
   actualiserCommandesCampPrototype();
@@ -10452,6 +10531,7 @@ function basculerGommeRoutesCampPrototype() {
 }
 
 function deplacerItemCampPrototype(uid, x, y) {
+  if (!campPrototypeModeEdition) return false;
   const item = itemCampPrototype(uid);
   if (!item) return false;
   const resultat = campPrototypeApi.testerPlacement(campPrototypeLayout, item.type, x, y, uid);
@@ -10470,6 +10550,7 @@ function deplacerItemCampPrototype(uid, x, y) {
 }
 
 function selectionnerItemCampPrototype(uid) {
+  if (!campPrototypeModeEdition) return;
   campPrototypeSelectionUid = itemCampPrototype(uid) ? uid : null;
   campPrototypeTypeAPlacer = null;
   campPrototypeGommeRoutes = false;
@@ -10481,7 +10562,7 @@ function selectionnerItemCampPrototype(uid) {
 
 function supprimerSelectionCampPrototype() {
   const item = itemCampPrototype(campPrototypeSelectionUid);
-  if (!DEV_MODE || !item) return;
+  if (!DEV_MODE || !campPrototypeModeEdition || !item) return;
   const label = typeCampPrototype(item.type).label;
   campPrototypeLayout = campPrototypeLayout.filter(function(candidate) {
     return candidate.uid !== item.uid;
@@ -10494,7 +10575,7 @@ function supprimerSelectionCampPrototype() {
 }
 
 function reinitialiserCampPrototype() {
-  if (!DEV_MODE) return;
+  if (!DEV_MODE || !campPrototypeModeEdition) return;
   campPrototypeLayout = [];
   campPrototypeSelectionUid = null;
   campPrototypeTypeAPlacer = null;
@@ -10506,7 +10587,7 @@ function reinitialiserCampPrototype() {
 }
 
 function demarrerInteractionCampPrototype(event) {
-  if (!DEV_MODE || event.button > 0) return;
+  if (!DEV_MODE || !campPrototypeModeEdition || event.button > 0) return;
   const board = document.getElementById("camp-prototype-board");
   const cible = event.target.closest("[data-camp-uid]");
   if (campPrototypeGommeRoutes || campPrototypeTypeAPlacer === "road") {
@@ -10581,7 +10662,7 @@ function demarrerInteractionCampPrototype(event) {
 }
 
 function deplacerInteractionCampPrototype(event) {
-  if (!DEV_MODE) return;
+  if (!DEV_MODE || !campPrototypeModeEdition) return;
   if (!campPrototypePointeur) {
     if (campPrototypeTypeAPlacer && event.pointerType === "mouse") {
       const positionSurvol = positionCampDepuisPointeur(event, campPrototypeTypeAPlacer);
@@ -10662,14 +10743,10 @@ function terminerInteractionCampPrototype(event, annulee) {
 }
 
 function gererClavierCampPrototype(event) {
+  if (!campPrototypeModeEdition) return;
   const item = itemCampPrototype(campPrototypeSelectionUid);
   if (event.key === "Escape") {
-    campPrototypeTypeAPlacer = null;
-    campPrototypeGommeRoutes = false;
-    campPrototypeSelectionUid = null;
-    masquerApercuCampPrototype();
-    renduCampPrototype();
-    definirMessageCampPrototype("Selection cancelled.");
+    quitterEditionCampPrototype();
     event.preventDefault();
     return;
   }
@@ -10716,7 +10793,44 @@ function initialiserCampPrototype() {
   board.addEventListener("keydown", gererClavierCampPrototype);
   board.addEventListener("click", function(event) {
     const cible = event.target.closest("[data-camp-uid]");
-    if (cible && event.detail === 0) selectionnerItemCampPrototype(cible.dataset.campUid);
+    if (!cible) return;
+    if (campPrototypeModeEdition && event.detail === 0) {
+      selectionnerItemCampPrototype(cible.dataset.campUid);
+      return;
+    }
+    if (!campPrototypeModeEdition) {
+      const item = itemCampPrototype(cible.dataset.campUid);
+      const type = item && typeCampPrototype(item.type);
+      if (type) definirMessageCampPrototype(type.label + " selected. Its gameplay interaction will be connected later.");
+    }
+  });
+  document.addEventListener("keydown", function(event) {
+    if (!campPrototypeModeEdition) return;
+    const panneau = document.getElementById("camp-prototype-panel");
+    if (event.key === "Escape") {
+      quitterEditionCampPrototype();
+      event.preventDefault();
+      return;
+    }
+    if (event.key !== "Tab" || !panneau) return;
+    const focusables = Array.from(panneau.querySelectorAll(
+      'button:not([disabled]):not([hidden]), [tabindex="0"]'
+    )).filter(function(element) {
+      return element.getClientRects().length > 0;
+    });
+    if (focusables.length === 0) return;
+    const premier = focusables[0];
+    const dernier = focusables[focusables.length - 1];
+    if (!panneau.contains(document.activeElement)) {
+      premier.focus();
+      event.preventDefault();
+    } else if (event.shiftKey && document.activeElement === premier) {
+      dernier.focus();
+      event.preventDefault();
+    } else if (!event.shiftKey && document.activeElement === dernier) {
+      premier.focus();
+      event.preventDefault();
+    }
   });
   renduCampPrototype();
 }
@@ -10729,6 +10843,7 @@ function changerOnglet(id) {
   if (!IDS_ONGLETS.includes(id)) return;
   if (id === "camp" && !DEV_MODE) return;
   if (id === "logs" && etat.chatons < 3) return;
+  if (id !== "camp" && campPrototypeModeEdition) quitterEditionCampPrototype(false);
   const estMobile = window.matchMedia("(max-width: 768px)").matches;
   // On mobile, the Gang tab is the list landing view. Returning to it from
   // another tab must not reopen the kitty profile that was previously open.

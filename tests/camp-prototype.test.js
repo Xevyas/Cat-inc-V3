@@ -91,3 +91,19 @@ test('Camp prototype uses pointer controls and separate debug-only persistence',
   assert.match(cssSource, /\.camp-prototype-board\s*\{[\s\S]*?aspect-ratio:\s*2\s*\/\s*3/);
   assert.match(cssSource, /\.camp-prototype-grid\s*\{[\s\S]*?background-size:\s*5% 3\.333333%/);
 });
+
+test('Camp layout editing is isolated in a full-screen mode with category menus', function() {
+  assert.match(htmlSource, /id="camp-prototype-edit-open"[\s\S]*?entrerEditionCampPrototype\(\)/);
+  assert.match(htmlSource, /id="camp-prototype-edit-done"[\s\S]*?quitterEditionCampPrototype\(\)/);
+  assert.equal((htmlSource.match(/data-camp-category="(?:building|decoration|road)"/g) || []).length, 3);
+  assert.match(htmlSource, /id="camp-prototype-category-sheet"[^>]*hidden/);
+  assert.match(gameSource, /let campPrototypeModeEdition = false/);
+  assert.match(gameSource, /function entrerEditionCampPrototype\(\)[\s\S]*?campPrototypeModeEdition = true[\s\S]*?renduCampPrototype\(\)/);
+  assert.match(gameSource, /function quitterEditionCampPrototype\(restaurerFocus\)[\s\S]*?campPrototypeModeEdition = false[\s\S]*?campPrototypeTypeAPlacer = null[\s\S]*?campPrototypeGommeRoutes = false/);
+  assert.match(gameSource, /function demarrerInteractionCampPrototype\(event\)\s*\{\s*if \(!DEV_MODE \|\| !campPrototypeModeEdition/);
+  assert.match(gameSource, /function ouvrirCategorieCampPrototype\(categorie\)[\s\S]*?\["building", "decoration", "road"\]/);
+  assert.match(gameSource, /Its gameplay interaction will be connected later/);
+  assert.match(cssSource, /body\.camp-prototype-editing \.camp-prototype-panel\s*\{[\s\S]*?position:\s*fixed[\s\S]*?inset:\s*0[\s\S]*?height:\s*100dvh/);
+  assert.match(cssSource, /body\.camp-prototype-editing \.camp-prototype-edit-dock\s*\{[\s\S]*?position:\s*absolute[\s\S]*?bottom:/);
+  assert.match(cssSource, /\.camp-prototype-edit-dock > button\s*\{[\s\S]*?width:\s*70px[\s\S]*?height:\s*70px[\s\S]*?border-radius:\s*50%/);
+});

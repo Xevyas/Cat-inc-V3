@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0117" />
+  <link rel="stylesheet" href="style.css?v=0.0118" />
 </head>
 <body>
 
@@ -582,22 +582,22 @@
 
   <!-- CONTENU CAMP: development-only placement prototype -->
   <div id="contenu-camp" role="tabpanel" aria-labelledby="onglet-camp" aria-hidden="true" style="display:none">
-    <section class="panneau camp-prototype-panel" aria-labelledby="camp-prototype-title">
+    <section id="camp-prototype-panel" class="panneau camp-prototype-panel" aria-labelledby="camp-prototype-title">
       <div class="camp-prototype-heading">
         <div>
           <span class="camp-prototype-kicker">DEV PROTOTYPE</span>
           <h2 id="camp-prototype-title">Base Camp</h2>
-          <p>Place buildings and decorations, then paint connecting roads on the 20 × 30 camp grid. This layout is isolated from the game save.</p>
+          <p class="camp-prototype-view-copy">Tap a camp element to interact with it. Enter Edit mode to build and rearrange the camp.</p>
+          <p class="camp-prototype-edit-copy">Place buildings and decorations, then paint connecting roads on the 20 × 30 camp grid.</p>
+          <p id="camp-prototype-status" class="camp-prototype-status" role="status" aria-live="polite">Tap a camp element to interact with it.</p>
         </div>
-        <span class="camp-prototype-size" aria-label="Grid size">20 wide × 30 high</span>
+        <div class="camp-prototype-heading-actions">
+          <span class="camp-prototype-size" aria-label="Grid size">20 wide × 30 high</span>
+          <button id="camp-prototype-edit-open" class="camp-prototype-edit-open" type="button" onclick="entrerEditionCampPrototype()">Edit camp</button>
+          <button class="camp-prototype-edit-only camp-prototype-clear" type="button" onclick="reinitialiserCampPrototype()">Clear</button>
+          <button id="camp-prototype-edit-done" class="camp-prototype-edit-only camp-prototype-edit-done" type="button" onclick="quitterEditionCampPrototype()">Done</button>
+        </div>
       </div>
-      <div id="camp-prototype-palette" class="camp-prototype-palette" role="toolbar" aria-label="Prototype camp items"></div>
-      <div class="camp-prototype-actions">
-        <button id="camp-prototype-road-erase" type="button" aria-pressed="false" onclick="basculerGommeRoutesCampPrototype()">Erase roads</button>
-        <button id="camp-prototype-delete" type="button" onclick="supprimerSelectionCampPrototype()" disabled>Remove selected</button>
-        <button type="button" onclick="reinitialiserCampPrototype()">Clear camp</button>
-      </div>
-      <p id="camp-prototype-status" class="camp-prototype-status" role="status" aria-live="polite">Choose a camp item or road tool.</p>
       <div class="camp-prototype-viewport">
         <div id="camp-prototype-board" class="camp-prototype-board" tabindex="0" role="application" aria-label="Base Camp placement grid, 20 columns by 30 rows">
           <div class="camp-prototype-grid" aria-hidden="true"></div>
@@ -605,7 +605,29 @@
           <div id="camp-prototype-ghost" class="camp-prototype-item camp-prototype-ghost" aria-hidden="true" hidden></div>
         </div>
       </div>
-      <p class="camp-prototype-help">Tap an item to select it. Drag buildings and decorations to move them. Road painting and erasing remain active until cancelled.</p>
+      <button id="camp-prototype-delete" class="camp-prototype-edit-only camp-prototype-delete" type="button" onclick="supprimerSelectionCampPrototype()" disabled>Remove selected</button>
+      <section id="camp-prototype-category-sheet" class="camp-prototype-category-sheet camp-prototype-edit-only" aria-label="Camp item menu" hidden>
+        <div class="camp-prototype-category-sheet-heading">
+          <h3 id="camp-prototype-category-title">Buildings</h3>
+          <button type="button" aria-label="Close item menu" onclick="fermerCategorieCampPrototype()">×</button>
+        </div>
+        <div id="camp-prototype-palette" class="camp-prototype-palette" role="toolbar" aria-label="Prototype camp items"></div>
+      </section>
+      <nav class="camp-prototype-edit-dock camp-prototype-edit-only" aria-label="Camp edit categories">
+        <button type="button" data-camp-category="building" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('building')">
+          <span class="camp-prototype-category-icon camp-prototype-category-icon-building" aria-hidden="true"></span>
+          <span>Buildings</span>
+        </button>
+        <button type="button" data-camp-category="decoration" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('decoration')">
+          <span class="camp-prototype-category-icon camp-prototype-category-icon-decoration" aria-hidden="true"></span>
+          <span>Decorations</span>
+        </button>
+        <button type="button" data-camp-category="road" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('road')">
+          <span class="camp-prototype-category-icon camp-prototype-category-icon-road" aria-hidden="true"></span>
+          <span>Paths</span>
+        </button>
+      </nav>
+      <p class="camp-prototype-help camp-prototype-edit-only">Choose a category below. Drag placed buildings and decorations to move them; use Escape or Done to leave Edit mode.</p>
     </section>
   </div>
 
@@ -1155,7 +1177,7 @@
   <script src="js/ui/dom.js?v=0.0033"></script>
   <script src="js/ui/audio.js?v=0.0007"></script>
   <script src="js/ui/camp.js?v=0.0002"></script>
-  <script src="jeu.js?v=0.0134"></script>
+  <script src="jeu.js?v=0.0135"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>
