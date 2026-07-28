@@ -9355,7 +9355,10 @@ const VITESSE_HORS_LIGNE  = 0.1;
 const MAX_AFK_SECONDS     = 10 * 60 * 60;
 const ABSENCE_MIN_MS      = 60000; // ignore gaps shorter than 1 minute
 const AFK_RESUME_RELOAD_KEY = "catInc.afkResumeReload";
+const VERSION_MANIFEST_PATH = "version.json";
 let afkReloadProgramme = false;
+let afkNavigationLancee = false;
+let verificationVersionAfkEnCours = false;
 let resumeAbsenceRechargeEffectue = false;
 
 function maxAfkSeconds() {
@@ -9592,17 +9595,67 @@ function afficherResumeAbsence(resume) {
 
   afficherModal("ecran-absence");
   if (arguments[1] && arguments[1].apresRechargement) return;
-  if (afkReloadProgramme) return;
+  verifierMiseAJourApresResumeAfk(resume);
+}
+
+function supprimerResumeAbsenceStocke() {
+  try {
+    sessionStorage.removeItem(AFK_RESUME_RELOAD_KEY);
+  } catch (e) {}
+}
+
+function versionPublieePlusRecente(versionPubliee, versionCourante) {
+  const formatVersion = /^\d+(?:\.\d+)*$/;
+  if (!formatVersion.test(versionPubliee) || !formatVersion.test(versionCourante)) return false;
+  const publiee = versionPubliee.split(".").map(Number);
+  const courante = versionCourante.split(".").map(Number);
+  const longueur = Math.max(publiee.length, courante.length);
+  for (let i = 0; i < longueur; i++) {
+    const segmentPublie = publiee[i] || 0;
+    const segmentCourant = courante[i] || 0;
+    if (segmentPublie !== segmentCourant) return segmentPublie > segmentCourant;
+  }
+  return false;
+}
+
+function miseAJourPublieeDisponible() {
+  const url = new URL(VERSION_MANIFEST_PATH, window.location.href);
+  url.searchParams.set("cacheBust", String(Date.now()));
+  return fetch(url.href, { cache: "no-store" }).then(function(response) {
+    if (!response.ok) return null;
+    return response.json();
+  }).then(function(manifest) {
+    return !!manifest
+      && typeof manifest.version === "string"
+      && versionPublieePlusRecente(manifest.version, GAME_RELEASE_VERSION);
+  }).catch(function() {
+    // Offline play and hosts without the manifest remain fully usable.
+    return false;
+  });
+}
+
+function verifierMiseAJourApresResumeAfk(resume) {
+  if (resumeAbsenceRechargeEffectue || afkReloadProgramme || verificationVersionAfkEnCours) return;
   try {
     sessionStorage.setItem(AFK_RESUME_RELOAD_KEY, JSON.stringify(resume));
-    afkReloadProgramme = true;
-    setTimeout(function() {
-      const panneau = document.getElementById("ecran-absence");
-      if (panneau && panneau.getAttribute("aria-hidden") === "false") fermerResumeAbsenceEtRecharger();
-    }, 250);
   } catch (e) {
-    // If sessionStorage is unavailable, keep the summary usable without risking a reload loop.
+    // A reload would lose the summary if sessionStorage is unavailable.
+    return;
   }
+
+  verificationVersionAfkEnCours = true;
+  miseAJourPublieeDisponible().then(function(disponible) {
+    if (!disponible) {
+      supprimerResumeAbsenceStocke();
+      return;
+    }
+    afkReloadProgramme = true;
+    setTimeout(rechargerPourMiseAJourAfk, 250);
+  }).catch(function() {
+    supprimerResumeAbsenceStocke();
+  }).then(function() {
+    verificationVersionAfkEnCours = false;
+  });
 }
 
 function recupererResumeAbsenceApresRechargement() {
@@ -9618,10 +9671,14 @@ function recupererResumeAbsenceApresRechargement() {
 }
 
 function fermerResumeAbsenceEtRecharger() {
-  if (resumeAbsenceRechargeEffectue) {
-    fermerModal("ecran-absence");
-    return;
-  }
+  fermerModal("ecran-absence");
+  if (resumeAbsenceRechargeEffectue || !afkReloadProgramme) return;
+  rechargerPourMiseAJourAfk();
+}
+
+function rechargerPourMiseAJourAfk() {
+  if (afkNavigationLancee) return;
+  afkNavigationLancee = true;
   sauvegarder();
   sauvegardeVerrouillee = true;
   const url = new URL(window.location.href);

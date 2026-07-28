@@ -2,10 +2,10 @@
 
 ## Current status
 
-The v0.0036 mobile-performance, scouting-reward and map-rendering updates were validated on 2026-07-27 against the working copy `V3 - ChatGPT`.
+The v0.0037 map-layering and conditional AFK-update fixes were validated on 2026-07-28 against the working copy `V3 - ChatGPT`.
 
-- Release status: published as game version v0.0036.
-- Interface references: CSS `0.0114`, JavaScript `0.0130`, production module `0.0036`, save module `0.0042`, state module `0.0040`, audio module `0.0007`, config data `0.0043`, content data `0.0052`.
+- Release status: published as game version v0.0037.
+- Interface references: CSS `0.0115`, JavaScript `0.0131`, production module `0.0036`, save module `0.0042`, state module `0.0040`, audio module `0.0007`, config data `0.0043`, content data `0.0052`.
 - Automated suite: 176/176 tests passing.
 - Browser load: no JavaScript exception and no missing runtime asset.
 
@@ -19,7 +19,7 @@ From the game folder, run:
 node --test --test-reporter=spec tests\*.test.js
 ```
 
-Required result: zero failed, cancelled, skipped or todo tests (125 tests currently).
+Required result: zero failed, cancelled, skipped or todo tests (176 tests currently).
 
 The suite currently validates:
 

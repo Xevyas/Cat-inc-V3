@@ -61,6 +61,7 @@ Additional constraints:
 - When a completion changes the available actions, set a dirty flag and let the next safe structural render rebuild the section.
 - Preserve interaction protection around pointer/click resolution; do not trade away target stability to gain a small render shortcut.
 - If a feature affects a mini-game, update `Documentation/mini_games.md` and verify the foreground runtime before changing the shared dispatcher.
+- Keep `version.json` synchronized with the player-facing release version. AFK resume checks must fetch it with `cache: "no-store"` and reload only when the published version is newer; never restore unconditional reloads on every AFK panel.
 
 ## Validation checklist
 

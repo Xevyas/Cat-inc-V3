@@ -5858,7 +5858,9 @@ body[data-dev-mode="true"] .bird-debug-btn { display: inline-flex; }
   background-color: transparent !important;
   background-image: none !important;
   background-repeat: no-repeat;
-  z-index: 1;
+  /* Transparent cells must sit above the global fog (z-index 4) so their
+     selection outline, lock and mission badges remain visible. */
+  z-index: 5;
 }
 /* One masked fog layer covers every unrevealed part of the map. */
 .carte-fog-global {
