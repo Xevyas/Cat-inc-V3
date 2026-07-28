@@ -33,6 +33,8 @@ This path must not introduce a new broad `innerHTML` rebuild. If a new dynamic v
 
 The main tab switch updates visibility and accessibility state synchronously, then schedules one structural render with `requestAnimationFrame`. Rapid tab taps are coalesced and the last selected tab wins. This lets the browser paint the new tab state before the heavier section work runs. Gang is special because its kitty list lives outside the master dispatcher; the deferred tab callback must refresh it explicitly.
 
+The development-only Base Camp prototype is structural only. It has no tick or animation loop: its placeholder layer rebuilds when the Camp tab opens or when placement changes. Building and decoration pointer movement updates only the placement ghost; road painting interpolates crossed cells and rebuilds only the Camp item layer. Keep the future renderer independent from production and AFK simulation, and stop any later canvas renderer whenever Camp is hidden.
+
 ## Mini-games
 
 The shared mini-game runtime remains authoritative. While a mini-game is active:

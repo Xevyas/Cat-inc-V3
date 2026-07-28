@@ -25,6 +25,7 @@ En mode développement :
 - le sélecteur de vitesse permet toujours 1×, 2×, 5×, 10×, 50×, 100×, 500× et 1000× ;
 - le bouton gris Bird permet toujours de forcer l'événement ;
 - le bouton de forçage disparaît pendant qu'un événement Bird est déjà disponible, puis revient après sa résolution.
+- l'onglet principal `Camp` donne accès au prototype de placement 20 × 30 pour les bâtiments, décorations et routes connectées. Sa disposition est enregistrée dans un stockage local séparé et ne fait pas partie de la sauvegarde du jeu.
 
 Le mode n'est jamais stocké dans la sauvegarde. Revenir à l'adresse sans `?debug=1` suffit pour retrouver l'interface normale et une vitesse de 1×.
 

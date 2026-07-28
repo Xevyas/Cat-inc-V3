@@ -2,11 +2,11 @@
 
 ## Current status
 
-The v0.0037 map-layering and conditional AFK-update fixes were validated on 2026-07-28 against the working copy `V3 - ChatGPT`.
+The v0.0038 development Camp prototype and changelog-display update were validated on 2026-07-28 against the working copy `V3 - ChatGPT`.
 
-- Release status: published as game version v0.0037.
-- Interface references: CSS `0.0115`, JavaScript `0.0131`, production module `0.0036`, save module `0.0042`, state module `0.0040`, audio module `0.0007`, config data `0.0043`, content data `0.0052`.
-- Automated suite: 176/176 tests passing.
+- Release status: published as game version v0.0038.
+- Interface references: CSS `0.0117`, JavaScript `0.0134`, Camp module `0.0002`, production module `0.0036`, save module `0.0042`, state module `0.0040`, audio module `0.0007`, config data `0.0043`, content data `0.0052`.
+- Automated suite: 180/180 tests passing.
 - Browser load: no JavaScript exception and no missing runtime asset.
 
 This file is the release gate for future changes. A release is ready only when every automated gate passes and the relevant manual journeys have been replayed.
@@ -19,7 +19,7 @@ From the game folder, run:
 node --test --test-reporter=spec tests\*.test.js
 ```
 
-Required result: zero failed, cancelled, skipped or todo tests (176 tests currently).
+Required result: zero failed, cancelled, skipped or todo tests (180 tests currently).
 
 The suite currently validates:
 

@@ -17,12 +17,13 @@ const savePath = path.join(root, 'js', 'core', 'save.js');
 const productionPath = path.join(root, 'js', 'core', 'production.js');
 const domPath = path.join(root, 'js', 'ui', 'dom.js');
 const audioPath = path.join(root, 'js', 'ui', 'audio.js');
+const campPath = path.join(root, 'js', 'ui', 'camp.js');
 
 test('classic modules load in dependency order before the game', function() {
   const scripts = Array.from(indexSource.matchAll(/<script\s+src="([^"]+)"/g), function(match) {
     return match[1].split('?')[0];
   });
-  assert.deepEqual(scripts.slice(-10), [
+  assert.deepEqual(scripts.slice(-11), [
     'js/cat-inc.js',
     'js/data/config.js',
     'js/data/content.js',
@@ -32,6 +33,7 @@ test('classic modules load in dependency order before the game', function() {
     'js/core/production.js',
     'js/ui/dom.js',
     'js/ui/audio.js',
+    'js/ui/camp.js',
     'jeu.js'
   ]);
   assert.doesNotMatch(indexSource, /<script[^>]+type="module"/);
@@ -39,11 +41,11 @@ test('classic modules load in dependency order before the game', function() {
 
 test('extracted modules expose only namespaced frozen APIs', function() {
   const context = vm.createContext({ document: { getElementById: function() { return null; } } });
-  [namespacePath, configPath, contentPath, changelogPath, statePath, savePath, productionPath, domPath, audioPath].forEach(function(filePath) {
+  [namespacePath, configPath, contentPath, changelogPath, statePath, savePath, productionPath, domPath, audioPath, campPath].forEach(function(filePath) {
     vm.runInContext(fs.readFileSync(filePath, 'utf8'), context, { filename: filePath });
   });
 
-  assert.deepEqual(Array.from(Object.keys(context.CatInc)).sort(), ['audio', 'data', 'dom', 'production', 'save', 'state']);
+  assert.deepEqual(Array.from(Object.keys(context.CatInc)).sort(), ['audio', 'camp', 'data', 'dom', 'production', 'save', 'state']);
   assert.equal(Object.isFrozen(context.CatInc.data.config), true);
   assert.equal(Object.isFrozen(context.CatInc.data.content), true);
   assert.equal(Object.isFrozen(context.CatInc.state), true);
@@ -51,6 +53,7 @@ test('extracted modules expose only namespaced frozen APIs', function() {
   assert.equal(Object.isFrozen(context.CatInc.production), true);
   assert.equal(Object.isFrozen(context.CatInc.dom), true);
   assert.equal(Object.isFrozen(context.CatInc.audio), true);
+  assert.equal(Object.isFrozen(context.CatInc.camp), true);
   assert.equal(context.CONFIG, undefined);
   assert.equal(context.RESOURCE_INFO, undefined);
   assert.equal(context.NOMS_KITTIES, undefined);
