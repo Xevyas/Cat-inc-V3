@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0130" />
+  <link rel="stylesheet" href="style.css?v=0.0133" />
 </head>
 <body>
 
@@ -631,13 +631,20 @@
               </div>
             </div>
             <span class="camp-prototype-gardens"></span>
-            <img class="camp-prototype-fence camp-prototype-fence-west" src="img/Maps/Camp%20Prototypes/Camp_Garden_Fence_Upright_Prototype_v2.webp?v=0.0001" alt="">
-            <img class="camp-prototype-fence camp-prototype-fence-east" src="img/Maps/Camp%20Prototypes/Camp_Garden_Fence_Upright_Prototype_v2.webp?v=0.0001" alt="">
           </div>
           <div id="camp-prototype-territory-zones" class="camp-prototype-territory-zones" aria-hidden="true"></div>
           <div id="camp-prototype-terrain" class="camp-prototype-terrain"></div>
           <div class="camp-prototype-grid" aria-hidden="true"></div>
           <div id="camp-prototype-items" class="camp-prototype-items"></div>
+          <div class="camp-prototype-fences" aria-hidden="true">
+            <img class="camp-prototype-fence camp-prototype-fence-west" data-camp-boundary-zone="redGarden" src="img/Maps/Camp%20Prototypes/Camp_Garden_Fence_Upright_Prototype_v2.webp?v=0.0001" alt="">
+            <img class="camp-prototype-fence camp-prototype-fence-east" data-camp-boundary-zone="greenGarden" src="img/Maps/Camp%20Prototypes/Camp_Garden_Fence_Upright_Prototype_v2.webp?v=0.0001" alt="">
+          </div>
+          <div id="camp-prototype-interaction-menu" class="camp-prototype-interaction-menu" role="menu" aria-label="Building actions" hidden>
+            <button type="button" role="menuitem" aria-label="Open building in Work" onclick="ouvrirWorkDepuisCamp(event)">
+              <span aria-hidden="true">→</span>
+            </button>
+          </div>
           <div id="camp-prototype-ghost" class="camp-prototype-item camp-prototype-ghost" aria-hidden="true" hidden></div>
         </div>
       </div>
@@ -1220,7 +1227,7 @@
   <script src="js/ui/dom.js?v=0.0033"></script>
   <script src="js/ui/audio.js?v=0.0007"></script>
   <script src="js/ui/camp.js?v=0.0012"></script>
-  <script src="jeu.js?v=0.0143"></script>
+  <script src="jeu.js?v=0.0145"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

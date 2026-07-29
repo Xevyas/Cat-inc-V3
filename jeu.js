@@ -5481,7 +5481,7 @@ function renduWorkDynamique() {
 
 let workFiltre = "all";  // "all" | "wood" | "food" | "rock"
 
-function filtrerWork(filtre) {
+function appliquerFiltreWork(filtre) {
   workFiltre = filtre || "all";
   document.body.dataset.workFilter = workFiltre;
   ["all", "wood", "food", "rock"].forEach(function(f) {
@@ -5491,6 +5491,10 @@ function filtrerWork(filtre) {
       el.setAttribute("aria-pressed", f === workFiltre ? "true" : "false");
     }
   });
+}
+
+function filtrerWork(filtre) {
+  appliquerFiltreWork(filtre);
   rendu();
 }
 
@@ -10170,6 +10174,11 @@ const CAMP_PROTOTYPE_LONG_PRESS_MOVE_TOLERANCE = 8;
 const CAMP_PROTOTYPE_ZOOM_MIN = 0.75;
 const CAMP_PROTOTYPE_ZOOM_MAX = 2.5;
 const CAMP_PROTOTYPE_ZOOM_STEP = 0.25;
+const CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE = Object.freeze({
+  sawmill: "wood",
+  catchen: "food",
+  pawsonry: "rock"
+});
 let campPrototypeLayout = [];
 let campPrototypeTerrain = campPrototypeApi.creerTerrainInitial();
 let campPrototypeZoom = 1;
@@ -10184,6 +10193,7 @@ let campPrototypeInitialise = false;
 let campPrototypeCameraInitialisee = false;
 let campPrototypeModeEdition = false;
 let campPrototypeCategorieOuverte = null;
+let campPrototypeInteractionUid = null;
 let campPrototypeMessage = "";
 let campPrototypeAppuiProlongeTimer = null;
 let campPrototypePincement = null;
@@ -10487,6 +10497,76 @@ function remplirItemCampPrototype(element, type, rotation) {
     + dimensions.width + " × " + dimensions.height + "</span>";
 }
 
+function fermerMenuInteractionCampPrototype() {
+  const menu = document.getElementById("camp-prototype-interaction-menu");
+  if (menu) {
+    menu.hidden = true;
+    delete menu.dataset.workFamily;
+    delete menu.dataset.campUid;
+  }
+  document.querySelectorAll('[aria-controls="camp-prototype-interaction-menu"]').forEach(function(item) {
+    item.setAttribute("aria-expanded", "false");
+  });
+  campPrototypeInteractionUid = null;
+}
+
+function ouvrirMenuInteractionCampPrototype(uid) {
+  if (!DEV_MODE || campPrototypeModeEdition) return false;
+  const item = itemCampPrototype(uid);
+  const type = item && typeCampPrototype(item.type);
+  const famille = type && CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE[type.id];
+  const menu = document.getElementById("camp-prototype-interaction-menu");
+  if (!item || !type || !famille || !menu) {
+    fermerMenuInteractionCampPrototype();
+    return false;
+  }
+  if (campPrototypeInteractionUid === uid && !menu.hidden) {
+    fermerMenuInteractionCampPrototype();
+    return false;
+  }
+  fermerMenuInteractionCampPrototype();
+  const dimensions = dimensionsCampPrototype(item.type, item.rotation);
+  menu.style.left = ((item.x + dimensions.width / 2) / campPrototypeApi.GRID_WIDTH * 100) + "%";
+  menu.style.top = (item.y / campPrototypeApi.GRID_HEIGHT * 100) + "%";
+  menu.dataset.workFamily = famille;
+  menu.dataset.campUid = uid;
+  menu.setAttribute("aria-label", type.label + " actions");
+  const action = menu.querySelector("button");
+  if (action) action.setAttribute("aria-label", "Open " + type.label + " in Work");
+  const itemElement = document.querySelector('[data-camp-uid="' + uid + '"]');
+  if (itemElement) itemElement.setAttribute("aria-expanded", "true");
+  campPrototypeInteractionUid = uid;
+  menu.hidden = false;
+  return true;
+}
+
+function ouvrirWorkDepuisCamp(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  const menu = document.getElementById("camp-prototype-interaction-menu");
+  const famille = menu && menu.dataset.workFamily;
+  if (!["wood", "food", "rock"].includes(famille)) return false;
+  fermerMenuInteractionCampPrototype();
+  changerOnglet("work");
+  appliquerFiltreWork(famille);
+  requestAnimationFrame(function() {
+    const filtre = document.getElementById("filtre-work-" + famille);
+    if (filtre) filtre.focus();
+  });
+  return true;
+}
+
+function actualiserCloturesCampPrototype(zonesConquises) {
+  const zones = zonesConquises instanceof Set
+    ? zonesConquises
+    : new Set(campPrototypeTerrain.claimedZoneIds);
+  document.querySelectorAll("[data-camp-boundary-zone]").forEach(function(cloture) {
+    cloture.hidden = zones.has(cloture.dataset.campBoundaryZone);
+  });
+}
+
 function rendreTerrainCampPrototype() {
   const zones = document.getElementById("camp-prototype-territory-zones");
   const terrain = document.getElementById("camp-prototype-terrain");
@@ -10495,6 +10575,7 @@ function rendreTerrainCampPrototype() {
   terrain.innerHTML = "";
   const zonesConquises = new Set(campPrototypeTerrain.claimedZoneIds);
   const cellulesLibres = new Set(campPrototypeTerrain.clearedCells);
+  actualiserCloturesCampPrototype(zonesConquises);
   Object.keys(campPrototypeApi.TERRITORY_ZONES).forEach(function(zoneId) {
     const zone = campPrototypeApi.TERRITORY_ZONES[zoneId];
     const conquise = zonesConquises.has(zoneId);
@@ -10740,6 +10821,7 @@ function fermerCategorieCampPrototype() {
 
 function entrerEditionCampPrototype() {
   if (!DEV_MODE || campPrototypeModeEdition) return;
+  fermerMenuInteractionCampPrototype();
   campPrototypeModeEdition = true;
   campPrototypeCategorieOuverte = null;
   campPrototypeTypeAPlacer = null;
@@ -10781,6 +10863,7 @@ function quitterEditionCampPrototype(restaurerFocus) {
 function rendreItemsCampPrototype() {
   const conteneur = document.getElementById("camp-prototype-items");
   if (!conteneur) return;
+  fermerMenuInteractionCampPrototype();
   conteneur.innerHTML = "";
   campPrototypeLayout.forEach(function(item) {
     const type = typeCampPrototype(item.type);
@@ -10805,6 +10888,12 @@ function rendreItemsCampPrototype() {
     bouton.setAttribute("aria-label", type.label + ", column " + (item.x + 1)
       + ", row " + (item.y + 1) + ", " + dimensions.width + " by "
       + dimensions.height + " cells, rotation " + dimensions.rotation + " degrees");
+    const workFamily = CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE[type.id];
+    if (workFamily && !campPrototypeModeEdition) {
+      bouton.setAttribute("aria-haspopup", "menu");
+      bouton.setAttribute("aria-expanded", "false");
+      bouton.setAttribute("aria-controls", "camp-prototype-interaction-menu");
+    }
     if (type.category === "road") {
       bouton.innerHTML = '<i class="camp-prototype-road-center" aria-hidden="true"></i>'
         + '<i class="camp-prototype-road-segment camp-prototype-road-segment-north" aria-hidden="true"></i>'
@@ -10886,7 +10975,8 @@ function conquerirZoneCampPrototype(zoneId) {
   campPrototypeTerrain = resultat.terrain;
   sauvegarderCampPrototype();
   definirMessageCampPrototype(zone.label
-    + " claimed. Clear its obstacles to make the new cells buildable.");
+    + " claimed. The cats demolished the boundary fence. Clear its obstacles"
+    + " to make the new cells buildable.");
   rendrePaletteCampPrototype();
   rendreTerrainCampPrototype();
   actualiserCommandesCampPrototype();
@@ -11519,7 +11609,10 @@ function initialiserCampPrototype() {
         : "Enter Edit camp and choose Terrain to clear this obstacle.");
       return;
     }
-    if (!cible) return;
+    if (!cible) {
+      if (!campPrototypeModeEdition) fermerMenuInteractionCampPrototype();
+      return;
+    }
     if (campPrototypeModeEdition && event.detail === 0) {
       selectionnerItemCampPrototype(cible.dataset.campUid);
       return;
@@ -11527,7 +11620,12 @@ function initialiserCampPrototype() {
     if (!campPrototypeModeEdition) {
       const item = itemCampPrototype(cible.dataset.campUid);
       const type = item && typeCampPrototype(item.type);
-      if (type) definirMessageCampPrototype(type.label + " selected. Its gameplay interaction will be connected later.");
+      if (type && CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE[type.id]) {
+        ouvrirMenuInteractionCampPrototype(item.uid);
+      } else if (type) {
+        fermerMenuInteractionCampPrototype();
+        definirMessageCampPrototype(type.label + " selected. Its gameplay interaction will be connected later.");
+      }
     }
   });
   document.addEventListener("keydown", function(event) {
@@ -11569,6 +11667,7 @@ function changerOnglet(id) {
   if (!IDS_ONGLETS.includes(id)) return;
   if (id === "camp" && !DEV_MODE) return;
   if (id === "logs" && etat.chatons < 3) return;
+  if (id !== "camp") fermerMenuInteractionCampPrototype();
   if (id !== "camp" && campPrototypeModeEdition) quitterEditionCampPrototype(false);
   const estMobile = window.matchMedia("(max-width: 768px)").matches;
   // On mobile, the Gang tab is the list landing view. Returning to it from

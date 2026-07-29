@@ -279,6 +279,10 @@ test('Camp uses optimized building sprites with rotatable footprints', function(
     )), true);
   });
   assert.match(cssSource, /\.camp-prototype-road-center,[\s\S]*?Basic Trail_Camp_TopDown_Watercolor_Game_v1\.png/);
+  assert.match(cssSource, /\.camp-prototype-road-center\s*\{[\s\S]*?left:\s*9%[\s\S]*?width:\s*82%[\s\S]*?height:\s*82%[\s\S]*?clip-path:\s*polygon/);
+  assert.match(cssSource, /\.camp-prototype-road-segment-north,[\s\S]*?width:\s*82%[\s\S]*?height:\s*55%[\s\S]*?clip-path:\s*polygon/);
+  assert.match(cssSource, /\.camp-prototype-road-segment-east,[\s\S]*?width:\s*55%[\s\S]*?height:\s*82%[\s\S]*?clip-path:\s*polygon/);
+  assert.match(cssSource, /\.camp-prototype-road-center,[\s\S]*?background-size:\s*170% 170%/);
   assert.match(campSource, /const LEGACY_TYPE_ALIASES[\s\S]*?kitchen:\s*"catchen"/);
   assert.match(htmlSource, /id="camp-prototype-rotate"[\s\S]*?tournerSelectionCampPrototype\(\)/);
   assert.match(gameSource, /function tournerSelectionCampPrototype\(\)[\s\S]*?normaliserRotation[\s\S]*?testerPlacement[\s\S]*?item\.rotation = rotation/);
@@ -297,6 +301,14 @@ test('Camp layout editing is isolated in a full-screen mode with category menus'
   assert.match(gameSource, /function demarrerInteractionCampPrototype\(event\)\s*\{\s*if \(!DEV_MODE \|\| !campPrototypeModeEdition/);
   assert.match(gameSource, /function ouvrirCategorieCampPrototype\(categorie\)[\s\S]*?\["building", "decoration", "road", "terrain"\]/);
   assert.match(gameSource, /Its gameplay interaction will be connected later/);
+  assert.match(gameSource, /const CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE = Object\.freeze\(\{[\s\S]*?sawmill:\s*"wood"[\s\S]*?catchen:\s*"food"[\s\S]*?pawsonry:\s*"rock"/);
+  assert.match(htmlSource, /id="camp-prototype-interaction-menu"[^>]*role="menu"[^>]*hidden[\s\S]*?onclick="ouvrirWorkDepuisCamp\(event\)"/);
+  assert.match(gameSource, /function ouvrirMenuInteractionCampPrototype\(uid\)[\s\S]*?menu\.style\.left[\s\S]*?menu\.style\.top[\s\S]*?menu\.dataset\.workFamily/);
+  assert.match(gameSource, /function ouvrirWorkDepuisCamp\(event\)[\s\S]*?changerOnglet\("work"\)[\s\S]*?appliquerFiltreWork\(famille\)/);
+  assert.match(gameSource, /if \(type && CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE\[type\.id\]\)[\s\S]*?ouvrirMenuInteractionCampPrototype\(item\.uid\)/);
+  assert.match(gameSource, /bouton\.setAttribute\("aria-haspopup", "menu"\)[\s\S]*?bouton\.setAttribute\("aria-controls", "camp-prototype-interaction-menu"\)/);
+  assert.match(cssSource, /\.camp-prototype-interaction-menu\s*\{[\s\S]*?z-index:\s*7[\s\S]*?transform:\s*translate\(-50%, calc\(-100% - 7px\)\)/);
+  assert.match(cssSource, /\.camp-prototype-interaction-menu button\s*\{[\s\S]*?width:\s*46px[\s\S]*?color:\s*#27834f[\s\S]*?border:\s*3px solid #27834f[\s\S]*?border-radius:\s*50%/);
   assert.match(cssSource, /body\.camp-prototype-editing \.camp-prototype-panel\s*\{[\s\S]*?position:\s*fixed[\s\S]*?inset:\s*0[\s\S]*?height:\s*100dvh/);
   assert.match(cssSource, /body\.camp-prototype-editing \.camp-prototype-edit-dock\s*\{[\s\S]*?position:\s*absolute[\s\S]*?bottom:/);
   assert.match(cssSource, /\.camp-prototype-edit-dock > button\s*\{[\s\S]*?width:\s*70px[\s\S]*?height:\s*70px[\s\S]*?border-radius:\s*50%/);
@@ -327,7 +339,10 @@ test('Camp camera zoom and terrain tools stay renderer-independent and mobile-sa
   assert.equal((htmlSource.match(/Camp_(?:Red|Blue|Green)_House_Rear_Watercolor_HighAngle_v3\.webp/g) || []).length, 3);
   assert.equal((htmlSource.match(/class="camp-prototype-shrub camp-prototype-shrub-(?:left|right)"/g) || []).length, 6);
   assert.equal((htmlSource.match(/Camp_Garden_Fence_Upright_Prototype_v2\.webp/g) || []).length, 2);
+  assert.match(htmlSource, /camp-prototype-fence-west[^>]*data-camp-boundary-zone="redGarden"/);
+  assert.match(htmlSource, /camp-prototype-fence-east[^>]*data-camp-boundary-zone="greenGarden"/);
   assert.match(htmlSource, /id="camp-prototype-territory-zones"[\s\S]*?id="camp-prototype-terrain"/);
+  assert.match(htmlSource, /id="camp-prototype-items"[\s\S]*?class="camp-prototype-fences"[\s\S]*?id="camp-prototype-ghost"/);
   assert.match(gameSource, /const CAMP_PROTOTYPE_ZOOM_MIN = 0\.75[\s\S]*?const CAMP_PROTOTYPE_ZOOM_MAX = 2\.5/);
   assert.match(gameSource, /function appliquerZoomCampPrototype\(conserverCentre, ancrageClient\)[\s\S]*?ancienScrollLeft[\s\S]*?dataset\.campBaseWidth[\s\S]*?viewport\.scrollLeft[\s\S]*?viewport\.scrollTop/);
   assert.match(gameSource, /function demarrerPincementCampPrototype\(event\)[\s\S]*?event\.touches\.length !== 2[\s\S]*?distanceInitiale/);
@@ -335,6 +350,8 @@ test('Camp camera zoom and terrain tools stay renderer-independent and mobile-sa
   assert.match(gameSource, /viewport\.addEventListener\("touchstart", demarrerPincementCampPrototype, \{ passive: false \}\)[\s\S]*?viewport\.addEventListener\("touchmove", deplacerPincementCampPrototype, \{ passive: false \}\)/);
   assert.match(gameSource, /window\.addEventListener\("resize"[\s\S]*?invaliderLargeurBaseCampPrototype\(\)[\s\S]*?appliquerZoomCampPrototype\(false\)/);
   assert.match(gameSource, /function rendreTerrainCampPrototype\(\)[\s\S]*?TERRITORY_ZONES[\s\S]*?obstaclesTerrain[\s\S]*?camp-prototype-obstacle-sprite/);
+  assert.match(gameSource, /function actualiserCloturesCampPrototype\(zonesConquises\)[\s\S]*?data-camp-boundary-zone[\s\S]*?cloture\.hidden = zones\.has/);
+  assert.match(gameSource, /function rendreTerrainCampPrototype\(\)[\s\S]*?actualiserCloturesCampPrototype\(zonesConquises\)/);
   assert.match(gameSource, /function debroussaillerCelluleCampPrototype\(x, y\)[\s\S]*?debroussaillerTerrain/);
   assert.match(gameSource, /function conquerirZoneCampPrototype\(zoneId\)[\s\S]*?conquerirZoneTerrain/);
   assert.match(cssSource, /\.camp-prototype-viewport\s*\{[\s\S]*?overflow:\s*auto[\s\S]*?touch-action:\s*pan-x pan-y/);
@@ -345,4 +362,8 @@ test('Camp camera zoom and terrain tools stay renderer-independent and mobile-sa
   assert.match(cssSource, /\.camp-prototype-shrub-left\s*\{\s*left:\s*8%/);
   assert.match(cssSource, /\.camp-prototype-shrub-right\s*\{\s*right:\s*8%/);
   assert.match(cssSource, /\.camp-prototype-gardens\s*\{[\s\S]*?Camp_Grass_Texture_Prototype_v1\.webp/);
+  assert.match(cssSource, /\.camp-prototype-items\s*\{[\s\S]*?z-index:\s*4/);
+  assert.match(cssSource, /\.camp-prototype-ghost\s*\{[\s\S]*?z-index:\s*5/);
+  assert.match(cssSource, /\.camp-prototype-fences\s*\{[\s\S]*?z-index:\s*6[\s\S]*?pointer-events:\s*none/);
+  assert.match(cssSource, /\.camp-prototype-fence\[hidden\]\s*\{\s*display:\s*none/);
 });
