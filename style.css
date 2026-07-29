@@ -2565,13 +2565,24 @@ body:not([data-dev-mode="true"]) .onglet-camp-dev { display: none !important; }
   color: var(--couleur-accent);
   font-size: 1.25rem;
 }
+.camp-prototype-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.camp-prototype-title-row .panneau-aide-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.camp-prototype-title-row .panneau-aide-popover {
+  font-weight: 700;
+}
 .camp-prototype-heading p {
   max-width: 680px;
   margin: 0;
   color: var(--couleur-discrete);
   font-size: .84rem;
 }
-.camp-prototype-edit-copy,
 .camp-prototype-edit-only {
   display: none;
 }
@@ -2730,10 +2741,14 @@ body:not([data-dev-mode="true"]) .onglet-camp-dev { display: none !important; }
   font-size: .76rem;
   font-weight: 700;
 }
+.camp-prototype-status:empty {
+  display: none;
+}
 .camp-prototype-viewport {
   max-height: min(72vh, 780px);
   overflow: auto;
   overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
   border-radius: 12px;
   background: #d8ccb9;
   scrollbar-width: thin;
@@ -2900,28 +2915,31 @@ body:not(.camp-prototype-editing) .camp-prototype-grid {
   position: absolute;
   display: grid;
   place-items: center;
-  padding: 0;
+  padding: 2px;
   overflow: visible;
   border: 0;
-  border-radius: 24%;
-  background: rgba(91, 104, 57, .2);
-  filter: saturate(.78);
-  color: #5e6f31;
-  font-size: var(--camp-prototype-obstacle-size, 16px);
-  line-height: 1;
-  opacity: .82;
+  border-radius: 14%;
+  background: transparent;
+  filter: saturate(.82) brightness(.96);
+  opacity: .9;
   touch-action: pan-x pan-y;
   pointer-events: auto;
 }
+.camp-prototype-obstacle-sprite {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
 .camp-prototype-obstacle-clearable {
-  background: rgba(245, 209, 120, .32);
+  background: rgba(255, 225, 143, .18);
   box-shadow: inset 0 0 0 2px rgba(177, 105, 29, .66);
   filter: none;
   opacity: 1;
 }
-.camp-prototype-obstacle-brokenPot { color: #b45b31; }
-.camp-prototype-obstacle-brambles { color: #8b632e; }
-.camp-prototype-obstacle-rubble { color: #756e64; }
 .camp-prototype-board.camp-prototype-terrain-mode .camp-prototype-obstacle {
   cursor: pointer;
   touch-action: manipulation;
@@ -3060,7 +3078,10 @@ body:not(.camp-prototype-editing) .camp-prototype-grid {
   display: block;
   margin: 0;
   border: 0;
-  background: #9c8465;
+  background-color: #e5bd75;
+  background-image: url("img/Maps/Camp Prototypes/Basic Trail_Camp_TopDown_Watercolor_Game_v1.png?v=0.0001");
+  background-position: center;
+  background-size: cover;
   opacity: 1;
   pointer-events: none;
 }
@@ -3070,7 +3091,7 @@ body:not(.camp-prototype-editing) .camp-prototype-grid {
   width: 60%;
   height: 60%;
   border-radius: 25%;
-  box-shadow: inset 0 0 0 1px rgba(77, 57, 39, .2);
+  box-shadow: inset 0 0 0 1px rgba(112, 73, 35, .18);
 }
 .camp-prototype-road-segment-north,
 .camp-prototype-road-segment-south {
@@ -3267,12 +3288,8 @@ body.camp-prototype-editing .camp-prototype-heading {
   align-items: center;
   margin-bottom: 8px;
 }
-body.camp-prototype-editing .camp-prototype-view-copy,
 body.camp-prototype-editing .camp-prototype-edit-open {
   display: none;
-}
-body.camp-prototype-editing .camp-prototype-edit-copy {
-  display: block;
 }
 body.camp-prototype-editing .camp-prototype-edit-done,
 body.camp-prototype-editing .camp-prototype-clear,
@@ -8586,7 +8603,6 @@ body.camp-prototype-editing .camp-prototype-help {
   body.camp-prototype-editing .camp-prototype-heading h2 {
     margin-top: 0;
   }
-  body.camp-prototype-editing .camp-prototype-edit-copy,
   body.camp-prototype-editing .camp-prototype-size,
   body.camp-prototype-editing .camp-prototype-help {
     display: none;

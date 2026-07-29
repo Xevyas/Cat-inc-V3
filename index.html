@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0127" />
+  <link rel="stylesheet" href="style.css?v=0.0130" />
 </head>
 <body>
 
@@ -586,10 +586,17 @@
       <div class="camp-prototype-heading">
         <div>
           <span class="camp-prototype-kicker">DEV PROTOTYPE</span>
-          <h2 id="camp-prototype-title">Base Camp</h2>
-          <p class="camp-prototype-view-copy">Tap a camp element to interact with it. Enter Edit mode to build and rearrange the camp.</p>
-          <p class="camp-prototype-edit-copy">Build on cleared land, remove obstacles and expand into adjacent territories.</p>
-          <p id="camp-prototype-status" class="camp-prototype-status" role="status" aria-live="polite">Tap a camp element to interact with it.</p>
+          <div class="camp-prototype-title-row">
+            <h2 id="camp-prototype-title">Base Camp</h2>
+            <span class="panneau-aide-wrap">
+              <button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Base Camp" aria-expanded="false" aria-controls="base-camp-help" onclick="togglePanneauAide(event)">?</button>
+              <span id="base-camp-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">
+                <span>Tap a camp element to interact with it. Enter Edit mode to build and rearrange the camp.</span>
+                <span>Build on cleared land, remove obstacles and expand into adjacent territories.</span>
+              </span>
+            </span>
+          </div>
+          <p id="camp-prototype-status" class="camp-prototype-status" role="status" aria-live="polite"></p>
         </div>
         <div class="camp-prototype-heading-actions">
           <span class="camp-prototype-size" aria-label="Three gardens, each 6 columns by 8 rows">3 gardens · 6 × 8</span>
@@ -1212,8 +1219,8 @@
   <script src="js/core/production.js?v=0.0036"></script>
   <script src="js/ui/dom.js?v=0.0033"></script>
   <script src="js/ui/audio.js?v=0.0007"></script>
-  <script src="js/ui/camp.js?v=0.0010"></script>
-  <script src="jeu.js?v=0.0140"></script>
+  <script src="js/ui/camp.js?v=0.0012"></script>
+  <script src="jeu.js?v=0.0143"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

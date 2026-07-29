@@ -43,7 +43,7 @@ test('Camp prototype exposes an 18 by 12 collision-safe placement model', functi
   );
   assert.deepEqual(
     JSON.parse(JSON.stringify(camp.dimensionsType('jobCenter', 270))),
-    { width: 6, height: 5, rotation: 270 }
+    { width: 4, height: 3, rotation: 270 }
   );
   assert.deepEqual(
     JSON.parse(JSON.stringify(camp.dimensionsType('sawmill', 90))),
@@ -55,10 +55,10 @@ test('Camp prototype exposes an 18 by 12 collision-safe placement model', functi
   );
   assert.deepEqual(
     JSON.parse(JSON.stringify(camp.dimensionsType('pawsonry', 270))),
-    { width: 4, height: 4, rotation: 270 }
+    { width: 3, height: 3, rotation: 270 }
   );
   assert.equal(camp.testerPlacement([], 'jobCenter', 13, 6, null, 0).valide, true);
-  assert.equal(camp.testerPlacement([], 'jobCenter', 13, 7, null, 90).valide, false);
+  assert.equal(camp.testerPlacement([], 'jobCenter', 15, 7, null, 90).valide, false);
 
   const layout = [{ uid: 'one', type: 'sawmill', x: 2, y: 3 }];
   assert.equal(camp.testerPlacement(layout, 'catchen', 8, 3).valide, true);
@@ -106,7 +106,7 @@ test('Camp prototype normalizes persisted layouts without overlaps or invalid it
   assert.equal(normalized[2].rotation, 90);
   assert.deepEqual(
     JSON.parse(JSON.stringify(camp.rectangleItem(normalized[2]))),
-    { x: 12, y: 7, width: 6, height: 5 }
+    { x: 12, y: 7, width: 4, height: 3 }
   );
 });
 
@@ -135,12 +135,21 @@ test('Camp starts with the first three blue-garden rows and expands through clea
   assert.equal(camp.zoneTerrainPourCellule(9, 2), null);
   assert.equal(camp.estCelluleConstructible(terrain, 6, 4), true);
   assert.equal(camp.estCelluleConstructible(terrain, 6, 7), false);
-  assert.equal(camp.obstacleCellule(terrain, 6, 7).label.length > 0, true);
+  const premierObstacle = camp.obstacleCellule(terrain, 6, 7);
+  assert.equal(premierObstacle.label.length > 0, true);
+  assert.deepEqual(
+    Array.from(premierObstacle.cells, function(cell) { return cell.x + ':' + cell.y; }),
+    ['6:7', '7:7']
+  );
   assert.equal(camp.peutDebroussailler(terrain, 6, 7).valide, true);
   assert.equal(camp.peutConquerirZone(terrain, 'redGarden').valide, true);
 
   terrain = camp.debroussaillerTerrain(terrain, 6, 7).terrain;
-  assert.equal(camp.estCelluleConstructible(terrain, 6, 7), true);
+  premierObstacle.cells.forEach(function(cell) {
+    assert.equal(camp.estCelluleConstructible(terrain, cell.x, cell.y), true);
+  });
+  assert.equal(terrain.clearedCells.length, 18 + premierObstacle.cells.length);
+  assert.equal(camp.obstacleCellule(terrain, 7, 7), null);
   terrain = camp.conquerirZoneTerrain(terrain, 'redGarden').terrain;
   assert.equal(camp.estZoneConquise(terrain, 'redGarden'), true);
   assert.equal(camp.estCelluleConstructible(terrain, 5, 4), false);
@@ -157,11 +166,56 @@ test('Camp starts with the first three blue-garden rows and expands through clea
   assert.equal(camp.estCelluleConstructible(migrated, 0, 4), true);
 });
 
+test('Camp clearing obstacles have stable multi-cell footprints and illustrated assets', function() {
+  const camp = chargerCampApi();
+  const expectedTypes = [
+    ['greenBush', 2, 1],
+    ['thornBush', 2, 1],
+    ['flowerBush', 2, 1],
+    ['pebblePile', 1, 1],
+    ['stoneBlockPile', 2, 2],
+    ['tallGrass', 1, 1]
+  ];
+  assert.deepEqual(
+    Array.from(camp.OBSTACLE_TYPES, function(type) {
+      return [type.id, type.width, type.height];
+    }),
+    expectedTypes
+  );
+  assert.equal(camp.creerTerrainInitial().version, 4);
+  const initialKeys = new Set(camp.creerTerrainInitial().clearedCells);
+  const occupiedKeys = new Set();
+  camp.OBSTACLE_LAYOUT.forEach(function(obstacle) {
+    const zone = camp.TERRITORY_ZONES[obstacle.zoneId];
+    assert.equal(obstacle.cells.length, obstacle.width * obstacle.height);
+    assert.match(obstacle.asset, /Camp_Obstacle_Watercolor_Game_v1\.png\?v=0\.0001$/);
+    obstacle.cells.forEach(function(cell) {
+      const key = camp.cleCellule(cell.x, cell.y);
+      assert.equal(initialKeys.has(key), false);
+      assert.equal(occupiedKeys.has(key), false);
+      assert.equal(cell.x >= zone.x && cell.x < zone.x + zone.width, true);
+      assert.equal(cell.y >= zone.y && cell.y < zone.y + zone.height, true);
+      occupiedKeys.add(key);
+    });
+  });
+  assert.equal(occupiedKeys.size + initialKeys.size, camp.TERRAIN_CELL_COUNT);
+
+  const partialLegacyTerrain = {
+    version: 3,
+    claimedZoneIds: ['home'],
+    clearedCells: initialKeys.size ? Array.from(initialKeys).concat('6:7') : ['6:7']
+  };
+  const migrated = camp.normaliserTerrain(partialLegacyTerrain);
+  assert.equal(migrated.version, 4);
+  assert.equal(migrated.clearedCells.includes('6:7'), true);
+  assert.equal(migrated.clearedCells.includes('7:7'), true);
+});
+
 test('Camp prototype uses pointer controls and separate debug-only persistence', function() {
   assert.match(gameSource, /const CAMP_PROTOTYPE_STORAGE_KEY = "catIncCampPrototypeLayoutV2"/);
   assert.match(gameSource, /const CAMP_PROTOTYPE_LEGACY_STORAGE_KEY = "catIncCampPrototypeLayoutV1"/);
-  assert.match(gameSource, /const CAMP_PROTOTYPE_TERRAIN_STORAGE_KEY = "catIncCampPrototypeTerrainV3"/);
-  assert.match(gameSource, /const CAMP_PROTOTYPE_TERRAIN_LEGACY_STORAGE_KEYS = \[[\s\S]*?catIncCampPrototypeTerrainV2[\s\S]*?catIncCampPrototypeTerrainV1/);
+  assert.match(gameSource, /const CAMP_PROTOTYPE_TERRAIN_STORAGE_KEY = "catIncCampPrototypeTerrainV4"/);
+  assert.match(gameSource, /const CAMP_PROTOTYPE_TERRAIN_LEGACY_STORAGE_KEYS = \[[\s\S]*?catIncCampPrototypeTerrainV3[\s\S]*?catIncCampPrototypeTerrainV2[\s\S]*?catIncCampPrototypeTerrainV1/);
   assert.match(gameSource, /const CAMP_PROTOTYPE_ZOOM_STORAGE_KEY = "catIncCampPrototypeZoomV1"/);
   assert.match(gameSource, /localStorage\.setItem\(CAMP_PROTOTYPE_STORAGE_KEY, JSON\.stringify\(campPrototypeLayout\)\)/);
   assert.match(gameSource, /localStorage\.setItem\(CAMP_PROTOTYPE_TERRAIN_STORAGE_KEY, JSON\.stringify\(campPrototypeTerrain\)\)/);
@@ -176,16 +230,21 @@ test('Camp prototype uses pointer controls and separate debug-only persistence',
 
 test('Camp uses optimized building sprites with rotatable footprints', function() {
   assert.match(campSource, /cardboardBox:[\s\S]*?width:\s*2[\s\S]*?height:\s*1[\s\S]*?Cardboard%20Box_Camp_TopDown_Watercolor_Game_v2\.png/);
-  assert.match(campSource, /jobCenter:[\s\S]*?width:\s*5[\s\S]*?height:\s*6[\s\S]*?Job%20Center_Camp_TopDown_Watercolor_Game_v2\.png/);
+  assert.match(campSource, /jobCenter:[\s\S]*?width:\s*3[\s\S]*?height:\s*4[\s\S]*?Job%20Center_Camp_TopDown_Watercolor_Game_v2\.png/);
   assert.match(campSource, /sawmill:[\s\S]*?width:\s*3[\s\S]*?height:\s*2[\s\S]*?Sawmill_Camp_TopDown_Watercolor_Game_v2\.png/);
   assert.match(campSource, /catchen:[\s\S]*?width:\s*3[\s\S]*?height:\s*3[\s\S]*?Catchen_Camp_TopDown_Watercolor_Game_v3\.png/);
-  assert.match(campSource, /pawsonry:[\s\S]*?width:\s*4[\s\S]*?height:\s*4[\s\S]*?Pawsonry_Camp_TopDown_Watercolor_Game_v3\.png/);
+  assert.match(campSource, /pawsonry:[\s\S]*?width:\s*3[\s\S]*?height:\s*3[\s\S]*?Pawsonry_Camp_TopDown_Watercolor_Game_v3\.png/);
+  assert.match(campSource, /trainingCenter:[\s\S]*?width:\s*3[\s\S]*?height:\s*4[\s\S]*?Training%20Center_Camp_TopDown_Watercolor_Game_v1\.png/);
+  assert.match(campSource, /tree:[\s\S]*?width:\s*2[\s\S]*?height:\s*2[\s\S]*?Tree_Camp_TopDown_Watercolor_Game_v1\.png/);
+  assert.match(campSource, /road:[\s\S]*?label:\s*"Basic Trail"[\s\S]*?Basic%20Trail_Camp_TopDown_Watercolor_Game_v1\.png/);
   [
     'Cardboard Box_Camp_TopDown_Watercolor_Game_v2.png',
     'Job Center_Camp_TopDown_Watercolor_Game_v2.png',
     'Sawmill_Camp_TopDown_Watercolor_Game_v2.png',
     'Catchen_Camp_TopDown_Watercolor_Game_v3.png',
-    'Pawsonry_Camp_TopDown_Watercolor_Game_v3.png'
+    'Pawsonry_Camp_TopDown_Watercolor_Game_v3.png',
+    'Training Center_Camp_TopDown_Watercolor_Game_v1.png',
+    'Tree_Camp_TopDown_Watercolor_Game_v1.png'
   ].forEach(function(filename) {
     assert.equal(fs.existsSync(path.join(
       root,
@@ -195,6 +254,31 @@ test('Camp uses optimized building sprites with rotatable footprints', function(
       filename
     )), true);
   });
+  assert.equal(fs.existsSync(path.join(
+    root,
+    'img',
+    'Maps',
+    'Camp Prototypes',
+    'Basic Trail_Camp_TopDown_Watercolor_Game_v1.png'
+  )), true);
+  [
+    'Green Bush_Camp_Obstacle_Watercolor_Game_v1.png',
+    'Thorn Bush_Camp_Obstacle_Watercolor_Game_v1.png',
+    'Flower Bush_Camp_Obstacle_Watercolor_Game_v1.png',
+    'Pebble Pile_Camp_Obstacle_Watercolor_Game_v1.png',
+    'Stone Block Pile_Camp_Obstacle_Watercolor_Game_v1.png',
+    'Tall Grass_Camp_Obstacle_Watercolor_Game_v1.png'
+  ].forEach(function(filename) {
+    assert.equal(fs.existsSync(path.join(
+      root,
+      'img',
+      'Maps',
+      'Camp Prototypes',
+      'Obstacles',
+      filename
+    )), true);
+  });
+  assert.match(cssSource, /\.camp-prototype-road-center,[\s\S]*?Basic Trail_Camp_TopDown_Watercolor_Game_v1\.png/);
   assert.match(campSource, /const LEGACY_TYPE_ALIASES[\s\S]*?kitchen:\s*"catchen"/);
   assert.match(htmlSource, /id="camp-prototype-rotate"[\s\S]*?tournerSelectionCampPrototype\(\)/);
   assert.match(gameSource, /function tournerSelectionCampPrototype\(\)[\s\S]*?normaliserRotation[\s\S]*?testerPlacement[\s\S]*?item\.rotation = rotation/);
@@ -232,6 +316,11 @@ test('Camp edit navigation keeps vertical scrolling and requires a long press to
 });
 
 test('Camp camera zoom and terrain tools stay renderer-independent and mobile-safe', function() {
+  assert.match(htmlSource, /id="camp-prototype-title">Base Camp<\/h2>[\s\S]*?aria-label="Explain Base Camp"[\s\S]*?id="base-camp-help"/);
+  assert.match(htmlSource, /id="base-camp-help"[\s\S]*?Tap a camp element to interact with it[\s\S]*?Build on cleared land/);
+  assert.doesNotMatch(htmlSource, /class="camp-prototype-(?:view|edit)-copy"/);
+  assert.match(htmlSource, /id="camp-prototype-status"[^>]*><\/p>/);
+  assert.match(cssSource, /\.camp-prototype-status:empty\s*\{\s*display:\s*none/);
   assert.match(htmlSource, /id="camp-prototype-zoom-out"[\s\S]*?ajusterZoomCampPrototype\(-0\.25\)/);
   assert.match(htmlSource, /id="camp-prototype-zoom-value"[\s\S]*?definirZoomCampPrototype\(1\)/);
   assert.match(htmlSource, /id="camp-prototype-zoom-in"[\s\S]*?ajusterZoomCampPrototype\(0\.25\)/);
@@ -240,11 +329,15 @@ test('Camp camera zoom and terrain tools stay renderer-independent and mobile-sa
   assert.equal((htmlSource.match(/Camp_Garden_Fence_Upright_Prototype_v2\.webp/g) || []).length, 2);
   assert.match(htmlSource, /id="camp-prototype-territory-zones"[\s\S]*?id="camp-prototype-terrain"/);
   assert.match(gameSource, /const CAMP_PROTOTYPE_ZOOM_MIN = 0\.75[\s\S]*?const CAMP_PROTOTYPE_ZOOM_MAX = 2\.5/);
-  assert.match(gameSource, /function appliquerZoomCampPrototype\(conserverCentre\)[\s\S]*?viewport\.scrollLeft[\s\S]*?viewport\.scrollTop/);
-  assert.match(gameSource, /function rendreTerrainCampPrototype\(\)[\s\S]*?TERRITORY_ZONES[\s\S]*?obstacleCellule/);
+  assert.match(gameSource, /function appliquerZoomCampPrototype\(conserverCentre, ancrageClient\)[\s\S]*?ancienScrollLeft[\s\S]*?dataset\.campBaseWidth[\s\S]*?viewport\.scrollLeft[\s\S]*?viewport\.scrollTop/);
+  assert.match(gameSource, /function demarrerPincementCampPrototype\(event\)[\s\S]*?event\.touches\.length !== 2[\s\S]*?distanceInitiale/);
+  assert.match(gameSource, /function deplacerPincementCampPrototype\(event\)[\s\S]*?zoomInitial[\s\S]*?centrePincementCampPrototype\(event\.touches\)/);
+  assert.match(gameSource, /viewport\.addEventListener\("touchstart", demarrerPincementCampPrototype, \{ passive: false \}\)[\s\S]*?viewport\.addEventListener\("touchmove", deplacerPincementCampPrototype, \{ passive: false \}\)/);
+  assert.match(gameSource, /window\.addEventListener\("resize"[\s\S]*?invaliderLargeurBaseCampPrototype\(\)[\s\S]*?appliquerZoomCampPrototype\(false\)/);
+  assert.match(gameSource, /function rendreTerrainCampPrototype\(\)[\s\S]*?TERRITORY_ZONES[\s\S]*?obstaclesTerrain[\s\S]*?camp-prototype-obstacle-sprite/);
   assert.match(gameSource, /function debroussaillerCelluleCampPrototype\(x, y\)[\s\S]*?debroussaillerTerrain/);
   assert.match(gameSource, /function conquerirZoneCampPrototype\(zoneId\)[\s\S]*?conquerirZoneTerrain/);
-  assert.match(cssSource, /\.camp-prototype-viewport\s*\{[\s\S]*?overflow:\s*auto/);
+  assert.match(cssSource, /\.camp-prototype-viewport\s*\{[\s\S]*?overflow:\s*auto[\s\S]*?touch-action:\s*pan-x pan-y/);
   assert.match(cssSource, /\.camp-prototype-board\s*\{[\s\S]*?touch-action:\s*pan-x pan-y/);
   assert.match(cssSource, /\.camp-prototype-houses\s*\{[\s\S]*?height:\s*33\.333333%/);
   assert.match(cssSource, /\.camp-prototype-house\s*\{[\s\S]*?transform:\s*scale\(1\.04\)[\s\S]*?transform-origin:\s*center bottom/);

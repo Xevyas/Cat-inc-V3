@@ -20,8 +20,8 @@
     jobCenter: Object.freeze({
       id: "jobCenter",
       label: "Job Center",
-      width: 5,
-      height: 6,
+      width: 3,
+      height: 4,
       color: "job-center",
       category: "building",
       rotatable: true,
@@ -50,8 +50,8 @@
     pawsonry: Object.freeze({
       id: "pawsonry",
       label: "Pawsonry",
-      width: 4,
-      height: 4,
+      width: 3,
+      height: 3,
       color: "stone",
       category: "building",
       rotatable: true,
@@ -60,11 +60,12 @@
     trainingCenter: Object.freeze({
       id: "trainingCenter",
       label: "Training Center",
-      width: 4,
-      height: 3,
+      width: 3,
+      height: 4,
       color: "training",
       category: "building",
-      rotatable: true
+      rotatable: true,
+      asset: "img/Buildings/Camp%20Prototypes/Training%20Center_Camp_TopDown_Watercolor_Game_v1.png?v=0.0001"
     }),
     tree: Object.freeze({
       id: "tree",
@@ -72,7 +73,8 @@
       width: 2,
       height: 2,
       color: "nature",
-      category: "decoration"
+      category: "decoration",
+      asset: "img/Buildings/Camp%20Prototypes/Tree_Camp_TopDown_Watercolor_Game_v1.png?v=0.0001"
     }),
     catToy: Object.freeze({
       id: "catToy",
@@ -84,12 +86,13 @@
     }),
     road: Object.freeze({
       id: "road",
-      label: "Road",
+      label: "Basic Trail",
       width: 1,
       height: 1,
       color: "road",
       category: "road",
-      continuous: true
+      continuous: true,
+      asset: "img/Maps/Camp%20Prototypes/Basic%20Trail_Camp_TopDown_Watercolor_Game_v1.png?v=0.0001"
     })
   });
   const LEGACY_TYPE_ALIASES = Object.freeze({
@@ -132,11 +135,50 @@
     const zone = TERRITORY_ZONES[zoneId];
     return total + zone.width * zone.height;
   }, 0);
+  const OBSTACLE_ASSET_ROOT = "img/Maps/Camp%20Prototypes/Obstacles/";
   const OBSTACLE_TYPES = Object.freeze([
-    Object.freeze({ id: "weeds", label: "Tall weeds", icon: "♣" }),
-    Object.freeze({ id: "brokenPot", label: "Broken pot", icon: "◒" }),
-    Object.freeze({ id: "brambles", label: "Brambles", icon: "✣" }),
-    Object.freeze({ id: "rubble", label: "Rubble", icon: "◆" })
+    Object.freeze({
+      id: "greenBush",
+      label: "Green bush",
+      width: 2,
+      height: 1,
+      asset: OBSTACLE_ASSET_ROOT + "Green%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+    }),
+    Object.freeze({
+      id: "thornBush",
+      label: "Thorny bramble bush",
+      width: 2,
+      height: 1,
+      asset: OBSTACLE_ASSET_ROOT + "Thorn%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+    }),
+    Object.freeze({
+      id: "flowerBush",
+      label: "Flowering bush",
+      width: 2,
+      height: 1,
+      asset: OBSTACLE_ASSET_ROOT + "Flower%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+    }),
+    Object.freeze({
+      id: "pebblePile",
+      label: "Pile of pebbles",
+      width: 1,
+      height: 1,
+      asset: OBSTACLE_ASSET_ROOT + "Pebble%20Pile_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+    }),
+    Object.freeze({
+      id: "stoneBlockPile",
+      label: "Pile of stone blocks",
+      width: 2,
+      height: 2,
+      asset: OBSTACLE_ASSET_ROOT + "Stone%20Block%20Pile_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+    }),
+    Object.freeze({
+      id: "tallGrass",
+      label: "Tall green grass",
+      width: 1,
+      height: 1,
+      asset: OBSTACLE_ASSET_ROOT + "Tall%20Grass_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+    })
   ]);
 
   function entier(value) {
@@ -202,9 +244,72 @@
     return cellules;
   }
 
+  function creerLayoutObstacles() {
+    const obstacles = [];
+    const cellulesOccupees = new Set(cellulesRectangle(INITIAL_BUILDABLE_RECT).map(function(cellule) {
+      return cleCellule(cellule.x, cellule.y);
+    }));
+    const zoneIds = Object.keys(TERRITORY_ZONES);
+    zoneIds.forEach(function(zoneId, zoneIndex) {
+      const zone = TERRITORY_ZONES[zoneId];
+      for (let y = zone.y; y < zone.y + zone.height; y += 1) {
+        for (let x = zone.x; x < zone.x + zone.width; x += 1) {
+          if (cellulesOccupees.has(cleCellule(x, y))) continue;
+          const indexInitial = Math.abs(x * 17 + y * 31 + zoneIndex * 43)
+            % OBSTACLE_TYPES.length;
+          let selection = null;
+          for (let decalage = 0; decalage < OBSTACLE_TYPES.length; decalage += 1) {
+            const type = OBSTACLE_TYPES[(indexInitial + decalage) % OBSTACLE_TYPES.length];
+            const cellules = cellulesRectangle({
+              x: x,
+              y: y,
+              width: type.width,
+              height: type.height
+            });
+            const tientDansZone = cellules.length === type.width * type.height
+              && cellules.every(function(cellule) {
+                return celluleDansZone(zone, cellule.x, cellule.y)
+                  && !cellulesOccupees.has(cleCellule(cellule.x, cellule.y));
+              });
+            if (!tientDansZone) continue;
+            selection = { type: type, cellules: cellules };
+            break;
+          }
+          if (!selection) continue;
+          selection.cellules.forEach(function(cellule) {
+            cellulesOccupees.add(cleCellule(cellule.x, cellule.y));
+          });
+          obstacles.push(Object.freeze({
+            uid: zone.id + ":" + x + ":" + y,
+            id: selection.type.id,
+            label: selection.type.label,
+            width: selection.type.width,
+            height: selection.type.height,
+            asset: selection.type.asset,
+            zoneId: zone.id,
+            x: x,
+            y: y,
+            cells: Object.freeze(selection.cellules.map(function(cellule) {
+              return Object.freeze({ x: cellule.x, y: cellule.y });
+            }))
+          }));
+        }
+      }
+    });
+    return Object.freeze(obstacles);
+  }
+
+  const OBSTACLE_LAYOUT = creerLayoutObstacles();
+  const OBSTACLE_BY_CELL_KEY = Object.freeze(OBSTACLE_LAYOUT.reduce(function(index, obstacle) {
+    obstacle.cells.forEach(function(cellule) {
+      index[cleCellule(cellule.x, cellule.y)] = obstacle;
+    });
+    return index;
+  }, {}));
+
   function creerTerrainInitial() {
     return {
-      version: 3,
+      version: 4,
       claimedZoneIds: ["home"],
       clearedCells: cellulesRectangle(INITIAL_BUILDABLE_RECT).map(function(cellule) {
         return cleCellule(cellule.x, cellule.y);
@@ -228,8 +333,15 @@
         if (zone && zonesConquises.has(zone.id)) cellulesLibres.add(cleCellule(cellule.x, cellule.y));
       });
     }
+    Array.from(cellulesLibres).forEach(function(cle) {
+      const obstacle = OBSTACLE_BY_CELL_KEY[cle];
+      if (!obstacle || !zonesConquises.has(obstacle.zoneId)) return;
+      obstacle.cells.forEach(function(cellule) {
+        cellulesLibres.add(cleCellule(cellule.x, cellule.y));
+      });
+    });
     return {
-      version: 3,
+      version: 4,
       claimedZoneIds: Object.keys(TERRITORY_ZONES).filter(function(zoneId) {
         return zonesConquises.has(zoneId);
       }),
@@ -270,18 +382,28 @@
     const positionX = entier(x);
     const positionY = entier(y);
     const zone = zoneTerrainPourCellule(positionX, positionY);
+    const normalise = normaliserTerrain(terrain);
     if (!zone) return { valide: false, raison: "This cell is outside the camp." };
-    if (!estZoneConquise(terrain, zone.id)) {
+    if (!normalise.claimedZoneIds.includes(zone.id)) {
       return { valide: false, raison: "Conquer this territory before clearing it." };
     }
-    if (estCelluleConstructible(terrain, positionX, positionY)) {
+    if (normalise.clearedCells.includes(cleCellule(positionX, positionY))) {
       return { valide: false, raison: "This cell is already clear." };
     }
-    const toucheTerrainLibre = cellulesVoisines(positionX, positionY).some(function(cellule) {
-      return estCelluleConstructible(terrain, cellule.x, cellule.y);
+    const obstacle = OBSTACLE_BY_CELL_KEY[cleCellule(positionX, positionY)];
+    if (!obstacle) return { valide: false, raison: "There is nothing to clear here." };
+    const cellulesObstacle = new Set(obstacle.cells.map(function(cellule) {
+      return cleCellule(cellule.x, cellule.y);
+    }));
+    const cellulesLibres = new Set(normalise.clearedCells);
+    const toucheTerrainLibre = obstacle.cells.some(function(celluleObstacle) {
+      return cellulesVoisines(celluleObstacle.x, celluleObstacle.y).some(function(cellule) {
+        const cle = cleCellule(cellule.x, cellule.y);
+        return !cellulesObstacle.has(cle) && cellulesLibres.has(cle);
+      });
     });
     return toucheTerrainLibre
-      ? { valide: true, raison: "" }
+      ? { valide: true, raison: "", obstacle: obstacle }
       : { valide: false, raison: "Clear a neighboring cell first." };
   }
 
@@ -291,8 +413,15 @@
       return { valide: false, raison: resultat.raison, terrain: normaliserTerrain(terrain) };
     }
     const normalise = normaliserTerrain(terrain);
-    normalise.clearedCells.push(cleCellule(x, y));
-    return { valide: true, raison: "", terrain: normaliserTerrain(normalise) };
+    resultat.obstacle.cells.forEach(function(cellule) {
+      normalise.clearedCells.push(cleCellule(cellule.x, cellule.y));
+    });
+    return {
+      valide: true,
+      raison: "",
+      obstacle: resultat.obstacle,
+      terrain: normaliserTerrain(normalise)
+    };
   }
 
   function peutConquerirZone(terrain, zoneId) {
@@ -323,12 +452,25 @@
   }
 
   function obstacleCellule(terrain, x, y) {
-    const zone = zoneTerrainPourCellule(x, y);
-    if (!zone || !estZoneConquise(terrain, zone.id) || estCelluleConstructible(terrain, x, y)) {
-      return null;
-    }
-    const index = Math.abs(entier(x) * 17 + entier(y) * 31) % OBSTACLE_TYPES.length;
-    return OBSTACLE_TYPES[index];
+    const normalise = normaliserTerrain(terrain);
+    const obstacle = OBSTACLE_BY_CELL_KEY[cleCellule(x, y)];
+    if (!obstacle || !normalise.claimedZoneIds.includes(obstacle.zoneId)) return null;
+    const cellulesLibres = new Set(normalise.clearedCells);
+    return obstacle.cells.some(function(cellule) {
+      return !cellulesLibres.has(cleCellule(cellule.x, cellule.y));
+    }) ? obstacle : null;
+  }
+
+  function obstaclesTerrain(terrain) {
+    const normalise = normaliserTerrain(terrain);
+    const zonesConquises = new Set(normalise.claimedZoneIds);
+    const cellulesLibres = new Set(normalise.clearedCells);
+    return OBSTACLE_LAYOUT.filter(function(obstacle) {
+      return zonesConquises.has(obstacle.zoneId)
+        && obstacle.cells.some(function(cellule) {
+          return !cellulesLibres.has(cleCellule(cellule.x, cellule.y));
+        });
+    });
   }
 
   function adapterTerrainAuLayout(terrain, layout) {
@@ -520,6 +662,7 @@
     INITIAL_BUILDABLE_RECT: INITIAL_BUILDABLE_RECT,
     TERRITORY_ZONES: TERRITORY_ZONES,
     OBSTACLE_TYPES: OBSTACLE_TYPES,
+    OBSTACLE_LAYOUT: OBSTACLE_LAYOUT,
     normaliserRotation: normaliserRotation,
     celluleDansGrille: celluleDansGrille,
     cleCellule: cleCellule,
@@ -534,6 +677,7 @@
     peutConquerirZone: peutConquerirZone,
     conquerirZoneTerrain: conquerirZoneTerrain,
     obstacleCellule: obstacleCellule,
+    obstaclesTerrain: obstaclesTerrain,
     adapterTerrainAuLayout: adapterTerrainAuLayout,
     dimensionsType: dimensionsType,
     rectangleItem: rectangleItem,

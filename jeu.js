@@ -10158,8 +10158,9 @@ document.getElementById("bouton-intro").addEventListener("click", function() {
 
 const CAMP_PROTOTYPE_STORAGE_KEY = "catIncCampPrototypeLayoutV2";
 const CAMP_PROTOTYPE_LEGACY_STORAGE_KEY = "catIncCampPrototypeLayoutV1";
-const CAMP_PROTOTYPE_TERRAIN_STORAGE_KEY = "catIncCampPrototypeTerrainV3";
+const CAMP_PROTOTYPE_TERRAIN_STORAGE_KEY = "catIncCampPrototypeTerrainV4";
 const CAMP_PROTOTYPE_TERRAIN_LEGACY_STORAGE_KEYS = [
+  "catIncCampPrototypeTerrainV3",
   "catIncCampPrototypeTerrainV2",
   "catIncCampPrototypeTerrainV1"
 ];
@@ -10183,8 +10184,9 @@ let campPrototypeInitialise = false;
 let campPrototypeCameraInitialisee = false;
 let campPrototypeModeEdition = false;
 let campPrototypeCategorieOuverte = null;
-let campPrototypeMessage = "Tap a camp element to interact with it.";
+let campPrototypeMessage = "";
 let campPrototypeAppuiProlongeTimer = null;
+let campPrototypePincement = null;
 
 function typeCampPrototype(typeId) {
   return campPrototypeApi.ITEM_TYPES[typeId] || null;
@@ -10301,39 +10303,59 @@ function actualiserCommandesZoomCampPrototype() {
   if (plus) plus.disabled = campPrototypeZoom >= CAMP_PROTOTYPE_ZOOM_MAX;
 }
 
-function appliquerZoomCampPrototype(conserverCentre) {
+function invaliderLargeurBaseCampPrototype() {
+  const board = document.getElementById("camp-prototype-board");
+  if (board) delete board.dataset.campBaseWidth;
+}
+
+function appliquerZoomCampPrototype(conserverCentre, ancrageClient) {
   const viewport = document.querySelector(".camp-prototype-viewport");
   const board = document.getElementById("camp-prototype-board");
   if (!viewport || !board || board.getClientRects().length === 0) return;
-  const ancienScrollWidth = viewport.scrollWidth;
-  const ancienScrollHeight = viewport.scrollHeight;
-  const centreX = ancienScrollWidth > 0
-    ? (viewport.scrollLeft + viewport.clientWidth / 2) / ancienScrollWidth
+  const ancienScrollLeft = viewport.scrollLeft;
+  const ancienScrollTop = viewport.scrollTop;
+  const viewportRect = viewport.getBoundingClientRect();
+  const boardRect = board.getBoundingClientRect();
+  const clientX = ancrageClient && Number.isFinite(ancrageClient.clientX)
+    ? ancrageClient.clientX
+    : viewportRect.left + viewport.clientWidth / 2;
+  const clientY = ancrageClient && Number.isFinite(ancrageClient.clientY)
+    ? ancrageClient.clientY
+    : viewportRect.top + viewport.clientHeight / 2;
+  const ratioX = boardRect.width > 0
+    ? Math.max(0, Math.min(1, (clientX - boardRect.left) / boardRect.width))
     : 0.5;
-  const centreY = ancienScrollHeight > 0
-    ? (viewport.scrollTop + viewport.clientHeight / 2) / ancienScrollHeight
+  const ratioY = boardRect.height > 0
+    ? Math.max(0, Math.min(1, (clientY - boardRect.top) / boardRect.height))
     : 0.5;
-  board.style.removeProperty("width");
-  const largeurBase = board.getBoundingClientRect().width;
+  let largeurBase = Number(board.dataset.campBaseWidth);
+  if (!Number.isFinite(largeurBase) || largeurBase <= 0) {
+    board.style.removeProperty("width");
+    largeurBase = board.getBoundingClientRect().width;
+    if (largeurBase > 0) board.dataset.campBaseWidth = String(largeurBase);
+  }
   if (largeurBase <= 0) return;
   board.style.width = (largeurBase * campPrototypeZoom) + "px";
   board.style.setProperty("--camp-prototype-obstacle-size", (16 * campPrototypeZoom) + "px");
   board.dataset.campZoom = String(campPrototypeZoom);
   actualiserCommandesZoomCampPrototype();
-  if (!conserverCentre) return;
-  requestAnimationFrame(function() {
-    viewport.scrollLeft = Math.max(
-      0,
-      centreX * viewport.scrollWidth - viewport.clientWidth / 2
-    );
-    viewport.scrollTop = Math.max(
-      0,
-      centreY * viewport.scrollHeight - viewport.clientHeight / 2
-    );
-  });
+  const nouveauBoardRect = board.getBoundingClientRect();
+  if (conserverCentre) {
+    viewport.scrollLeft += nouveauBoardRect.left + ratioX * nouveauBoardRect.width - clientX;
+    viewport.scrollTop += nouveauBoardRect.top + ratioY * nouveauBoardRect.height - clientY;
+    return;
+  }
+  viewport.scrollLeft = Math.min(
+    ancienScrollLeft,
+    Math.max(0, viewport.scrollWidth - viewport.clientWidth)
+  );
+  viewport.scrollTop = Math.min(
+    ancienScrollTop,
+    Math.max(0, viewport.scrollHeight - viewport.clientHeight)
+  );
 }
 
-function definirZoomCampPrototype(value) {
+function definirZoomCampPrototype(value, ancrageClient) {
   if (!DEV_MODE) return;
   campPrototypeZoom = normaliserZoomCampPrototype(value);
   if (typeof localStorage !== "undefined") {
@@ -10341,11 +10363,66 @@ function definirZoomCampPrototype(value) {
       localStorage.setItem(CAMP_PROTOTYPE_ZOOM_STORAGE_KEY, String(campPrototypeZoom));
     } catch (error) {}
   }
-  appliquerZoomCampPrototype(true);
+  appliquerZoomCampPrototype(true, ancrageClient);
 }
 
 function ajusterZoomCampPrototype(delta) {
   definirZoomCampPrototype(campPrototypeZoom + Number(delta || 0));
+}
+
+function distancePincementCampPrototype(touches) {
+  if (!touches || touches.length < 2) return 0;
+  return Math.hypot(
+    touches[1].clientX - touches[0].clientX,
+    touches[1].clientY - touches[0].clientY
+  );
+}
+
+function centrePincementCampPrototype(touches) {
+  return {
+    clientX: (touches[0].clientX + touches[1].clientX) / 2,
+    clientY: (touches[0].clientY + touches[1].clientY) / 2
+  };
+}
+
+function demarrerPincementCampPrototype(event) {
+  if (!DEV_MODE || event.touches.length !== 2) return;
+  const distance = distancePincementCampPrototype(event.touches);
+  if (distance <= 0) return;
+  const interaction = campPrototypePointeur;
+  const board = document.getElementById("camp-prototype-board");
+  annulerAppuiProlongeCampPrototype();
+  if (
+    interaction
+    && board
+    && board.hasPointerCapture(interaction.pointerId)
+  ) {
+    board.releasePointerCapture(interaction.pointerId);
+  }
+  campPrototypePointeur = null;
+  masquerApercuCampPrototype();
+  campPrototypePincement = {
+    distanceInitiale: distance,
+    zoomInitial: campPrototypeZoom
+  };
+  campPrototypeCameraInitialisee = true;
+  event.preventDefault();
+}
+
+function deplacerPincementCampPrototype(event) {
+  if (!campPrototypePincement || event.touches.length !== 2) return;
+  const distance = distancePincementCampPrototype(event.touches);
+  if (distance <= 0) return;
+  const zoomCible = campPrototypePincement.zoomInitial
+    * distance / campPrototypePincement.distanceInitiale;
+  definirZoomCampPrototype(zoomCible, centrePincementCampPrototype(event.touches));
+  event.preventDefault();
+}
+
+function terminerPincementCampPrototype(event) {
+  if (!campPrototypePincement) return;
+  if (event.touches && event.touches.length >= 2) return;
+  campPrototypePincement = null;
 }
 
 function centrerCameraCampPrototype(x, y) {
@@ -10441,35 +10518,41 @@ function rendreTerrainCampPrototype() {
         libre.setAttribute("aria-hidden", "true");
         appliquerCadreTerrainCampPrototype(libre, x, y, 1, 1);
         terrain.appendChild(libre);
-        continue;
       }
-      const zone = campPrototypeApi.zoneTerrainPourCellule(x, y);
-      if (!zone || !zonesConquises.has(zone.id)) continue;
-      const obstacle = campPrototypeApi.OBSTACLE_TYPES[
-        Math.abs(x * 17 + y * 31) % campPrototypeApi.OBSTACLE_TYPES.length
-      ];
-      const peutRetirer = [
-        campPrototypeApi.cleCellule(x, y - 1),
-        campPrototypeApi.cleCellule(x + 1, y),
-        campPrototypeApi.cleCellule(x, y + 1),
-        campPrototypeApi.cleCellule(x - 1, y)
-      ].some(function(cleVoisine) {
-        return cellulesLibres.has(cleVoisine);
-      });
-      const bouton = document.createElement("button");
-      bouton.type = "button";
-      bouton.className = "camp-prototype-obstacle camp-prototype-obstacle-" + obstacle.id
-        + (peutRetirer ? " camp-prototype-obstacle-clearable" : "");
-      bouton.dataset.campTerrainX = String(x);
-      bouton.dataset.campTerrainY = String(y);
-      bouton.setAttribute("aria-label", obstacle.label + ", column " + (x + 1)
-        + ", row " + (y + 1) + (peutRetirer ? ", can be cleared" : ", not reachable yet"));
-      bouton.setAttribute("aria-disabled", peutRetirer ? "false" : "true");
-      bouton.textContent = obstacle.icon;
-      appliquerCadreTerrainCampPrototype(bouton, x, y, 1, 1);
-      terrain.appendChild(bouton);
     }
   }
+  campPrototypeApi.obstaclesTerrain(campPrototypeTerrain).forEach(function(obstacle) {
+    const peutRetirer = campPrototypeApi.peutDebroussailler(
+      campPrototypeTerrain,
+      obstacle.x,
+      obstacle.y
+    ).valide;
+    const bouton = document.createElement("button");
+    bouton.type = "button";
+    bouton.className = "camp-prototype-obstacle camp-prototype-obstacle-" + obstacle.id
+      + (peutRetirer ? " camp-prototype-obstacle-clearable" : "");
+    bouton.dataset.campTerrainX = String(obstacle.x);
+    bouton.dataset.campTerrainY = String(obstacle.y);
+    bouton.setAttribute("aria-label", obstacle.label + ", "
+      + obstacle.width + " by " + obstacle.height + " tiles, column " + (obstacle.x + 1)
+      + ", row " + (obstacle.y + 1)
+      + (peutRetirer ? ", can be cleared" : ", not reachable yet"));
+    bouton.setAttribute("aria-disabled", peutRetirer ? "false" : "true");
+    const image = document.createElement("img");
+    image.className = "camp-prototype-obstacle-sprite";
+    image.src = obstacle.asset;
+    image.alt = "";
+    image.draggable = false;
+    bouton.appendChild(image);
+    appliquerCadreTerrainCampPrototype(
+      bouton,
+      obstacle.x,
+      obstacle.y,
+      obstacle.width,
+      obstacle.height
+    );
+    terrain.appendChild(bouton);
+  });
 }
 
 function actualiserCommandesCampPrototype() {
@@ -10621,7 +10704,7 @@ function rendrePaletteCampPrototype() {
       actualiserCommandesCampPrototype();
       definirMessageCampPrototype(campPrototypeTypeAPlacer
         ? (type.continuous
-            ? "Drag across the grid to paint roads."
+            ? "Drag across the grid to paint Basic Trails."
             : "Tap the grid to place " + type.label + ".")
         : "Placement cancelled.");
     });
@@ -10633,7 +10716,7 @@ function rendrePaletteCampPrototype() {
     gomme.type = "button";
     gomme.className = "camp-prototype-palette-item camp-prototype-road-eraser";
     gomme.setAttribute("aria-pressed", "false");
-    gomme.innerHTML = "<strong>Road eraser</strong><span>Drag over paths to remove them</span>";
+    gomme.innerHTML = "<strong>Trail eraser</strong><span>Drag over Basic Trails to remove them</span>";
     gomme.addEventListener("click", basculerGommeRoutesCampPrototype);
     palette.appendChild(gomme);
   }
@@ -10664,7 +10747,8 @@ function entrerEditionCampPrototype() {
   campPrototypeGommeRoutes = false;
   campPrototypeOutilTerrain = false;
   campPrototypeSelectionUid = null;
-  campPrototypeMessage = "Choose Buildings, Decorations, Paths or Terrain below.";
+  campPrototypeMessage = "";
+  invaliderLargeurBaseCampPrototype();
   renduCampPrototype();
   requestAnimationFrame(function() {
     const done = document.getElementById("camp-prototype-edit-done");
@@ -10684,7 +10768,8 @@ function quitterEditionCampPrototype(restaurerFocus) {
   campPrototypePointeur = null;
   annulerAppuiProlongeCampPrototype();
   masquerApercuCampPrototype();
-  campPrototypeMessage = "Tap a camp element to interact with it.";
+  campPrototypeMessage = "";
+  invaliderLargeurBaseCampPrototype();
   renduCampPrototype();
   if (restaurerFocus === false) return;
   requestAnimationFrame(function() {
@@ -10781,8 +10866,10 @@ function debroussaillerCelluleCampPrototype(x, y) {
   }
   campPrototypeTerrain = resultat.terrain;
   sauvegarderCampPrototype();
+  const cellulesLiberees = obstacle && obstacle.cells ? obstacle.cells.length : 1;
   definirMessageCampPrototype((obstacle ? obstacle.label : "Obstacle")
-    + " removed. This cell is now buildable.");
+    + " removed. " + cellulesLiberees + (cellulesLiberees === 1 ? " cell is" : " cells are")
+    + " now buildable.");
   rendreTerrainCampPrototype();
   actualiserCommandesCampPrototype();
   return true;
@@ -10996,8 +11083,8 @@ function modifierRoutesCampPrototype(cellules, effacer) {
   rendreItemsCampPrototype();
   actualiserCommandesCampPrototype();
   definirMessageCampPrototype(effacer
-    ? "Road tile" + (modifications === 1 ? "" : "s") + " removed."
-    : "Road extended by " + modifications + " tile" + (modifications === 1 ? "." : "s."));
+    ? "Basic Trail tile" + (modifications === 1 ? "" : "s") + " removed."
+    : "Basic Trail extended by " + modifications + " tile" + (modifications === 1 ? "." : "s."));
   return true;
 }
 
@@ -11013,8 +11100,8 @@ function basculerGommeRoutesCampPrototype() {
   rendreItemsCampPrototype();
   actualiserCommandesCampPrototype();
   definirMessageCampPrototype(campPrototypeGommeRoutes
-    ? "Drag across road tiles to erase them."
-    : "Road eraser disabled.");
+    ? "Drag across Basic Trail tiles to erase them."
+    : "Trail eraser disabled.");
 }
 
 function deplacerItemCampPrototype(uid, x, y) {
@@ -11343,8 +11430,8 @@ function terminerInteractionCampPrototype(event, annulee) {
       );
     } else if (interaction.mode === "paint-road" || interaction.mode === "erase-road") {
       definirMessageCampPrototype(interaction.mode === "paint-road"
-        ? "Road tool active. Keep dragging to extend paths."
-        : "Road eraser active. Keep dragging to remove paths.");
+        ? "Basic Trail tool active. Keep dragging to extend paths."
+        : "Trail eraser active. Keep dragging to remove paths.");
     } else if (interaction.bouge) {
       deplacerItemCampPrototype(interaction.uid, interaction.x, interaction.y);
     } else {
@@ -11394,7 +11481,8 @@ function gererClavierCampPrototype(event) {
 function initialiserCampPrototype() {
   if (campPrototypeInitialise || !DEV_MODE) return;
   const board = document.getElementById("camp-prototype-board");
-  if (!board) return;
+  const viewport = document.querySelector(".camp-prototype-viewport");
+  if (!board || !viewport) return;
   campPrototypeInitialise = true;
   chargerCampPrototype();
   board.addEventListener("pointerdown", demarrerInteractionCampPrototype);
@@ -11408,8 +11496,18 @@ function initialiserCampPrototype() {
   board.addEventListener("pointerleave", function() {
     if (!campPrototypePointeur) masquerApercuCampPrototype();
   });
+  viewport.addEventListener("touchstart", demarrerPincementCampPrototype, { passive: false });
+  viewport.addEventListener("touchmove", deplacerPincementCampPrototype, { passive: false });
+  viewport.addEventListener("touchend", terminerPincementCampPrototype);
+  viewport.addEventListener("touchcancel", terminerPincementCampPrototype);
+  viewport.addEventListener("scroll", function() {
+    if (viewport.scrollLeft !== 0 || viewport.scrollTop !== 0) {
+      campPrototypeCameraInitialisee = true;
+    }
+  }, { passive: true });
   board.addEventListener("keydown", gererClavierCampPrototype);
   window.addEventListener("resize", function() {
+    invaliderLargeurBaseCampPrototype();
     appliquerZoomCampPrototype(false);
   });
   board.addEventListener("click", function(event) {
