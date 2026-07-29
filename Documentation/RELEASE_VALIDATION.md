@@ -2,12 +2,12 @@
 
 ## Current status
 
-The published v0.0038 build plus the current unpublished development-only Camp obstacle work were validated on 2026-07-29 against the working copy `V3 - ChatGPT`.
+The published v0.0038 build plus the current unpublished development-only Camp placement and debris-demolition work were validated on 2026-07-29 against the working copy `V3 - ChatGPT`.
 
 - Release status: public game version remains v0.0038; the latest Camp prototype changes are not yet published or listed in the public changelog.
-- Interface references: CSS `0.0133`, JavaScript `0.0145`, Camp module `0.0012`, production module `0.0036`, save module `0.0042`, state module `0.0040`, audio module `0.0007`, config data `0.0043`, content data `0.0052`.
-- Automated suite: 186/186 tests passing.
-- Browser load: no JavaScript exception and no missing runtime asset.
+- Interface references: CSS `0.0136`, JavaScript `0.0147`, Camp module `0.0013`, production module `0.0036`, save module `0.0042`, state module `0.0040`, audio module `0.0007`, config data `0.0043`, content data `0.0052`.
+- Automated suite: 188/188 tests passing.
+- Browser load: no JavaScript exception and no missing runtime asset. Brave mobile emulation at 390 × 844 validated debris selection, Cat assignment, countdown display, Work exclusion, completion, full-footprint clearing and reload persistence.
 
 This file is the release gate for future changes. A release is ready only when every automated gate passes and the relevant manual journeys have been replayed.
 
@@ -19,7 +19,7 @@ From the game folder, run:
 node --test --test-reporter=spec tests\*.test.js
 ```
 
-Required result: zero failed, cancelled, skipped or todo tests (185 tests currently).
+Required result: zero failed, cancelled, skipped or todo tests (188 tests currently).
 
 The suite currently validates:
 
@@ -67,7 +67,7 @@ Validated in headless Chrome with fresh storage and an advanced seeded state.
 | Short mobile | 390 × 667 introduction and guide | Pass |
 | Landscape mobile | 844 × 390 introduction remains scrollable and its action reachable | Pass |
 | Exploration | Map and page do not create document-level horizontal overflow; mobile returns to the map landing view when reopening the tab or launching a zone mission | Pass |
-| Camp (`?debug=1`) | 390 px and 1200 px views: three matching rear facades, upright full-height fences rendered above boundary-touching obstacles/items without intercepting input and removed persistently when their adjacent zone is claimed, three equal 6 × 8 gardens, first three blue-garden rows cleared, six illustrated obstacle types fitted to 1 × 1, 2 × 1 and 2 × 2 footprints, a two-cell bush cleared through the mobile UI, Basic Trail verified at 250% with broad irregular edges and equal-width straight/corner/intersection connections, and normal-view Sawmill/Catchen/Pawsonry menus mapped to Work Wood/Food/Rocks | Pass |
+| Camp (`?debug=1`) | 390 px and 1200 px views: three matching rear facades; upright full-height fences above map elements but below Edit UI and removed persistently with their adjacent zone; three equal 6 × 8 gardens; illustrated 1 × 1, 2 × 1 and 2 × 2 debris; normal-view demolition menu and accessible Cat picker; 10/20/80-minute persisted timers; globally busy demolition Cats; full-footprint completion after reload; debris disabled in Edit; Basic Trail at 250% with broad connected edges; transactional building placement with explicit green Confirm/red Cancel, invalid rotation preview, unchanged storage before confirmation and exact existing-item restoration on cancellation; and normal-view Sawmill/Catchen/Pawsonry navigation to Work | Pass |
 | Accessibility tree | No unnamed interactive control | Pass |
 
 Compact desktop controls below 44 px are intentional secondary controls. They remain above the WCAG 2.2 pointer-target minimum or have sufficient surrounding spacing. Automated contrast reports on tab labels must be visually checked because their painted pseudo-element background is not represented correctly by a simple DOM color sampler.

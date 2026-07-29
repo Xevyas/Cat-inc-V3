@@ -367,7 +367,9 @@ function kittyIsOnZoneExplo(kittyIdx) {
 
 function kittyIsBusy(kittyIdx) {
   const kitty = etat.kittiesData[kittyIdx];
-  return estIngenieur(kitty) || kittyEstManager(kittyIdx) || kittyIsOnExpedition(kittyIdx) || kittyIsInWorkerSlot(kittyIdx) || kittyIsInTraining(kittyIdx) || kittyIsOnZoneExplo(kittyIdx) || kittyIsOnScouting(kittyIdx) || kittyIsInScoutingStaging(kittyIdx) || kittyIsLearningBook(kittyIdx);
+  const demolitionCamp = typeof kittyIsDemolishingCamp === "function"
+    && kittyIsDemolishingCamp(kittyIdx);
+  return estIngenieur(kitty) || kittyEstManager(kittyIdx) || kittyIsOnExpedition(kittyIdx) || kittyIsInWorkerSlot(kittyIdx) || kittyIsInTraining(kittyIdx) || kittyIsOnZoneExplo(kittyIdx) || kittyIsOnScouting(kittyIdx) || kittyIsInScoutingStaging(kittyIdx) || kittyIsLearningBook(kittyIdx) || demolitionCamp;
 }
 
 function isAvailableForAutoAssign(ki, currentSlots) {
@@ -492,6 +494,9 @@ function totalAlloue() {
   if (etat.formationEnCours) total++;
   if (etat.formationIngenieurEnCours) total++;
   if (etat.learningEnCours && Number.isInteger(etat.learningEnCours.kittyIndex)) total++;
+  if (typeof campPrototypeDemolitionsActives === "function") {
+    total += campPrototypeDemolitionsActives().length;
+  }
   total += ingenieursFormes().length;
   return total;
 }
@@ -533,7 +538,8 @@ function kittyHasNonReplaceableAction(kittyIdx) {
     || kittyIsOnScouting(kittyIdx)
     || kittyIsInScoutingStaging(kittyIdx)
     || kittyIsInTraining(kittyIdx)
-    || kittyIsLearningBook(kittyIdx);
+    || kittyIsLearningBook(kittyIdx)
+    || (typeof kittyIsDemolishingCamp === "function" && kittyIsDemolishingCamp(kittyIdx));
 }
 
 // Repair older saves and protect the core invariant: a Cat can own one action
@@ -592,6 +598,10 @@ function normaliserOccupationsChatons() {
       changed = true;
     }
   });
+  if (
+    typeof normaliserDemolitionsCampPrototype === "function"
+    && normaliserDemolitionsCampPrototype(claim)
+  ) changed = true;
   Object.keys(etat.managers || {}).forEach(function(famille) {
     var ki = etat.managers[famille];
     if (ki === null || ki === undefined) return;
@@ -639,6 +649,12 @@ function kittyAllocationLabel(kittyIdx) {
   }
   if (estIngenieur(kittyForLabel)) {
     return { text: "Engineer: passive bonus", cls: "kitty-statut-work" };
+  }
+  const demolitionCamp = typeof demolitionCampPrototypePourKitty === "function"
+    ? demolitionCampPrototypePourKitty(kittyIdx)
+    : null;
+  if (demolitionCamp) {
+    return { text: "Demolition: Camp", cls: "kitty-statut-work" };
   }
   // Recipe slot
   var assignedRecipe = null;
@@ -5367,6 +5383,7 @@ function renduDynamique() {
   }
 
   if (ongletActif === "work")         renduWorkDynamique();
+  if (ongletActif === "camp")         renduCampPrototypeDynamique();
   if (ongletActif === "buildings")    renduBuildings(u);
   if (ongletActif === "facilities")   renduFacilities(u);
   if (ongletActif === "explorations") renduExplorationsDynamique(u);
@@ -6608,6 +6625,7 @@ function renduModalExplo() {
     const isManager    = kittyEstManager(i);
     const inTraining   = kittyIsInTraining(i);
     const isLearning   = kittyIsLearningBook(i);
+    const inDemolition = kittyIsDemolishingCamp(i);
     const onZoneExplo  = kittyIsOnZoneExplo(i);
     const onScouting   = kittyIsOnScouting(i) || (kittyIsInScoutingStaging(i) && scoutingsStagingKitty[exploModalOuvert.scoutingId] !== i);
     const inZoneSlot   = exploModalOuvert.zoneId
@@ -6615,9 +6633,9 @@ function renduModalExplo() {
       : false;
     const requiresExplorator = !!(exploModalOuvert.zoneId && exploModalOuvert.slotIndex === 0);
     const validExplorator = !requiresExplorator || estExplorateurDeZone(i);
-    const disabled     = onExplo || inOtherSlot || inWorker || isManager || inTraining || isLearning || onZoneExplo || inZoneSlot || onScouting || !validExplorator;
-    const forcable     = validExplorator && !onExplo && !inOtherSlot && !inTraining && !isLearning && !onZoneExplo && !inZoneSlot && !onScouting && (inWorker || isManager);
-    let statusLabel    = !validExplorator ? "Explorator required" : (onExplo || onZoneExplo || onScouting || inTraining || isLearning || isManager || inWorker) ? kittyAllocationLabel(i).text : (inOtherSlot || inZoneSlot) ? "in another slot" : "";
+    const disabled     = onExplo || inOtherSlot || inWorker || isManager || inTraining || isLearning || inDemolition || onZoneExplo || inZoneSlot || onScouting || !validExplorator;
+    const forcable     = validExplorator && !onExplo && !inOtherSlot && !inTraining && !isLearning && !inDemolition && !onZoneExplo && !inZoneSlot && !onScouting && (inWorker || isManager);
+    let statusLabel    = !validExplorator ? "Explorator required" : (onExplo || onZoneExplo || onScouting || inTraining || isLearning || inDemolition || isManager || inWorker) ? kittyAllocationLabel(i).text : (inOtherSlot || inZoneSlot) ? "in another slot" : "";
 
     html += '<div class="explo-modal-kitty' + (disabled ? ' explo-modal-kitty-disabled' : '') + '"' +
             (disabled ? ' aria-disabled="true"' : attributsActivationClavier("Select " + k.nom + " for this exploration") + ' onclick="selectionnerKittySlot(' + i + ')"') + '>';
@@ -8710,9 +8728,10 @@ function renduModalWorker() {
     const inTraining  = kittyIsInTraining(i);
     const isManager   = kittyEstManager(i);
     const isLearning  = kittyIsLearningBook(i);
+    const inDemolition = kittyIsDemolishingCamp(i);
     const inExplorationStaging = kittyIsInExplorationStaging(i);
-    const disabled    = onExplo || onZoneExplo || onScouting || inExplorationStaging || inWorker || inTraining || isLearning || isManager;
-    const forcable    = !isLearning && !onExplo && !onZoneExplo && !onScouting && !inExplorationStaging && !inTraining && (inWorker || isManager);
+    const disabled    = onExplo || onZoneExplo || onScouting || inExplorationStaging || inWorker || inTraining || isLearning || inDemolition || isManager;
+    const forcable    = !isLearning && !inDemolition && !onExplo && !onZoneExplo && !onScouting && !inExplorationStaging && !inTraining && (inWorker || isManager);
     const status      = disabled ? kittyAllocationLabel(i).text : "";
     html += '<div class="worker-modal-kitty' + (disabled ? ' worker-modal-kitty-disabled' : '') + '"' +
             (disabled ? ' aria-disabled="true"' : attributsActivationClavier("Assign " + k.nom + " to this work slot") + ' onclick="assignerWorkerSlot(' + i + ')"') + '>';
@@ -9270,6 +9289,7 @@ function tick() {
 
   // Check exploration completion
   const maintenant = Date.now();
+  terminerDemolitionsCampPrototype(maintenant);
   let exploTerminees = false;
   etat.exploEnCours = etat.exploEnCours.filter(function(explo) {
     if ((maintenant - explo.startTs) / 1000 >= explo.duree) {
@@ -10163,6 +10183,7 @@ document.getElementById("bouton-intro").addEventListener("click", function() {
 const CAMP_PROTOTYPE_STORAGE_KEY = "catIncCampPrototypeLayoutV2";
 const CAMP_PROTOTYPE_LEGACY_STORAGE_KEY = "catIncCampPrototypeLayoutV1";
 const CAMP_PROTOTYPE_TERRAIN_STORAGE_KEY = "catIncCampPrototypeTerrainV4";
+const CAMP_PROTOTYPE_DEMOLITIONS_STORAGE_KEY = "catIncCampPrototypeDemolitionsV1";
 const CAMP_PROTOTYPE_TERRAIN_LEGACY_STORAGE_KEYS = [
   "catIncCampPrototypeTerrainV3",
   "catIncCampPrototypeTerrainV2",
@@ -10185,7 +10206,6 @@ let campPrototypeZoom = 1;
 let campPrototypeTypeAPlacer = null;
 let campPrototypeRotationAPlacer = 0;
 let campPrototypeGommeRoutes = false;
-let campPrototypeOutilTerrain = false;
 let campPrototypeSelectionUid = null;
 let campPrototypePointeur = null;
 let campPrototypeUidCompteur = 0;
@@ -10194,6 +10214,10 @@ let campPrototypeCameraInitialisee = false;
 let campPrototypeModeEdition = false;
 let campPrototypeCategorieOuverte = null;
 let campPrototypeInteractionUid = null;
+let campPrototypePlacementEnCours = null;
+let campPrototypeDemolitions = [];
+let campPrototypeDemolitionObstacleUid = null;
+let campPrototypeDerniereSecondeDemolition = null;
 let campPrototypeMessage = "";
 let campPrototypeAppuiProlongeTimer = null;
 let campPrototypePincement = null;
@@ -10204,6 +10228,224 @@ function typeCampPrototype(typeId) {
 
 function itemCampPrototype(uid) {
   return campPrototypeLayout.find(function(item) { return item.uid === uid; }) || null;
+}
+
+function obstacleCampPrototypeParUid(uid) {
+  return campPrototypeApi.OBSTACLE_LAYOUT.find(function(obstacle) {
+    return obstacle.uid === uid;
+  }) || null;
+}
+
+function obstacleCampPrototypeActif(uid) {
+  return campPrototypeApi.obstaclesTerrain(campPrototypeTerrain).find(function(obstacle) {
+    return obstacle.uid === uid;
+  }) || null;
+}
+
+function campPrototypeDemolitionsActives() {
+  return Array.isArray(campPrototypeDemolitions) ? campPrototypeDemolitions : [];
+}
+
+function demolitionCampPrototypePourObstacle(uid) {
+  return campPrototypeDemolitionsActives().find(function(demolition) {
+    return demolition.obstacleUid === uid;
+  }) || null;
+}
+
+function demolitionCampPrototypePourKitty(kittyIndex) {
+  return campPrototypeDemolitionsActives().find(function(demolition) {
+    return demolition.kittyIndex === kittyIndex;
+  }) || null;
+}
+
+function kittyIsDemolishingCamp(kittyIndex) {
+  return Boolean(demolitionCampPrototypePourKitty(kittyIndex));
+}
+
+function sauvegarderDemolitionsCampPrototype() {
+  if (!DEV_MODE || typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(
+      CAMP_PROTOTYPE_DEMOLITIONS_STORAGE_KEY,
+      JSON.stringify(campPrototypeDemolitionsActives())
+    );
+  } catch (error) {
+    definirMessageCampPrototype("Camp demolition progress could not be saved in this browser.");
+  }
+}
+
+function normaliserDemolitionsCampPrototype(claimKitty) {
+  const source = Array.isArray(campPrototypeDemolitions) ? campPrototypeDemolitions : [];
+  const obstaclesActifs = new Set(campPrototypeApi.obstaclesTerrain(campPrototypeTerrain).map(function(obstacle) {
+    return obstacle.uid;
+  }));
+  const obstaclesPris = new Set();
+  const chatonsPris = new Set();
+  const normalisees = [];
+  let changed = !Array.isArray(campPrototypeDemolitions);
+  source.forEach(function(demolition) {
+    const obstacle = demolition && obstacleCampPrototypeParUid(demolition.obstacleUid);
+    const kittyIndex = demolition && Number(demolition.kittyIndex);
+    const startTs = demolition && Number(demolition.startTs);
+    const duree = demolition && Number(demolition.duree);
+    const valide = Boolean(
+      obstacle
+      && obstaclesActifs.has(obstacle.uid)
+      && Number.isInteger(kittyIndex)
+      && Number.isFinite(startTs)
+      && Number.isFinite(duree)
+      && duree > 0
+      && !obstaclesPris.has(obstacle.uid)
+      && !chatonsPris.has(kittyIndex)
+    );
+    if (!valide || (typeof claimKitty === "function" && !claimKitty(kittyIndex))) {
+      changed = true;
+      return;
+    }
+    const entree = {
+      obstacleUid: obstacle.uid,
+      kittyIndex: kittyIndex,
+      startTs: startTs,
+      duree: duree
+    };
+    if (
+      demolition.obstacleUid !== entree.obstacleUid
+      || demolition.kittyIndex !== entree.kittyIndex
+      || demolition.startTs !== entree.startTs
+      || demolition.duree !== entree.duree
+    ) changed = true;
+    obstaclesPris.add(obstacle.uid);
+    chatonsPris.add(kittyIndex);
+    normalisees.push(entree);
+  });
+  if (normalisees.length !== source.length) changed = true;
+  campPrototypeDemolitions = normalisees;
+  if (changed) sauvegarderDemolitionsCampPrototype();
+  return changed;
+}
+
+function chargerDemolitionsCampPrototype() {
+  campPrototypeDemolitions = [];
+  if (!DEV_MODE || typeof localStorage === "undefined") return;
+  try {
+    const brut = localStorage.getItem(CAMP_PROTOTYPE_DEMOLITIONS_STORAGE_KEY);
+    campPrototypeDemolitions = brut ? JSON.parse(brut) : [];
+  } catch (error) {
+    campPrototypeDemolitions = [];
+    try {
+      localStorage.removeItem(CAMP_PROTOTYPE_DEMOLITIONS_STORAGE_KEY);
+    } catch (storageError) {}
+  }
+  normaliserDemolitionsCampPrototype();
+}
+
+function placementCampPrototypePourItem(uid) {
+  return campPrototypePlacementEnCours
+    && campPrototypePlacementEnCours.mode === "existing"
+    && campPrototypePlacementEnCours.uid === uid
+    ? campPrototypePlacementEnCours
+    : null;
+}
+
+function evaluerPlacementCampPrototype(placement) {
+  if (
+    !placement
+    || !Number.isFinite(placement.x)
+    || !Number.isFinite(placement.y)
+  ) {
+    return { valide: false, raison: "Choose a position on the grid." };
+  }
+  return campPrototypeApi.testerPlacement(
+    campPrototypeLayout,
+    placement.type,
+    placement.x,
+    placement.y,
+    placement.mode === "existing" ? placement.uid : null,
+    placement.rotation,
+    campPrototypeTerrain
+  );
+}
+
+function actualiserValiditePlacementCampPrototype() {
+  if (!campPrototypePlacementEnCours) return null;
+  const resultat = evaluerPlacementCampPrototype(campPrototypePlacementEnCours);
+  campPrototypePlacementEnCours.valide = resultat.valide;
+  campPrototypePlacementEnCours.raison = resultat.raison;
+  return resultat;
+}
+
+function commencerPlacementExistantCampPrototype(item) {
+  if (!item) return null;
+  campPrototypePlacementEnCours = {
+    mode: "existing",
+    uid: item.uid,
+    type: item.type,
+    x: item.x,
+    y: item.y,
+    rotation: item.rotation || 0,
+    original: {
+      x: item.x,
+      y: item.y,
+      rotation: item.rotation || 0
+    },
+    valide: true,
+    raison: ""
+  };
+  actualiserValiditePlacementCampPrototype();
+  return campPrototypePlacementEnCours;
+}
+
+function commencerNouveauPlacementCampPrototype(typeId) {
+  const type = typeCampPrototype(typeId);
+  if (!type || type.continuous) return null;
+  campPrototypePlacementEnCours = {
+    mode: "new",
+    uid: null,
+    type: typeId,
+    x: null,
+    y: null,
+    rotation: 0,
+    original: null,
+    valide: false,
+    raison: "Choose a position on the grid."
+  };
+  return campPrototypePlacementEnCours;
+}
+
+function definirPositionPlacementCampPrototype(typeId, x, y, rotation, uid) {
+  const type = typeCampPrototype(typeId);
+  if (!type || type.continuous) return false;
+  let placement = campPrototypePlacementEnCours;
+  if (
+    !placement
+    || placement.type !== typeId
+    || (uid && placement.uid !== uid)
+    || (!uid && placement.mode !== "new")
+  ) {
+    const item = uid ? itemCampPrototype(uid) : null;
+    placement = item
+      ? commencerPlacementExistantCampPrototype(item)
+      : commencerNouveauPlacementCampPrototype(typeId);
+  }
+  if (!placement) return false;
+  placement.x = x;
+  placement.y = y;
+  placement.rotation = type.rotatable
+    ? campPrototypeApi.normaliserRotation(rotation)
+    : 0;
+  if (placement.mode === "new") {
+    campPrototypeRotationAPlacer = placement.rotation;
+  }
+  const resultat = actualiserValiditePlacementCampPrototype();
+  const dimensions = dimensionsCampPrototype(placement.type, placement.rotation);
+  definirMessageCampPrototype(resultat.valide
+    ? type.label + " ready at column " + (placement.x + 1) + ", row "
+      + (placement.y + 1) + ". Confirm to place it."
+    : type.label + " cannot be placed here: " + resultat.raison
+      + " Move or rotate it before confirming.");
+  rendreItemsCampPrototype();
+  actualiserCommandesCampPrototype();
+  return Boolean(dimensions);
 }
 
 function dimensionsCampPrototype(typeId, rotation) {
@@ -10220,6 +10462,10 @@ function sauvegarderCampPrototype() {
   try {
     localStorage.setItem(CAMP_PROTOTYPE_STORAGE_KEY, JSON.stringify(campPrototypeLayout));
     localStorage.setItem(CAMP_PROTOTYPE_TERRAIN_STORAGE_KEY, JSON.stringify(campPrototypeTerrain));
+    localStorage.setItem(
+      CAMP_PROTOTYPE_DEMOLITIONS_STORAGE_KEY,
+      JSON.stringify(campPrototypeDemolitionsActives())
+    );
   } catch (error) {
     definirMessageCampPrototype("The prototype layout could not be saved in this browser.");
   }
@@ -10291,6 +10537,7 @@ function chargerCampPrototype() {
       });
     } catch (storageError) {}
   }
+  chargerDemolitionsCampPrototype();
 }
 
 function normaliserZoomCampPrototype(value) {
@@ -10433,6 +10680,7 @@ function terminerPincementCampPrototype(event) {
   if (!campPrototypePincement) return;
   if (event.touches && event.touches.length >= 2) return;
   campPrototypePincement = null;
+  if (campPrototypePlacementEnCours) rendreItemsCampPrototype();
 }
 
 function centrerCameraCampPrototype(x, y) {
@@ -10503,6 +10751,8 @@ function fermerMenuInteractionCampPrototype() {
     menu.hidden = true;
     delete menu.dataset.workFamily;
     delete menu.dataset.campUid;
+    delete menu.dataset.obstacleUid;
+    delete menu.dataset.interactionKind;
   }
   document.querySelectorAll('[aria-controls="camp-prototype-interaction-menu"]').forEach(function(item) {
     item.setAttribute("aria-expanded", "false");
@@ -10530,12 +10780,63 @@ function ouvrirMenuInteractionCampPrototype(uid) {
   menu.style.top = (item.y / campPrototypeApi.GRID_HEIGHT * 100) + "%";
   menu.dataset.workFamily = famille;
   menu.dataset.campUid = uid;
+  menu.dataset.interactionKind = "building";
   menu.setAttribute("aria-label", type.label + " actions");
-  const action = menu.querySelector("button");
-  if (action) action.setAttribute("aria-label", "Open " + type.label + " in Work");
+  menu.innerHTML = '<button type="button" role="menuitem" aria-label="Open '
+    + echapperAttributHtml(type.label)
+    + ' in Work" onclick="ouvrirWorkDepuisCamp(event)"><span aria-hidden="true">→</span></button>';
   const itemElement = document.querySelector('[data-camp-uid="' + uid + '"]');
   if (itemElement) itemElement.setAttribute("aria-expanded", "true");
   campPrototypeInteractionUid = uid;
+  menu.hidden = false;
+  return true;
+}
+
+function ouvrirMenuDemolitionCampPrototype(obstacleUid) {
+  if (!DEV_MODE || campPrototypeModeEdition) return false;
+  const obstacle = obstacleCampPrototypeActif(obstacleUid);
+  const menu = document.getElementById("camp-prototype-interaction-menu");
+  if (!obstacle || !menu) {
+    fermerMenuInteractionCampPrototype();
+    return false;
+  }
+  const resultat = campPrototypeApi.peutDebroussailler(
+    campPrototypeTerrain,
+    obstacle.x,
+    obstacle.y
+  );
+  if (!resultat.valide) {
+    fermerMenuInteractionCampPrototype();
+    definirMessageCampPrototype(resultat.raison);
+    return false;
+  }
+  if (campPrototypeInteractionUid === obstacleUid && !menu.hidden) {
+    fermerMenuInteractionCampPrototype();
+    return false;
+  }
+  fermerMenuInteractionCampPrototype();
+  menu.style.left = ((obstacle.x + obstacle.width / 2) / campPrototypeApi.GRID_WIDTH * 100) + "%";
+  menu.style.top = (obstacle.y / campPrototypeApi.GRID_HEIGHT * 100) + "%";
+  menu.dataset.obstacleUid = obstacleUid;
+  menu.dataset.interactionKind = "demolition";
+  menu.setAttribute("aria-label", obstacle.label + " actions");
+  const demolition = demolitionCampPrototypePourObstacle(obstacleUid);
+  if (demolition) {
+    menu.innerHTML = '<span class="camp-prototype-demolition-menu-status">'
+      + '<span aria-hidden="true">⏱</span> '
+      + '<span data-camp-demolition-menu-timer>'
+      + formaterTemps(Math.max(0, demolition.duree - (Date.now() - demolition.startTs) / 1000))
+      + '</span></span>';
+  } else {
+    menu.innerHTML = '<button type="button" class="camp-prototype-demolition-action" role="menuitem"'
+      + ' aria-label="Demolish ' + echapperAttributHtml(obstacle.label)
+      + '" onclick="ouvrirModalDemolitionCamp(event)"><span aria-hidden="true">⛏</span>'
+      + '<small>Demolish</small></button>';
+  }
+  const obstacleElement = document.querySelector('[data-camp-obstacle-uid="'
+    + obstacleUid + '"]');
+  if (obstacleElement) obstacleElement.setAttribute("aria-expanded", "true");
+  campPrototypeInteractionUid = obstacleUid;
   menu.hidden = false;
   return true;
 }
@@ -10556,6 +10857,184 @@ function ouvrirWorkDepuisCamp(event) {
     if (filtre) filtre.focus();
   });
   return true;
+}
+
+function ouvrirModalDemolitionCamp(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  const menu = document.getElementById("camp-prototype-interaction-menu");
+  const obstacleUid = menu && menu.dataset.obstacleUid;
+  const obstacle = obstacleCampPrototypeActif(obstacleUid);
+  const resultat = obstacle && campPrototypeApi.peutDebroussailler(
+    campPrototypeTerrain,
+    obstacle.x,
+    obstacle.y
+  );
+  if (
+    !obstacle
+    || !resultat
+    || !resultat.valide
+    || demolitionCampPrototypePourObstacle(obstacleUid)
+  ) {
+    fermerMenuInteractionCampPrototype();
+    return false;
+  }
+  campPrototypeDemolitionObstacleUid = obstacleUid;
+  fermerMenuInteractionCampPrototype();
+  renduModalDemolitionCamp();
+  ouvrirDialogueModal("camp-demolition-modal", {
+    dismissible: true,
+    fermer: fermerModalDemolitionCamp,
+    focusSelector: ".camp-demolition-kitty[data-clavier-clic]",
+    returnFocusSelector: '[data-camp-obstacle-uid="' + obstacleUid + '"]'
+  });
+  return true;
+}
+
+function fermerModalDemolitionCamp() {
+  campPrototypeDemolitionObstacleUid = null;
+  fermerDialogueModal("camp-demolition-modal");
+}
+
+function renduModalDemolitionCamp() {
+  const obstacle = obstacleCampPrototypeActif(campPrototypeDemolitionObstacleUid);
+  const contenu = document.getElementById("camp-demolition-modal-kitties");
+  if (!obstacle || !contenu) return;
+  const duree = campPrototypeApi.dureeDemolitionObstacle(obstacle);
+  ecrireTexte(
+    document.getElementById("camp-demolition-modal-title"),
+    "Assign a Cat to demolish " + obstacle.label
+  );
+  ecrireTexte(
+    document.getElementById("camp-demolition-modal-summary"),
+    obstacle.cells.length + (obstacle.cells.length === 1 ? " cell" : " cells")
+      + " · " + formaterTemps(duree)
+  );
+  let html = "";
+  etat.kittiesData.forEach(function(kitty, kittyIndex) {
+    if (!kitty || estIngenieur(kitty)) return;
+    const busy = kittyIsBusy(kittyIndex) || kittyIsInExplorationStaging(kittyIndex);
+    const status = busy ? kittyAllocationLabel(kittyIndex).text : "Available";
+    const tier = TIERS_KITTIES[kitty.tier] || "Kitty";
+    html += '<div class="camp-demolition-kitty' + (busy ? ' camp-demolition-kitty-disabled' : '') + '"'
+      + (busy
+        ? ' aria-disabled="true"'
+        : attributsActivationClavier("Assign " + kitty.nom + " to demolish " + obstacle.label)
+          + ' onclick="selectionnerKittyDemolitionCamp(' + kittyIndex + ')"')
+      + '><span class="camp-demolition-kitty-icon">' + kittyIconHtml(kitty) + '</span>'
+      + '<span class="camp-demolition-kitty-copy"><strong>' + echapperAttributHtml(kitty.nom)
+      + '</strong><small>' + echapperAttributHtml(tier) + ' · Level ' + (kitty.niveau || 0)
+      + '</small></span><span class="camp-demolition-kitty-status">'
+      + echapperAttributHtml(status) + '</span></div>';
+  });
+  contenu.innerHTML = html || '<p class="camp-demolition-empty">No Cat can demolish this obstacle yet.</p>';
+}
+
+function selectionnerKittyDemolitionCamp(kittyIndex) {
+  const obstacle = obstacleCampPrototypeActif(campPrototypeDemolitionObstacleUid);
+  if (
+    !obstacle
+    || !etat.kittiesData[kittyIndex]
+    || estIngenieur(etat.kittiesData[kittyIndex])
+    || kittyIsBusy(kittyIndex)
+    || kittyIsInExplorationStaging(kittyIndex)
+    || demolitionCampPrototypePourObstacle(obstacle.uid)
+  ) return false;
+  const resultat = campPrototypeApi.peutDebroussailler(
+    campPrototypeTerrain,
+    obstacle.x,
+    obstacle.y
+  );
+  if (!resultat.valide) return false;
+  const duree = campPrototypeApi.dureeDemolitionObstacle(obstacle);
+  if (!duree) return false;
+  const kitty = etat.kittiesData[kittyIndex];
+  campPrototypeDemolitions.push({
+    obstacleUid: obstacle.uid,
+    kittyIndex: kittyIndex,
+    startTs: Date.now(),
+    duree: duree
+  });
+  sauvegarderDemolitionsCampPrototype();
+  jouerSonAffectation();
+  ajouterLog("event", kitty.nom + " started demolishing " + obstacle.label
+    + " at Base Camp (" + formaterTemps(duree) + ").");
+  sauvegarder();
+  fermerModalDemolitionCamp();
+  definirMessageCampPrototype(kitty.nom + " is demolishing " + obstacle.label
+    + ". Time remaining: " + formaterTemps(duree) + ".");
+  rendu();
+  renduManagement();
+  return true;
+}
+
+function terminerDemolitionsCampPrototype(maintenant) {
+  if (!DEV_MODE || campPrototypeDemolitionsActives().length === 0) return false;
+  const timestamp = Number.isFinite(maintenant) ? maintenant : Date.now();
+  const terminees = campPrototypeDemolitionsActives().filter(function(demolition) {
+    return (timestamp - demolition.startTs) / 1000 >= demolition.duree;
+  });
+  if (terminees.length === 0) return false;
+  const uidsTerminees = new Set(terminees.map(function(demolition) {
+    return demolition.obstacleUid;
+  }));
+  terminees.forEach(function(demolition) {
+    const obstacle = obstacleCampPrototypeActif(demolition.obstacleUid);
+    const kitty = etat.kittiesData[demolition.kittyIndex];
+    if (!obstacle) return;
+    const resultat = campPrototypeApi.debroussaillerTerrain(
+      campPrototypeTerrain,
+      obstacle.x,
+      obstacle.y
+    );
+    if (!resultat.valide) return;
+    campPrototypeTerrain = resultat.terrain;
+    ajouterLog("event", (kitty ? kitty.nom : "A Cat") + " finished demolishing "
+      + obstacle.label + " at Base Camp.");
+    afficherNotification("⛏ " + obstacle.label + " cleared at Base Camp!");
+  });
+  campPrototypeDemolitions = campPrototypeDemolitionsActives().filter(function(demolition) {
+    return !uidsTerminees.has(demolition.obstacleUid);
+  });
+  sauvegarderCampPrototype();
+  sauvegarder();
+  campPrototypeDerniereSecondeDemolition = null;
+  if ((document.body.dataset.ongletActif || "gang") === "camp") {
+    fermerMenuInteractionCampPrototype();
+    renduCampPrototype();
+  }
+  if ((document.body.dataset.ongletActif || "gang") === "gang") renduManagement();
+  return true;
+}
+
+function renduCampPrototypeDynamique(maintenant) {
+  if (!DEV_MODE || (document.body.dataset.ongletActif || "gang") !== "camp") return;
+  const timestamp = Number.isFinite(maintenant) ? maintenant : Date.now();
+  const seconde = Math.floor(timestamp / 1000);
+  if (campPrototypeDerniereSecondeDemolition === seconde) return;
+  campPrototypeDerniereSecondeDemolition = seconde;
+  document.querySelectorAll("[data-camp-demolition-timer]").forEach(function(element) {
+    const demolition = demolitionCampPrototypePourObstacle(element.dataset.campDemolitionTimer);
+    if (!demolition) return;
+    const restant = Math.max(0, demolition.duree - (timestamp - demolition.startTs) / 1000);
+    element.textContent = formaterTemps(restant);
+    element.closest(".camp-prototype-obstacle").setAttribute(
+      "aria-label",
+      element.closest(".camp-prototype-obstacle").dataset.campObstacleLabel
+        + ", demolition in progress, " + formaterTemps(restant) + " remaining"
+    );
+  });
+  const timerMenu = document.querySelector("[data-camp-demolition-menu-timer]");
+  const menu = document.getElementById("camp-prototype-interaction-menu");
+  const demolitionMenu = menu && demolitionCampPrototypePourObstacle(menu.dataset.obstacleUid);
+  if (timerMenu && demolitionMenu) {
+    timerMenu.textContent = formaterTemps(Math.max(
+      0,
+      demolitionMenu.duree - (timestamp - demolitionMenu.startTs) / 1000
+    ));
+  }
 }
 
 function actualiserCloturesCampPrototype(zonesConquises) {
@@ -10608,23 +11087,51 @@ function rendreTerrainCampPrototype() {
       obstacle.x,
       obstacle.y
     ).valide;
+    const demolition = demolitionCampPrototypePourObstacle(obstacle.uid);
     const bouton = document.createElement("button");
     bouton.type = "button";
     bouton.className = "camp-prototype-obstacle camp-prototype-obstacle-" + obstacle.id
-      + (peutRetirer ? " camp-prototype-obstacle-clearable" : "");
+      + (peutRetirer ? " camp-prototype-obstacle-clearable" : "")
+      + (demolition ? " camp-prototype-obstacle-demolition-active" : "");
+    bouton.dataset.campObstacleUid = obstacle.uid;
+    bouton.dataset.campObstacleLabel = obstacle.label;
     bouton.dataset.campTerrainX = String(obstacle.x);
     bouton.dataset.campTerrainY = String(obstacle.y);
     bouton.setAttribute("aria-label", obstacle.label + ", "
       + obstacle.width + " by " + obstacle.height + " tiles, column " + (obstacle.x + 1)
       + ", row " + (obstacle.y + 1)
-      + (peutRetirer ? ", can be cleared" : ", not reachable yet"));
-    bouton.setAttribute("aria-disabled", peutRetirer ? "false" : "true");
+      + (demolition
+        ? ", demolition in progress"
+        : (peutRetirer && !campPrototypeModeEdition
+            ? ", available for demolition"
+            : (peutRetirer ? ", editing disabled" : ", not reachable yet"))));
+    bouton.setAttribute(
+      "aria-disabled",
+      peutRetirer && !campPrototypeModeEdition ? "false" : "true"
+    );
+    if (peutRetirer && !campPrototypeModeEdition) {
+      bouton.setAttribute("aria-haspopup", "menu");
+      bouton.setAttribute("aria-expanded", "false");
+      bouton.setAttribute("aria-controls", "camp-prototype-interaction-menu");
+    } else {
+      bouton.tabIndex = -1;
+    }
     const image = document.createElement("img");
     image.className = "camp-prototype-obstacle-sprite";
     image.src = obstacle.asset;
     image.alt = "";
     image.draggable = false;
     bouton.appendChild(image);
+    if (demolition) {
+      const timer = document.createElement("span");
+      timer.className = "camp-prototype-obstacle-timer";
+      timer.dataset.campDemolitionTimer = obstacle.uid;
+      timer.textContent = formaterTemps(Math.max(
+        0,
+        demolition.duree - (Date.now() - demolition.startTs) / 1000
+      ));
+      bouton.appendChild(timer);
+    }
     appliquerCadreTerrainCampPrototype(
       bouton,
       obstacle.x,
@@ -10650,8 +11157,28 @@ function actualiserCommandesCampPrototype() {
   if (supprimer) supprimer.disabled = !selection;
   const tourner = document.getElementById("camp-prototype-rotate");
   if (tourner) {
-    const typeSelectionne = selection && typeCampPrototype(selection.type);
+    const typeSelectionne = typeCampPrototype(
+      campPrototypePlacementEnCours
+        ? campPrototypePlacementEnCours.type
+        : (selection ? selection.type : campPrototypeTypeAPlacer)
+    );
     tourner.disabled = !(typeSelectionne && typeSelectionne.rotatable);
+  }
+  const actionsPlacement = document.getElementById("camp-prototype-placement-actions");
+  const confirmerPlacement = document.getElementById("camp-prototype-placement-confirm");
+  const placementActif = Boolean(
+    campPrototypePlacementEnCours
+    && typeCampPrototype(campPrototypePlacementEnCours.type)
+    && !typeCampPrototype(campPrototypePlacementEnCours.type).continuous
+  );
+  if (actionsPlacement) actionsPlacement.hidden = !placementActif;
+  if (confirmerPlacement) {
+    confirmerPlacement.disabled = !(
+      placementActif
+      && campPrototypePlacementEnCours.valide
+      && Number.isFinite(campPrototypePlacementEnCours.x)
+      && Number.isFinite(campPrototypePlacementEnCours.y)
+    );
   }
   const gomme = document.getElementById("camp-prototype-road-erase");
   if (gomme) {
@@ -10663,8 +11190,7 @@ function actualiserCommandesCampPrototype() {
     const categorie = bouton.dataset.campCategory;
     const actif = campPrototypeCategorieOuverte === categorie
       || (typeActif && typeActif.category === categorie)
-      || (categorie === "road" && campPrototypeGommeRoutes)
-      || (categorie === "terrain" && campPrototypeOutilTerrain);
+      || (categorie === "road" && campPrototypeGommeRoutes);
     bouton.classList.toggle("camp-prototype-category-active", Boolean(actif));
     bouton.setAttribute("aria-pressed", actif ? "true" : "false");
   });
@@ -10686,7 +11212,6 @@ function actualiserCommandesCampPrototype() {
     const outilContinu = campPrototypeGommeRoutes
       || Boolean(typeActif && typeActif.continuous);
     board.classList.toggle("camp-prototype-tool-continuous", outilContinu);
-    board.classList.toggle("camp-prototype-terrain-mode", campPrototypeOutilTerrain);
   }
   document.body.classList.toggle("camp-prototype-editing", campPrototypeModeEdition);
   if (menu) menu.hidden = !campPrototypeModeEdition || !campPrototypeCategorieOuverte;
@@ -10716,15 +11241,6 @@ function rendrePaletteCampPrototype() {
       + " cells cleared · " + campPrototypeTerrain.claimedZoneIds.length + " / "
       + Object.keys(campPrototypeApi.TERRITORY_ZONES).length + " territories claimed";
     palette.appendChild(resume);
-
-    const debroussailler = document.createElement("button");
-    debroussailler.type = "button";
-    debroussailler.className = "camp-prototype-palette-item camp-prototype-terrain-zone-action"
-      + (campPrototypeOutilTerrain ? " camp-prototype-palette-active" : "");
-    debroussailler.setAttribute("aria-pressed", campPrototypeOutilTerrain ? "true" : "false");
-    debroussailler.innerHTML = "<strong>Clear obstacles</strong><span>Tap highlighted weeds, pots or rubble</span>";
-    debroussailler.addEventListener("click", activerDebroussaillageCampPrototype);
-    palette.appendChild(debroussailler);
 
     Object.keys(campPrototypeApi.TERRITORY_ZONES).forEach(function(zoneId) {
       if (zoneId === "home") return;
@@ -10774,19 +11290,24 @@ function rendrePaletteCampPrototype() {
       + '<span class="camp-prototype-palette-copy"><strong>' + type.label + "</strong><span>"
       + type.width + " × " + type.height + " cells</span></span>";
     bouton.addEventListener("click", function() {
-      campPrototypeTypeAPlacer = campPrototypeTypeAPlacer === typeId ? null : typeId;
+      const memeTypeActif = campPrototypeTypeAPlacer === typeId;
+      campPrototypePlacementEnCours = null;
+      campPrototypeTypeAPlacer = memeTypeActif ? null : typeId;
       campPrototypeRotationAPlacer = 0;
       campPrototypeGommeRoutes = false;
-      campPrototypeOutilTerrain = false;
       campPrototypeSelectionUid = null;
       campPrototypeCategorieOuverte = null;
       masquerApercuCampPrototype();
+      if (campPrototypeTypeAPlacer && !type.continuous) {
+        commencerNouveauPlacementCampPrototype(typeId);
+      }
       rendreItemsCampPrototype();
       actualiserCommandesCampPrototype();
       definirMessageCampPrototype(campPrototypeTypeAPlacer
         ? (type.continuous
             ? "Drag across the grid to paint Basic Trails."
-            : "Tap the grid to place " + type.label + ".")
+            : "Tap the grid to preview " + type.label
+              + ", then confirm or cancel its placement.")
         : "Placement cancelled.");
     });
     palette.appendChild(bouton);
@@ -10807,7 +11328,6 @@ function rendrePaletteCampPrototype() {
 function ouvrirCategorieCampPrototype(categorie) {
   if (!DEV_MODE || !campPrototypeModeEdition) return;
   if (!["building", "decoration", "road", "terrain"].includes(categorie)) return;
-  if (categorie !== "terrain") campPrototypeOutilTerrain = false;
   campPrototypeCategorieOuverte = campPrototypeCategorieOuverte === categorie ? null : categorie;
   rendrePaletteCampPrototype();
   actualiserCommandesCampPrototype();
@@ -10827,8 +11347,8 @@ function entrerEditionCampPrototype() {
   campPrototypeTypeAPlacer = null;
   campPrototypeRotationAPlacer = 0;
   campPrototypeGommeRoutes = false;
-  campPrototypeOutilTerrain = false;
   campPrototypeSelectionUid = null;
+  campPrototypePlacementEnCours = null;
   campPrototypeMessage = "";
   invaliderLargeurBaseCampPrototype();
   renduCampPrototype();
@@ -10845,8 +11365,8 @@ function quitterEditionCampPrototype(restaurerFocus) {
   campPrototypeTypeAPlacer = null;
   campPrototypeRotationAPlacer = 0;
   campPrototypeGommeRoutes = false;
-  campPrototypeOutilTerrain = false;
   campPrototypeSelectionUid = null;
+  campPrototypePlacementEnCours = null;
   campPrototypePointeur = null;
   annulerAppuiProlongeCampPrototype();
   masquerApercuCampPrototype();
@@ -10868,7 +11388,11 @@ function rendreItemsCampPrototype() {
   campPrototypeLayout.forEach(function(item) {
     const type = typeCampPrototype(item.type);
     if (!type) return;
-    const dimensions = dimensionsCampPrototype(item.type, item.rotation);
+    const placement = placementCampPrototypePourItem(item.uid);
+    const xAffiche = placement ? placement.x : item.x;
+    const yAffiche = placement ? placement.y : item.y;
+    const rotationAffiche = placement ? placement.rotation : item.rotation;
+    const dimensions = dimensionsCampPrototype(item.type, rotationAffiche);
     const bouton = document.createElement("button");
     bouton.type = "button";
     bouton.className = "camp-prototype-item camp-prototype-color-" + type.color;
@@ -10884,10 +11408,21 @@ function rendreItemsCampPrototype() {
     }
     const selectionne = campPrototypeModeEdition && item.uid === campPrototypeSelectionUid;
     bouton.classList.toggle("camp-prototype-item-selected", selectionne);
+    if (placement) {
+      bouton.classList.add(
+        "camp-prototype-item-placement-pending",
+        placement.valide
+          ? "camp-prototype-item-placement-valid"
+          : "camp-prototype-item-placement-invalid"
+      );
+    }
     bouton.setAttribute("aria-pressed", selectionne ? "true" : "false");
-    bouton.setAttribute("aria-label", type.label + ", column " + (item.x + 1)
-      + ", row " + (item.y + 1) + ", " + dimensions.width + " by "
-      + dimensions.height + " cells, rotation " + dimensions.rotation + " degrees");
+    bouton.setAttribute("aria-label", type.label + ", column " + (xAffiche + 1)
+      + ", row " + (yAffiche + 1) + ", " + dimensions.width + " by "
+      + dimensions.height + " cells, rotation " + dimensions.rotation + " degrees"
+      + (placement ? (placement.valide
+          ? ", pending valid placement"
+          : ", pending invalid placement") : ""));
     const workFamily = CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE[type.id];
     if (workFamily && !campPrototypeModeEdition) {
       bouton.setAttribute("aria-haspopup", "menu");
@@ -10901,11 +11436,31 @@ function rendreItemsCampPrototype() {
         + '<i class="camp-prototype-road-segment camp-prototype-road-segment-south" aria-hidden="true"></i>'
         + '<i class="camp-prototype-road-segment camp-prototype-road-segment-west" aria-hidden="true"></i>';
     } else {
-      remplirItemCampPrototype(bouton, type, item.rotation);
+      remplirItemCampPrototype(bouton, type, rotationAffiche);
     }
-    appliquerCadreCampPrototype(bouton, type, item.x, item.y, item.rotation);
+    appliquerCadreCampPrototype(bouton, type, xAffiche, yAffiche, rotationAffiche);
     conteneur.appendChild(bouton);
   });
+  const nouveauPlacement = campPrototypePlacementEnCours
+    && campPrototypePlacementEnCours.mode === "new"
+    ? campPrototypePlacementEnCours
+    : null;
+  if (
+    nouveauPlacement
+    && Number.isFinite(nouveauPlacement.x)
+    && Number.isFinite(nouveauPlacement.y)
+  ) {
+    afficherApercuCampPrototype(
+      nouveauPlacement.type,
+      nouveauPlacement.x,
+      nouveauPlacement.y,
+      null,
+      nouveauPlacement.rotation
+    );
+  } else if (!campPrototypePointeur) {
+    const ghost = document.getElementById("camp-prototype-ghost");
+    if (ghost) ghost.hidden = true;
+  }
 }
 
 function renduCampPrototype() {
@@ -10926,42 +11481,6 @@ function renduCampPrototype() {
 function nouvelleUidCampPrototype() {
   campPrototypeUidCompteur += 1;
   return "camp-" + Date.now().toString(36) + "-" + campPrototypeUidCompteur.toString(36);
-}
-
-function activerDebroussaillageCampPrototype() {
-  if (!DEV_MODE || !campPrototypeModeEdition) return;
-  campPrototypeOutilTerrain = !campPrototypeOutilTerrain;
-  campPrototypeTypeAPlacer = null;
-  campPrototypeRotationAPlacer = 0;
-  campPrototypeGommeRoutes = false;
-  campPrototypeSelectionUid = null;
-  campPrototypeCategorieOuverte = null;
-  masquerApercuCampPrototype();
-  rendreTerrainCampPrototype();
-  rendreItemsCampPrototype();
-  actualiserCommandesCampPrototype();
-  definirMessageCampPrototype(campPrototypeOutilTerrain
-    ? "Tap a highlighted obstacle next to cleared land."
-    : "Terrain clearing cancelled.");
-}
-
-function debroussaillerCelluleCampPrototype(x, y) {
-  if (!DEV_MODE || !campPrototypeModeEdition || !campPrototypeOutilTerrain) return false;
-  const obstacle = campPrototypeApi.obstacleCellule(campPrototypeTerrain, x, y);
-  const resultat = campPrototypeApi.debroussaillerTerrain(campPrototypeTerrain, x, y);
-  if (!resultat.valide) {
-    definirMessageCampPrototype(resultat.raison);
-    return false;
-  }
-  campPrototypeTerrain = resultat.terrain;
-  sauvegarderCampPrototype();
-  const cellulesLiberees = obstacle && obstacle.cells ? obstacle.cells.length : 1;
-  definirMessageCampPrototype((obstacle ? obstacle.label : "Obstacle")
-    + " removed. " + cellulesLiberees + (cellulesLiberees === 1 ? " cell is" : " cells are")
-    + " now buildable.");
-  rendreTerrainCampPrototype();
-  actualiserCommandesCampPrototype();
-  return true;
 }
 
 function conquerirZoneCampPrototype(zoneId) {
@@ -10987,12 +11506,13 @@ function reinitialiserTerrainCampPrototype() {
   if (!DEV_MODE || !campPrototypeModeEdition) return;
   campPrototypeTerrain = campPrototypeApi.creerTerrainInitial();
   campPrototypeLayout = [];
+  campPrototypeDemolitions = [];
   campPrototypeCameraInitialisee = false;
   campPrototypeSelectionUid = null;
   campPrototypeTypeAPlacer = null;
+  campPrototypePlacementEnCours = null;
   campPrototypeRotationAPlacer = 0;
   campPrototypeGommeRoutes = false;
-  campPrototypeOutilTerrain = false;
   campPrototypeCategorieOuverte = null;
   sauvegarderCampPrototype();
   definirMessageCampPrototype("Land reset to the first 3 rows of the blue garden.");
@@ -11076,7 +11596,7 @@ function selectionnerItemParAppuiProlongeCampPrototype(uid) {
   campPrototypeTypeAPlacer = null;
   campPrototypeRotationAPlacer = 0;
   campPrototypeGommeRoutes = false;
-  campPrototypeOutilTerrain = false;
+  commencerPlacementExistantCampPrototype(item);
   interaction.mode = "hold-selected";
   const board = document.getElementById("camp-prototype-board");
   if (board) {
@@ -11089,42 +11609,13 @@ function selectionnerItemParAppuiProlongeCampPrototype(uid) {
   }
   actualiserCommandesCampPrototype();
   definirMessageCampPrototype(typeCampPrototype(item.type).label
-    + " selected. Drag it to move it, use the arrow keys, or press R to rotate.");
+    + " selected. Move or rotate it, then confirm or cancel the placement.");
   if (navigator.vibrate) navigator.vibrate(20);
 }
 
 function placerItemCampPrototype(typeId, x, y, rotation) {
   if (!campPrototypeModeEdition) return false;
-  const type = typeCampPrototype(typeId);
-  const angle = type && type.rotatable
-    ? campPrototypeApi.normaliserRotation(rotation)
-    : 0;
-  const resultat = campPrototypeApi.testerPlacement(
-    campPrototypeLayout,
-    typeId,
-    x,
-    y,
-    null,
-    angle,
-    campPrototypeTerrain
-  );
-  if (!type || !resultat.valide) {
-    definirMessageCampPrototype(resultat.raison || "This placeholder cannot be placed here.");
-    return false;
-  }
-  const item = { uid: nouvelleUidCampPrototype(), type: typeId, x: x, y: y };
-  if (type.rotatable) item.rotation = angle;
-  campPrototypeLayout.push(item);
-  campPrototypeSelectionUid = type.continuous ? null : item.uid;
-  if (!type.continuous) {
-    campPrototypeTypeAPlacer = null;
-    campPrototypeRotationAPlacer = 0;
-  }
-  sauvegarderCampPrototype();
-  definirMessageCampPrototype(type.label + " placed at column " + (x + 1) + ", row " + (y + 1) + ".");
-  rendreItemsCampPrototype();
-  actualiserCommandesCampPrototype();
-  return true;
+  return definirPositionPlacementCampPrototype(typeId, x, y, rotation, null);
 }
 
 function modifierRoutesCampPrototype(cellules, effacer) {
@@ -11182,8 +11673,8 @@ function basculerGommeRoutesCampPrototype() {
   if (!DEV_MODE || !campPrototypeModeEdition) return;
   campPrototypeGommeRoutes = !campPrototypeGommeRoutes;
   campPrototypeTypeAPlacer = null;
+  campPrototypePlacementEnCours = null;
   campPrototypeRotationAPlacer = 0;
-  campPrototypeOutilTerrain = false;
   campPrototypeSelectionUid = null;
   campPrototypeCategorieOuverte = null;
   masquerApercuCampPrototype();
@@ -11198,66 +11689,114 @@ function deplacerItemCampPrototype(uid, x, y) {
   if (!campPrototypeModeEdition) return false;
   const item = itemCampPrototype(uid);
   if (!item) return false;
-  const resultat = campPrototypeApi.testerPlacement(
-    campPrototypeLayout,
+  const placement = placementCampPrototypePourItem(uid)
+    || commencerPlacementExistantCampPrototype(item);
+  return definirPositionPlacementCampPrototype(
     item.type,
-    x,
-    y,
-    uid,
-    item.rotation,
-    campPrototypeTerrain
+    Math.max(0, Math.min(campPrototypeApi.GRID_WIDTH - 1, x)),
+    Math.max(0, Math.min(campPrototypeApi.GRID_HEIGHT - 1, y)),
+    placement.rotation,
+    uid
   );
-  if (!resultat.valide) {
-    definirMessageCampPrototype(resultat.raison);
-    return false;
+}
+
+function selectionnerItemCampPrototype(uid) {
+  if (!campPrototypeModeEdition) return;
+  const item = itemCampPrototype(uid);
+  campPrototypeSelectionUid = item ? uid : null;
+  campPrototypeTypeAPlacer = null;
+  campPrototypeRotationAPlacer = 0;
+  campPrototypeGommeRoutes = false;
+  if (item && !placementCampPrototypePourItem(uid)) {
+    commencerPlacementExistantCampPrototype(item);
   }
-  item.x = x;
-  item.y = y;
-  sauvegarderCampPrototype();
-  definirMessageCampPrototype(typeCampPrototype(item.type).label + " moved to column "
-    + (x + 1) + ", row " + (y + 1) + ".");
+  rendreItemsCampPrototype();
+  actualiserCommandesCampPrototype();
+  if (item) definirMessageCampPrototype(typeCampPrototype(item.type).label
+    + " selected. Move or rotate it, then confirm or cancel the placement.");
+}
+
+function tournerSelectionCampPrototype() {
+  if (!DEV_MODE || !campPrototypeModeEdition) return false;
+  let placement = campPrototypePlacementEnCours;
+  const item = itemCampPrototype(campPrototypeSelectionUid);
+  if (!placement && item) placement = commencerPlacementExistantCampPrototype(item);
+  if (!placement && campPrototypeTypeAPlacer) {
+    placement = commencerNouveauPlacementCampPrototype(campPrototypeTypeAPlacer);
+  }
+  const type = placement && typeCampPrototype(placement.type);
+  if (!placement || !type || !type.rotatable) return false;
+  placement.rotation = campPrototypeApi.normaliserRotation((placement.rotation || 0) + 90);
+  if (placement.mode === "new") campPrototypeRotationAPlacer = placement.rotation;
+  const resultat = actualiserValiditePlacementCampPrototype();
+  const dimensions = dimensionsCampPrototype(placement.type, placement.rotation);
+  definirMessageCampPrototype(type.label + " rotated to " + placement.rotation
+    + "°. Footprint: " + dimensions.width + " × " + dimensions.height + ". "
+    + (resultat.valide
+      ? "Confirm to place it."
+      : resultat.raison + " Move it to compatible cells before confirming."));
   rendreItemsCampPrototype();
   actualiserCommandesCampPrototype();
   return true;
 }
 
-function selectionnerItemCampPrototype(uid) {
-  if (!campPrototypeModeEdition) return;
-  campPrototypeSelectionUid = itemCampPrototype(uid) ? uid : null;
-  campPrototypeTypeAPlacer = null;
-  campPrototypeRotationAPlacer = 0;
-  campPrototypeGommeRoutes = false;
-  campPrototypeOutilTerrain = false;
-  rendreItemsCampPrototype();
-  actualiserCommandesCampPrototype();
-  const item = itemCampPrototype(uid);
-  if (item) definirMessageCampPrototype(typeCampPrototype(item.type).label
-    + " selected. Drag it, use the arrow keys, or press R to rotate.");
-}
-
-function tournerSelectionCampPrototype() {
-  const item = itemCampPrototype(campPrototypeSelectionUid);
-  const type = item && typeCampPrototype(item.type);
-  if (!DEV_MODE || !campPrototypeModeEdition || !item || !type || !type.rotatable) return false;
-  const rotation = campPrototypeApi.normaliserRotation((item.rotation || 0) + 90);
-  const resultat = campPrototypeApi.testerPlacement(
-    campPrototypeLayout,
-    item.type,
-    item.x,
-    item.y,
-    item.uid,
-    rotation,
-    campPrototypeTerrain
-  );
-  if (!resultat.valide) {
-    definirMessageCampPrototype("Not enough free space to rotate " + type.label + " here.");
+function validerPlacementCampPrototype() {
+  const placement = campPrototypePlacementEnCours;
+  if (!DEV_MODE || !campPrototypeModeEdition || !placement) return false;
+  const type = typeCampPrototype(placement.type);
+  const resultat = actualiserValiditePlacementCampPrototype();
+  if (!type || !resultat.valide) {
+    definirMessageCampPrototype((resultat && resultat.raison)
+      || "Move this item to compatible cells before confirming.");
+    actualiserCommandesCampPrototype();
     return false;
   }
-  item.rotation = rotation;
+  let item = null;
+  if (placement.mode === "existing") {
+    item = itemCampPrototype(placement.uid);
+    if (!item) return false;
+    item.x = placement.x;
+    item.y = placement.y;
+    if (type.rotatable) item.rotation = placement.rotation;
+  } else {
+    item = {
+      uid: nouvelleUidCampPrototype(),
+      type: placement.type,
+      x: placement.x,
+      y: placement.y
+    };
+    if (type.rotatable) item.rotation = placement.rotation;
+    campPrototypeLayout.push(item);
+  }
+  campPrototypePlacementEnCours = null;
+  campPrototypeSelectionUid = null;
+  campPrototypeTypeAPlacer = null;
+  campPrototypeRotationAPlacer = 0;
   sauvegarderCampPrototype();
-  const dimensions = dimensionsCampPrototype(item.type, rotation);
-  definirMessageCampPrototype(type.label + " rotated to " + rotation + "°. Footprint: "
-    + dimensions.width + " × " + dimensions.height + ".");
+  masquerApercuCampPrototype();
+  definirMessageCampPrototype(type.label + " placed at column " + (item.x + 1)
+    + ", row " + (item.y + 1) + ".");
+  rendreItemsCampPrototype();
+  actualiserCommandesCampPrototype();
+  return true;
+}
+
+function annulerPlacementCampPrototype() {
+  const placement = campPrototypePlacementEnCours;
+  if (!DEV_MODE || !campPrototypeModeEdition || !placement) return false;
+  const type = typeCampPrototype(placement.type);
+  const etaitExistant = placement.mode === "existing";
+  campPrototypePlacementEnCours = null;
+  campPrototypeSelectionUid = null;
+  campPrototypeTypeAPlacer = null;
+  campPrototypeRotationAPlacer = 0;
+  campPrototypePointeur = null;
+  annulerAppuiProlongeCampPrototype();
+  masquerApercuCampPrototype();
+  definirMessageCampPrototype((type ? type.label : "Placement")
+    + (etaitExistant
+      ? " returned to its original position."
+      : " placement cancelled."));
   rendreItemsCampPrototype();
   actualiserCommandesCampPrototype();
   return true;
@@ -11271,6 +11810,7 @@ function supprimerSelectionCampPrototype() {
     return candidate.uid !== item.uid;
   });
   campPrototypeSelectionUid = null;
+  campPrototypePlacementEnCours = null;
   sauvegarderCampPrototype();
   definirMessageCampPrototype(label + " removed from the prototype.");
   rendreItemsCampPrototype();
@@ -11282,9 +11822,9 @@ function reinitialiserCampPrototype() {
   campPrototypeLayout = [];
   campPrototypeSelectionUid = null;
   campPrototypeTypeAPlacer = null;
+  campPrototypePlacementEnCours = null;
   campPrototypeRotationAPlacer = 0;
   campPrototypeGommeRoutes = false;
-  campPrototypeOutilTerrain = false;
   sauvegarderCampPrototype();
   masquerApercuCampPrototype();
   definirMessageCampPrototype("Prototype camp cleared.");
@@ -11295,19 +11835,6 @@ function demarrerInteractionCampPrototype(event) {
   if (!DEV_MODE || !campPrototypeModeEdition || event.button > 0) return;
   const board = document.getElementById("camp-prototype-board");
   const cible = event.target.closest("[data-camp-uid]");
-  const cibleTerrain = event.target.closest("[data-camp-terrain-x][data-camp-terrain-y]");
-  if (campPrototypeOutilTerrain) {
-    if (cibleTerrain) {
-      debroussaillerCelluleCampPrototype(
-        Number(cibleTerrain.dataset.campTerrainX),
-        Number(cibleTerrain.dataset.campTerrainY)
-      );
-    } else {
-      definirMessageCampPrototype("Tap a highlighted obstacle next to cleared land.");
-    }
-    event.preventDefault();
-    return;
-  }
   if (campPrototypeGommeRoutes || campPrototypeTypeAPlacer === "road") {
     const positionRoute = positionCampDepuisPointeur(event, "road", 0, 0);
     if (!positionRoute) return;
@@ -11377,17 +11904,19 @@ function demarrerInteractionCampPrototype(event) {
     campPrototypeSelectionUid = item.uid;
     campPrototypeTypeAPlacer = null;
     campPrototypeRotationAPlacer = 0;
-    const dimensions = dimensionsCampPrototype(item.type, item.rotation);
+    const placement = placementCampPrototypePourItem(item.uid)
+      || commencerPlacementExistantCampPrototype(item);
+    const dimensions = dimensionsCampPrototype(item.type, placement.rotation);
     campPrototypePointeur = {
       pointerId: event.pointerId,
       mode: "move",
       uid: item.uid,
       type: item.type,
-      rotation: item.rotation || 0,
-      decalageX: Math.max(0, Math.min(dimensions.width - 1, colonne - item.x)),
-      decalageY: Math.max(0, Math.min(dimensions.height - 1, ligne - item.y)),
-      x: item.x,
-      y: item.y,
+      rotation: placement.rotation,
+      decalageX: Math.max(0, Math.min(dimensions.width - 1, colonne - placement.x)),
+      decalageY: Math.max(0, Math.min(dimensions.height - 1, ligne - placement.y)),
+      x: placement.x,
+      y: placement.y,
       departX: event.clientX,
       departY: event.clientY,
       bouge: false
@@ -11404,34 +11933,18 @@ function demarrerInteractionCampPrototype(event) {
     return;
   }
   if (!campPrototypeTypeAPlacer) {
-    campPrototypeSelectionUid = null;
-    rendreItemsCampPrototype();
-    actualiserCommandesCampPrototype();
+    if (!campPrototypePlacementEnCours) {
+      campPrototypeSelectionUid = null;
+      rendreItemsCampPrototype();
+      actualiserCommandesCampPrototype();
+    }
     return;
   }
 }
 
 function deplacerInteractionCampPrototype(event) {
   if (!DEV_MODE || !campPrototypeModeEdition) return;
-  if (!campPrototypePointeur) {
-    if (campPrototypeTypeAPlacer && event.pointerType === "mouse") {
-      const positionSurvol = positionCampDepuisPointeur(
-        event,
-        campPrototypeTypeAPlacer,
-        undefined,
-        undefined,
-        campPrototypeRotationAPlacer
-      );
-      if (positionSurvol) afficherApercuCampPrototype(
-        campPrototypeTypeAPlacer,
-        positionSurvol.x,
-        positionSurvol.y,
-        null,
-        campPrototypeRotationAPlacer
-      );
-    }
-    return;
-  }
+  if (!campPrototypePointeur) return;
   if (event.pointerId !== campPrototypePointeur.pointerId) return;
   if (campPrototypePointeur.mode === "hold-select") {
     const distance = Math.hypot(
@@ -11510,6 +12023,7 @@ function terminerInteractionCampPrototype(event, annulee) {
     event.preventDefault();
     return;
   }
+  masquerApercuCampPrototype();
   if (!annulee) {
     if (interaction.mode === "place") {
       placerItemCampPrototype(
@@ -11527,8 +12041,10 @@ function terminerInteractionCampPrototype(event, annulee) {
     } else {
       selectionnerItemCampPrototype(interaction.uid);
     }
+  } else {
+    rendreItemsCampPrototype();
+    actualiserCommandesCampPrototype();
   }
-  masquerApercuCampPrototype();
   event.preventDefault();
 }
 
@@ -11536,18 +12052,23 @@ function gererClavierCampPrototype(event) {
   if (!campPrototypeModeEdition) return;
   const item = itemCampPrototype(campPrototypeSelectionUid);
   if (event.key === "Escape") {
-    quitterEditionCampPrototype();
+    if (campPrototypePlacementEnCours) {
+      annulerPlacementCampPrototype();
+      event.stopPropagation();
+    } else {
+      quitterEditionCampPrototype();
+    }
+    event.preventDefault();
+    return;
+  }
+  if (event.key === "r" || event.key === "R") {
+    tournerSelectionCampPrototype();
     event.preventDefault();
     return;
   }
   if (!item) return;
   if (event.key === "Delete" || event.key === "Backspace") {
     supprimerSelectionCampPrototype();
-    event.preventDefault();
-    return;
-  }
-  if (event.key === "r" || event.key === "R") {
-    tournerSelectionCampPrototype();
     event.preventDefault();
     return;
   }
@@ -11559,7 +12080,13 @@ function gererClavierCampPrototype(event) {
   }[event.key];
   if (!delta) return;
   const uid = item.uid;
-  if (deplacerItemCampPrototype(uid, item.x + delta[0], item.y + delta[1])) {
+  const placement = placementCampPrototypePourItem(uid)
+    || commencerPlacementExistantCampPrototype(item);
+  if (deplacerItemCampPrototype(
+    uid,
+    placement.x + delta[0],
+    placement.y + delta[1]
+  )) {
     requestAnimationFrame(function() {
       const cible = document.querySelector('[data-camp-uid="' + uid + '"]');
       if (cible) cible.focus();
@@ -11584,7 +12111,9 @@ function initialiserCampPrototype() {
     terminerInteractionCampPrototype(event, true);
   });
   board.addEventListener("pointerleave", function() {
-    if (!campPrototypePointeur) masquerApercuCampPrototype();
+    if (!campPrototypePointeur && !campPrototypePlacementEnCours) {
+      masquerApercuCampPrototype();
+    }
   });
   viewport.addEventListener("touchstart", demarrerPincementCampPrototype, { passive: false });
   viewport.addEventListener("touchmove", deplacerPincementCampPrototype, { passive: false });
@@ -11602,11 +12131,14 @@ function initialiserCampPrototype() {
   });
   board.addEventListener("click", function(event) {
     const cible = event.target.closest("[data-camp-uid]");
-    const cibleTerrain = event.target.closest("[data-camp-terrain-x][data-camp-terrain-y]");
-    if (!cible && cibleTerrain) {
-      definirMessageCampPrototype(campPrototypeModeEdition
-        ? "Choose Terrain, then activate Clear obstacles."
-        : "Enter Edit camp and choose Terrain to clear this obstacle.");
+    const cibleObstacle = event.target.closest("[data-camp-obstacle-uid]");
+    if (!cible && cibleObstacle) {
+      if (campPrototypeModeEdition) {
+        fermerMenuInteractionCampPrototype();
+        definirMessageCampPrototype("Debris cannot be changed in Edit mode.");
+      } else {
+        ouvrirMenuDemolitionCampPrototype(cibleObstacle.dataset.campObstacleUid);
+      }
       return;
     }
     if (!cible) {
@@ -11632,7 +12164,11 @@ function initialiserCampPrototype() {
     if (!campPrototypeModeEdition) return;
     const panneau = document.getElementById("camp-prototype-panel");
     if (event.key === "Escape") {
-      quitterEditionCampPrototype();
+      if (campPrototypePlacementEnCours) {
+        annulerPlacementCampPrototype();
+      } else {
+        quitterEditionCampPrototype();
+      }
       event.preventDefault();
       return;
     }

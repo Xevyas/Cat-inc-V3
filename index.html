@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0133" />
+  <link rel="stylesheet" href="style.css?v=0.0136" />
 </head>
 <body>
 
@@ -591,8 +591,8 @@
             <span class="panneau-aide-wrap">
               <button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Base Camp" aria-expanded="false" aria-controls="base-camp-help" onclick="togglePanneauAide(event)">?</button>
               <span id="base-camp-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">
-                <span>Tap a camp element to interact with it. Enter Edit mode to build and rearrange the camp.</span>
-                <span>Build on cleared land, remove obstacles and expand into adjacent territories.</span>
+                <span>Tap a camp element to interact with it. Tap reachable debris to assign an available Cat and start its demolition.</span>
+                <span>Enter Edit mode to build and rearrange the camp or claim adjacent territory. Debris cannot be edited directly.</span>
               </span>
             </span>
           </div>
@@ -640,17 +640,19 @@
             <img class="camp-prototype-fence camp-prototype-fence-west" data-camp-boundary-zone="redGarden" src="img/Maps/Camp%20Prototypes/Camp_Garden_Fence_Upright_Prototype_v2.webp?v=0.0001" alt="">
             <img class="camp-prototype-fence camp-prototype-fence-east" data-camp-boundary-zone="greenGarden" src="img/Maps/Camp%20Prototypes/Camp_Garden_Fence_Upright_Prototype_v2.webp?v=0.0001" alt="">
           </div>
-          <div id="camp-prototype-interaction-menu" class="camp-prototype-interaction-menu" role="menu" aria-label="Building actions" hidden>
-            <button type="button" role="menuitem" aria-label="Open building in Work" onclick="ouvrirWorkDepuisCamp(event)">
-              <span aria-hidden="true">→</span>
-            </button>
-          </div>
+          <div id="camp-prototype-interaction-menu" class="camp-prototype-interaction-menu" role="menu" aria-label="Camp element actions" hidden></div>
           <div id="camp-prototype-ghost" class="camp-prototype-item camp-prototype-ghost" aria-hidden="true" hidden></div>
         </div>
       </div>
       <div class="camp-prototype-selection-actions camp-prototype-edit-only">
-        <button id="camp-prototype-rotate" class="camp-prototype-rotate" type="button" onclick="tournerSelectionCampPrototype()" disabled>Rotate 90°</button>
-        <button id="camp-prototype-delete" class="camp-prototype-delete" type="button" onclick="supprimerSelectionCampPrototype()" disabled>Remove selected</button>
+        <div class="camp-prototype-selection-tools">
+          <button id="camp-prototype-rotate" class="camp-prototype-rotate" type="button" onclick="tournerSelectionCampPrototype()" disabled>Rotate 90°</button>
+          <button id="camp-prototype-delete" class="camp-prototype-delete" type="button" onclick="supprimerSelectionCampPrototype()" disabled>Remove selected</button>
+        </div>
+        <div id="camp-prototype-placement-actions" class="camp-prototype-placement-actions" role="group" aria-label="Confirm or cancel placement" hidden>
+          <button id="camp-prototype-placement-confirm" class="camp-prototype-placement-confirm" type="button" aria-describedby="camp-prototype-status" onclick="validerPlacementCampPrototype()" disabled>✓ Confirm</button>
+          <button id="camp-prototype-placement-cancel" class="camp-prototype-placement-cancel" type="button" onclick="annulerPlacementCampPrototype()">× Cancel</button>
+        </div>
       </div>
       <section id="camp-prototype-category-sheet" class="camp-prototype-category-sheet camp-prototype-edit-only" aria-label="Camp item menu" hidden>
         <div class="camp-prototype-category-sheet-heading">
@@ -1069,6 +1071,19 @@
     </div>
   </div>
 
+  <!-- MODAL CAMP DEMOLITION -->
+  <div id="camp-demolition-modal" class="explo-modal camp-demolition-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-demolition-modal-title" style="display:none">
+    <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalDemolitionCamp()"></div>
+    <div class="explo-modal-panneau" role="document" tabindex="-1">
+      <div class="explo-modal-header">
+        <span class="explo-modal-titre" id="camp-demolition-modal-title">Assign a Cat</span>
+        <button class="explo-modal-close" aria-label="Close demolition assignment" onclick="fermerModalDemolitionCamp()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
+      </div>
+      <p id="camp-demolition-modal-summary" class="camp-demolition-modal-summary"></p>
+      <div id="camp-demolition-modal-kitties" class="camp-demolition-modal-kitties"></div>
+    </div>
+  </div>
+
   <!-- MODAL RECIPE SELECTION -->
   <div id="recipe-modal" class="explo-modal recipe-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="recipe-modal-title" style="display:none">
     <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalRecette()"></div>
@@ -1226,8 +1241,8 @@
   <script src="js/core/production.js?v=0.0036"></script>
   <script src="js/ui/dom.js?v=0.0033"></script>
   <script src="js/ui/audio.js?v=0.0007"></script>
-  <script src="js/ui/camp.js?v=0.0012"></script>
-  <script src="jeu.js?v=0.0145"></script>
+  <script src="js/ui/camp.js?v=0.0013"></script>
+  <script src="jeu.js?v=0.0147"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>

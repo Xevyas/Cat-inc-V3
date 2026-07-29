@@ -180,6 +180,7 @@
       asset: OBSTACLE_ASSET_ROOT + "Tall%20Grass_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
     })
   ]);
+  const DEMOLITION_BASE_DURATION_SECONDS = 10 * 60;
 
   function entier(value) {
     const number = Number(value);
@@ -461,6 +462,14 @@
     }) ? obstacle : null;
   }
 
+  function dureeDemolitionObstacle(obstacle) {
+    const cellules = obstacle && Array.isArray(obstacle.cells)
+      ? obstacle.cells.length
+      : 0;
+    if (cellules < 1) return 0;
+    return DEMOLITION_BASE_DURATION_SECONDS * Math.pow(2, cellules - 1);
+  }
+
   function obstaclesTerrain(terrain) {
     const normalise = normaliserTerrain(terrain);
     const zonesConquises = new Set(normalise.claimedZoneIds);
@@ -663,6 +672,7 @@
     TERRITORY_ZONES: TERRITORY_ZONES,
     OBSTACLE_TYPES: OBSTACLE_TYPES,
     OBSTACLE_LAYOUT: OBSTACLE_LAYOUT,
+    DEMOLITION_BASE_DURATION_SECONDS: DEMOLITION_BASE_DURATION_SECONDS,
     normaliserRotation: normaliserRotation,
     celluleDansGrille: celluleDansGrille,
     cleCellule: cleCellule,
@@ -678,6 +688,7 @@
     conquerirZoneTerrain: conquerirZoneTerrain,
     obstacleCellule: obstacleCellule,
     obstaclesTerrain: obstaclesTerrain,
+    dureeDemolitionObstacle: dureeDemolitionObstacle,
     adapterTerrainAuLayout: adapterTerrainAuLayout,
     dimensionsType: dimensionsType,
     rectangleItem: rectangleItem,

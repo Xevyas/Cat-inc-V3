@@ -807,11 +807,12 @@ test('Gang, Work, Inventory and Exploration expose their custom controls to keyb
 test('every custom modal exposes dialog semantics and an accessible name', function() {
   const dialogs = htmlSource.match(/role="dialog"/g) || [];
   const modalFlags = htmlSource.match(/aria-modal="true"/g) || [];
-  assert.equal(dialogs.length, 39);
+  assert.equal(dialogs.length, 40);
   assert.equal(modalFlags.length, dialogs.length);
   assert.match(htmlSource, /id="settings-modal"[\s\S]*?aria-labelledby="settings-modal-titre"/);
   assert.match(htmlSource, /id="jc-modal"[\s\S]*?aria-labelledby="jc-modal-titre"/);
   assert.match(htmlSource, /id="worker-modal"[\s\S]*?aria-labelledby="worker-modal-titre"/);
+  assert.match(htmlSource, /id="camp-demolition-modal"[\s\S]*?aria-labelledby="camp-demolition-modal-title"/);
   assert.match(htmlSource, /id="recipe-modal"[\s\S]*?aria-labelledby="recipe-modal-title"/);
   assert.match(htmlSource, /id="explo-modal"[\s\S]*?aria-labelledby="explo-modal-titre"/);
   assert.match(htmlSource, /id="scouting-reward-summary-modal"[\s\S]*?aria-labelledby="scouting-reward-summary-title"/);
