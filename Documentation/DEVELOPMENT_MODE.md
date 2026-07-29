@@ -30,6 +30,8 @@ En mode développement :
 
 Pour les bâtiments et décorations, la pose en mode Edit utilise une prévisualisation transactionnelle. Déplacer ou tourner un élément, y compris vers une position invalide affichée en rouge, ne modifie pas la disposition enregistrée. Le bouton vert `Confirm` est disponible uniquement sur des cases compatibles ; le bouton rouge `Cancel` abandonne un nouvel élément ou remet un élément existant à sa position et rotation d'origine. Cliquer ailleurs ne valide jamais la pose. Les chemins conservent leur peinture continue immédiate.
 
+Le mode Edit reste une vue active du jeu : tant que l'onglet est visible, la simulation continue à 100 % et aucun changement de focus interne ne déclenche l'AFK. Fermer la page, changer d'application ou laisser le navigateur geler l'onglet depuis cette vue produit en revanche les signaux de suspension habituels et applique la progression AFK normale au retour.
+
 Le mode n'est jamais stocké dans la sauvegarde. Revenir à l'adresse sans `?debug=1` suffit pour retrouver l'interface normale et une vitesse de 1×.
 
 Pour faciliter les tests, il est possible de créer deux favoris distincts, « Cat Inc » et « Cat Inc DEV ».

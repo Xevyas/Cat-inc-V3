@@ -324,7 +324,7 @@ test('Camp layout editing is isolated in a full-screen mode with category menus'
   assert.match(gameSource, /Its gameplay interaction will be connected later/);
   assert.match(gameSource, /const CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE = Object\.freeze\(\{[\s\S]*?sawmill:\s*"wood"[\s\S]*?catchen:\s*"food"[\s\S]*?pawsonry:\s*"rock"/);
   assert.match(htmlSource, /id="camp-prototype-interaction-menu"[^>]*role="menu"[^>]*hidden/);
-  assert.match(gameSource, /menu\.innerHTML = '<button[\s\S]*?onclick="ouvrirWorkDepuisCamp\(event\)"/);
+  assert.match(gameSource, /menu\.innerHTML = '<button[\s\S]*?data-camp-menu-action="work"/);
   assert.match(gameSource, /function ouvrirMenuInteractionCampPrototype\(uid\)[\s\S]*?menu\.style\.left[\s\S]*?menu\.style\.top[\s\S]*?menu\.dataset\.workFamily/);
   assert.match(gameSource, /function ouvrirWorkDepuisCamp\(event\)[\s\S]*?changerOnglet\("work"\)[\s\S]*?appliquerFiltreWork\(famille\)/);
   assert.match(gameSource, /if \(type && CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE\[type\.id\]\)[\s\S]*?ouvrirMenuInteractionCampPrototype\(item\.uid\)/);
@@ -334,6 +334,42 @@ test('Camp layout editing is isolated in a full-screen mode with category menus'
   assert.match(cssSource, /body\.camp-prototype-editing \.camp-prototype-panel\s*\{[\s\S]*?position:\s*fixed[\s\S]*?inset:\s*0[\s\S]*?height:\s*100dvh/);
   assert.match(cssSource, /body\.camp-prototype-editing \.camp-prototype-edit-dock\s*\{[\s\S]*?position:\s*absolute[\s\S]*?bottom:/);
   assert.match(cssSource, /\.camp-prototype-edit-dock > button\s*\{[\s\S]*?width:\s*70px[\s\S]*?height:\s*70px[\s\S]*?border-radius:\s*50%/);
+});
+
+test('Camp floating actions activate on the first touch across the complete popup', function() {
+  assert.match(gameSource, /data-camp-menu-action="work"/);
+  assert.match(gameSource, /data-camp-menu-action="demolition"/);
+  assert.match(gameSource, /function gererPointeurActionMenuCampPrototype\(event\)[\s\S]*?event\.pointerType !== "touch"[\s\S]*?executerActionMenuCampPrototype\(action, event\)/);
+  assert.match(gameSource, /function gererClicActionMenuCampPrototype\(event\)[\s\S]*?campPrototypeDerniereActivationTactile < 700/);
+  assert.match(gameSource, /menuInteraction\.addEventListener\("pointerup", gererPointeurActionMenuCampPrototype\)[\s\S]*?menuInteraction\.addEventListener\("click", gererClicActionMenuCampPrototype\)/);
+  assert.match(cssSource, /\.camp-prototype-interaction-menu\s*\{[\s\S]*?pointer-events:\s*auto[\s\S]*?touch-action:\s*manipulation/);
+  assert.match(cssSource, /\.camp-prototype-interaction-menu::after\s*\{[\s\S]*?pointer-events:\s*none/);
+});
+
+test('Camp grid is visible only while editing', function() {
+  assert.match(cssSource, /body:not\(\.camp-prototype-editing\) \.camp-prototype-grid\s*\{[\s\S]*?opacity:\s*0/);
+  assert.match(cssSource, /\.camp-prototype-grid\s*\{[\s\S]*?background-image:[\s\S]*?linear-gradient\(to right[\s\S]*?linear-gradient\(to bottom/);
+  assert.doesNotMatch(cssSource, /body\.camp-prototype-editing \.camp-prototype-grid\s*\{[\s\S]*?opacity:\s*0/);
+});
+
+test('Camp normal view chains vertical touch scrolling while containing horizontal camera movement', function() {
+  assert.match(cssSource, /\.camp-prototype-viewport\s*\{[\s\S]*?overflow:\s*auto[\s\S]*?overscroll-behavior-x:\s*contain[\s\S]*?overscroll-behavior-y:\s*auto[\s\S]*?touch-action:\s*pan-x pan-y/);
+  assert.match(cssSource, /body\.camp-prototype-editing \.camp-prototype-viewport\s*\{[\s\S]*?overscroll-behavior:\s*contain/);
+});
+
+test('Camp Edit keeps full active simulation and only real app suspension enables AFK', function() {
+  const tickCode = gameSource.slice(
+    gameSource.indexOf('function tick() {'),
+    gameSource.indexOf('setInterval(tick, 100);')
+  );
+  const editCode = gameSource.slice(
+    gameSource.indexOf('function entrerEditionCampPrototype() {'),
+    gameSource.indexOf('function quitterEditionCampPrototype(')
+  );
+  assert.doesNotMatch(tickCode, /campPrototypeModeEdition/);
+  assert.doesNotMatch(editCode, /(?:Afk|AFK|HorsLigne|Suspension)/);
+  assert.match(gameSource, /function rattraperApresSuspensionAfk\(\)[\s\S]*?!suspensionAfkConfirmee[\s\S]*?return null/);
+  assert.match(gameSource, /visibilitychange[\s\S]*?visibilityState === "hidden"[\s\S]*?marquerSuspensionAfk\(\)[\s\S]*?visibilityState === "visible"[\s\S]*?rattraperApresSuspensionAfk\(\)/);
 });
 
 test('Camp edit navigation keeps vertical scrolling and requires a long press to select items', function() {

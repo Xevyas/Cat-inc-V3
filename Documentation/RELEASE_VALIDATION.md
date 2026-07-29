@@ -2,12 +2,12 @@
 
 ## Current status
 
-The published v0.0038 build plus the current unpublished development-only Camp placement and debris-demolition work were validated on 2026-07-29 against the working copy `V3 - ChatGPT`.
+The published v0.0038 build plus the current development-only Camp work were validated on 2026-07-29 against the working copy `V3 - ChatGPT`.
 
-- Release status: public game version remains v0.0038; the latest Camp prototype changes are not yet published or listed in the public changelog.
-- Interface references: CSS `0.0136`, JavaScript `0.0147`, Camp module `0.0013`, production module `0.0036`, save module `0.0042`, state module `0.0040`, audio module `0.0007`, config data `0.0043`, content data `0.0052`.
-- Automated suite: 188/188 tests passing.
-- Browser load: no JavaScript exception and no missing runtime asset. Brave mobile emulation at 390 × 844 validated debris selection, Cat assignment, countdown display, Work exclusion, completion, full-footprint clearing and reload persistence.
+- Release status: public game version remains v0.0038; the latest Camp interaction fixes are not yet published or listed in the public changelog.
+- Interface references: CSS `0.0139`, JavaScript `0.0149`, Camp module `0.0013`, production module `0.0036`, save module `0.0042`, state module `0.0040`, audio module `0.0007`, config data `0.0043`, content data `0.0052`.
+- Automated suite: 192/192 tests passing.
+- Browser load: no JavaScript exception and no missing runtime asset. Brave mobile emulation at 390 × 844 validated debris selection, first-touch demolition action, Cat assignment, countdown display, Work exclusion, completion, full-footprint clearing, reload persistence, first-touch Sawmill navigation to Work/Wood, 250% one-finger two-axis map panning, vertical scroll chaining into the Camp page, full-speed active simulation during Camp Edit, no AFK on an in-page focus event and normal 10% AFK catch-up after a real suspension from Edit.
 
 This file is the release gate for future changes. A release is ready only when every automated gate passes and the relevant manual journeys have been replayed.
 
@@ -19,7 +19,7 @@ From the game folder, run:
 node --test --test-reporter=spec tests\*.test.js
 ```
 
-Required result: zero failed, cancelled, skipped or todo tests (188 tests currently).
+Required result: zero failed, cancelled, skipped or todo tests (192 tests currently).
 
 The suite currently validates:
 

@@ -10218,6 +10218,7 @@ let campPrototypePlacementEnCours = null;
 let campPrototypeDemolitions = [];
 let campPrototypeDemolitionObstacleUid = null;
 let campPrototypeDerniereSecondeDemolition = null;
+let campPrototypeDerniereActivationTactile = 0;
 let campPrototypeMessage = "";
 let campPrototypeAppuiProlongeTimer = null;
 let campPrototypePincement = null;
@@ -10760,6 +10761,55 @@ function fermerMenuInteractionCampPrototype() {
   campPrototypeInteractionUid = null;
 }
 
+function actionMenuCampPrototypeDepuisEvenement(menu, event) {
+  if (!menu || !event || !(event.target instanceof Element)) return null;
+  const bouton = event.target.closest("[data-camp-menu-action]");
+  if (bouton && menu.contains(bouton)) return bouton.dataset.campMenuAction || null;
+  if (event.target === menu) {
+    const actionUnique = menu.querySelector("[data-camp-menu-action]");
+    return actionUnique ? actionUnique.dataset.campMenuAction || null : null;
+  }
+  return null;
+}
+
+function executerActionMenuCampPrototype(action, event) {
+  if (!action) return false;
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  if (action === "work") return ouvrirWorkDepuisCamp();
+  if (action === "demolition") return ouvrirModalDemolitionCamp();
+  return false;
+}
+
+function gererPointeurActionMenuCampPrototype(event) {
+  if (event.pointerType !== "touch" || event.button > 0) return;
+  const menu = event.currentTarget;
+  const action = actionMenuCampPrototypeDepuisEvenement(menu, event);
+  if (!action) {
+    event.stopPropagation();
+    return;
+  }
+  campPrototypeDerniereActivationTactile = Date.now();
+  executerActionMenuCampPrototype(action, event);
+}
+
+function gererClicActionMenuCampPrototype(event) {
+  const menu = event.currentTarget;
+  const action = actionMenuCampPrototypeDepuisEvenement(menu, event);
+  if (!action) {
+    event.stopPropagation();
+    return;
+  }
+  if (Date.now() - campPrototypeDerniereActivationTactile < 700) {
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+  executerActionMenuCampPrototype(action, event);
+}
+
 function ouvrirMenuInteractionCampPrototype(uid) {
   if (!DEV_MODE || campPrototypeModeEdition) return false;
   const item = itemCampPrototype(uid);
@@ -10782,9 +10832,9 @@ function ouvrirMenuInteractionCampPrototype(uid) {
   menu.dataset.campUid = uid;
   menu.dataset.interactionKind = "building";
   menu.setAttribute("aria-label", type.label + " actions");
-  menu.innerHTML = '<button type="button" role="menuitem" aria-label="Open '
+  menu.innerHTML = '<button type="button" role="menuitem" data-camp-menu-action="work" aria-label="Open '
     + echapperAttributHtml(type.label)
-    + ' in Work" onclick="ouvrirWorkDepuisCamp(event)"><span aria-hidden="true">→</span></button>';
+    + ' in Work"><span aria-hidden="true">→</span></button>';
   const itemElement = document.querySelector('[data-camp-uid="' + uid + '"]');
   if (itemElement) itemElement.setAttribute("aria-expanded", "true");
   campPrototypeInteractionUid = uid;
@@ -10829,8 +10879,9 @@ function ouvrirMenuDemolitionCampPrototype(obstacleUid) {
       + '</span></span>';
   } else {
     menu.innerHTML = '<button type="button" class="camp-prototype-demolition-action" role="menuitem"'
+      + ' data-camp-menu-action="demolition"'
       + ' aria-label="Demolish ' + echapperAttributHtml(obstacle.label)
-      + '" onclick="ouvrirModalDemolitionCamp(event)"><span aria-hidden="true">⛏</span>'
+      + '"><span aria-hidden="true">⛏</span>'
       + '<small>Demolish</small></button>';
   }
   const obstacleElement = document.querySelector('[data-camp-obstacle-uid="'
@@ -12099,7 +12150,8 @@ function initialiserCampPrototype() {
   if (campPrototypeInitialise || !DEV_MODE) return;
   const board = document.getElementById("camp-prototype-board");
   const viewport = document.querySelector(".camp-prototype-viewport");
-  if (!board || !viewport) return;
+  const menuInteraction = document.getElementById("camp-prototype-interaction-menu");
+  if (!board || !viewport || !menuInteraction) return;
   campPrototypeInitialise = true;
   chargerCampPrototype();
   board.addEventListener("pointerdown", demarrerInteractionCampPrototype);
@@ -12125,6 +12177,8 @@ function initialiserCampPrototype() {
     }
   }, { passive: true });
   board.addEventListener("keydown", gererClavierCampPrototype);
+  menuInteraction.addEventListener("pointerup", gererPointeurActionMenuCampPrototype);
+  menuInteraction.addEventListener("click", gererClicActionMenuCampPrototype);
   window.addEventListener("resize", function() {
     invaliderLargeurBaseCampPrototype();
     appliquerZoomCampPrototype(false);
@@ -13111,6 +13165,7 @@ if (window.matchMedia("(max-width: 768px)").matches) {
 // signal. The guard makes visibility + pageshow/focus events harmless when
 // they arrive together.
 let rattrapageAfkEnCours = false;
+let suspensionAfkConfirmee = false;
 
 function rattraperProgressionAfk() {
   if (rattrapageAfkEnCours || sauvegardeVerrouillee || redemarrageMajeurRequis) return null;
@@ -13132,28 +13187,46 @@ function sauvegarderAvantSuspension() {
   if (!sauvegardeVerrouillee && !redemarrageMajeurRequis) sauvegarder();
 }
 
+function marquerSuspensionAfk() {
+  suspensionAfkConfirmee = true;
+  sauvegarderAvantSuspension();
+}
+
+function rattraperApresSuspensionAfk() {
+  if (
+    !suspensionAfkConfirmee
+    || rattrapageAfkEnCours
+    || sauvegardeVerrouillee
+    || redemarrageMajeurRequis
+  ) return null;
+  suspensionAfkConfirmee = false;
+  return rattraperProgressionAfk();
+}
+
 document.addEventListener("visibilitychange", function() {
-  if (document.visibilityState === "hidden") sauvegarderAvantSuspension();
-  else if (document.visibilityState === "visible") rattraperProgressionAfk();
+  if (document.visibilityState === "hidden") marquerSuspensionAfk();
+  else if (document.visibilityState === "visible") rattraperApresSuspensionAfk();
 });
 
 // pageshow is essential for iOS Safari/Android Chrome when the page returns
 // from bfcache without a normal reload or a second visibilitychange event.
 window.addEventListener("pageshow", function() {
-  if (document.visibilityState !== "hidden") rattraperProgressionAfk();
+  if (document.visibilityState !== "hidden") rattraperApresSuspensionAfk();
 });
 
-// Some mobile browsers restore focus without dispatching pageshow. A recent
-// timestamp makes this cheap and prevents duplicate catch-up work.
+// Some mobile browsers restore focus without dispatching pageshow. Focus alone
+// is not an AFK signal: it may also follow a full-screen in-page overlay such
+// as Camp Edit. Only a preceding hidden/pagehide/freeze event authorizes the
+// catch-up, so visible gameplay always stays at full active speed.
 window.addEventListener("focus", function() {
-  if (document.visibilityState !== "hidden") rattraperProgressionAfk();
+  if (document.visibilityState !== "hidden") rattraperApresSuspensionAfk();
 });
 
 // pagehide/freeze are the last persistence opportunities before a mobile tab
 // is discarded or frozen, including cases where visibilitychange is skipped.
-window.addEventListener("pagehide", sauvegarderAvantSuspension);
+window.addEventListener("pagehide", marquerSuspensionAfk);
 if (typeof document.addEventListener === "function") {
-  document.addEventListener("freeze", sauvegarderAvantSuspension);
+  document.addEventListener("freeze", marquerSuspensionAfk);
 }
 
 // Browsers block autoplay until the player interacts with the page. Start the

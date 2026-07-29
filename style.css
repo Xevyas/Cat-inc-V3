@@ -2747,7 +2747,8 @@ body:not([data-dev-mode="true"]) .onglet-camp-dev { display: none !important; }
 .camp-prototype-viewport {
   max-height: min(72vh, 780px);
   overflow: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
   touch-action: pan-x pan-y;
   border-radius: 12px;
   background: #d8ccb9;
@@ -2777,7 +2778,7 @@ body.camp-prototype-editing .camp-prototype-board.camp-prototype-tool-continuous
   touch-action: none;
 }
 body:not(.camp-prototype-editing) .camp-prototype-grid {
-  opacity: .55;
+  opacity: 0;
 }
 .camp-prototype-board:focus-visible {
   outline: 3px solid var(--couleur-accent);
@@ -2889,7 +2890,8 @@ body:not(.camp-prototype-editing) .camp-prototype-grid {
   border-radius: 999px;
   background: #fffaf1;
   box-shadow: 0 4px 12px rgba(58, 43, 27, .24);
-  pointer-events: none;
+  pointer-events: auto;
+  touch-action: manipulation;
   transform: translate(-50%, calc(-100% - 7px));
 }
 .camp-prototype-interaction-menu::after {
@@ -2902,6 +2904,7 @@ body:not(.camp-prototype-editing) .camp-prototype-grid {
   border-bottom: 1px solid rgba(59, 122, 75, .42);
   background: #fffaf1;
   content: "";
+  pointer-events: none;
   transform: translateX(-50%) rotate(45deg);
 }
 .camp-prototype-interaction-menu[hidden] { display: none; }
@@ -3451,6 +3454,7 @@ body.camp-prototype-editing .camp-prototype-viewport {
   align-items: flex-start;
   justify-content: flex-start;
   overflow: auto;
+  overscroll-behavior: contain;
   background: #d8ccb9;
   isolation: isolate;
   -webkit-overflow-scrolling: touch;

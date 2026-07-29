@@ -501,9 +501,14 @@ test('catch and recruit use a passive saved cooldown with an active claim action
   assert.match(offline, /terminerExplo\(explo\)[\s\S]*?terminerExploZone\(\)[\s\S]*?terminerScouting\(scoutingId, runs\)/);
   assert.match(offline, /terminerApprentissage\(etat\.learningEnCours\.itemId\)[\s\S]*?terminerFormation\(\)/);
   assert.match(gameSource, /function rattraperProgressionAfk\(\)[\s\S]*?appliquerProgressionHorsLigne\(\)[\s\S]*?renduManagement\(\)/);
-  assert.match(gameSource, /visibilitychange[\s\S]*?sauvegarderAvantSuspension\(\)[\s\S]*?rattraperProgressionAfk\(\)/);
-  assert.match(gameSource, /pageshow[\s\S]*?rattraperProgressionAfk\(\)/);
-  assert.match(gameSource, /pagehide[\s\S]*?sauvegarderAvantSuspension/);
+  assert.match(gameSource, /let suspensionAfkConfirmee = false/);
+  assert.match(gameSource, /function marquerSuspensionAfk\(\)[\s\S]*?suspensionAfkConfirmee = true[\s\S]*?sauvegarderAvantSuspension\(\)/);
+  assert.match(gameSource, /function rattraperApresSuspensionAfk\(\)[\s\S]*?!suspensionAfkConfirmee[\s\S]*?suspensionAfkConfirmee = false[\s\S]*?rattraperProgressionAfk\(\)/);
+  assert.match(gameSource, /visibilitychange[\s\S]*?marquerSuspensionAfk\(\)[\s\S]*?rattraperApresSuspensionAfk\(\)/);
+  assert.match(gameSource, /pageshow[\s\S]*?rattraperApresSuspensionAfk\(\)/);
+  assert.match(gameSource, /focus[\s\S]*?rattraperApresSuspensionAfk\(\)/);
+  assert.match(gameSource, /pagehide", marquerSuspensionAfk/);
+  assert.match(gameSource, /freeze", marquerSuspensionAfk/);
   assert.match(gameSource, /bouton-intro"\)\.addEventListener\("click"[\s\S]*?etat\.chatons === 0 && !etat\.sequenceEnCours[\s\S]*?demarrerRechargeCatch\(\)[\s\S]*?sauvegarder\(\)/);
   assert.match(gameSource, /function reset\(\)[\s\S]*?reinitialiserEtat\(\)[\s\S]*?renduManagement\(\)[\s\S]*?afficherModal\("ecran-intro"\)/);
 });
