@@ -2777,7 +2777,8 @@ body.camp-prototype-editing .camp-prototype-board.camp-prototype-tool-continuous
 body.camp-prototype-editing .camp-prototype-board.camp-prototype-tool-continuous .camp-prototype-item {
   touch-action: none;
 }
-body:not(.camp-prototype-editing) .camp-prototype-grid {
+body:not(.camp-prototype-editing) .camp-prototype-grid,
+body:not(.camp-prototype-editing) .camp-prototype-terrain-cleared {
   opacity: 0;
 }
 .camp-prototype-board:focus-visible {
@@ -3195,6 +3196,7 @@ body.camp-prototype-editing .camp-prototype-obstacle {
 .camp-prototype-color-nature { --camp-prototype-color: #72a45f; }
 .camp-prototype-color-toy { --camp-prototype-color: #d38cb1; }
 .camp-prototype-color-road { --camp-prototype-color: #a18b70; }
+.camp-prototype-color-junk { --camp-prototype-color: #8da269; }
 .camp-prototype-road {
   z-index: 2;
   padding: 0;
@@ -3386,6 +3388,31 @@ body.camp-prototype-editing .camp-prototype-obstacle {
 }
 .camp-prototype-category-icon-road::before { left: 4px; }
 .camp-prototype-category-icon-road::after { right: 4px; }
+.camp-prototype-category-icon-junk::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  bottom: 1px;
+  width: 12px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-radius: 55% 45% 48% 52%;
+  background: rgba(126, 153, 76, .32);
+  transform: rotate(-8deg);
+}
+.camp-prototype-category-icon-junk::after {
+  content: "";
+  position: absolute;
+  right: 1px;
+  bottom: 2px;
+  width: 11px;
+  height: 9px;
+  border: 2px solid currentColor;
+  border-radius: 45% 55% 52% 48%;
+  background: rgba(180, 162, 131, .42);
+  box-shadow: -7px -7px 0 -3px currentColor;
+  transform: rotate(9deg);
+}
 .camp-prototype-category-icon-terrain::before {
   content: "";
   position: absolute;
@@ -3470,57 +3497,87 @@ body.camp-prototype-editing .camp-prototype-selection-actions {
   right: max(16px, env(safe-area-inset-right));
   bottom: max(102px, calc(90px + env(safe-area-inset-bottom)));
   z-index: 3;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
 }
-body.camp-prototype-editing .camp-prototype-selection-tools,
-body.camp-prototype-editing .camp-prototype-placement-actions {
+body.camp-prototype-editing .camp-prototype-selection-tools {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
 }
+.camp-prototype-placement-actions {
+  --camp-placement-center-x: 50%;
+  --camp-placement-top: 50%;
+  position: absolute;
+  left: clamp(78px, var(--camp-placement-center-x), calc(100% - 78px));
+  top: var(--camp-placement-top);
+  z-index: 8;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 5px;
+  border: 1px solid rgba(132, 84, 42, .36);
+  border-radius: 999px;
+  background: rgba(255, 250, 241, .94);
+  box-shadow: 0 5px 16px rgba(74, 40, 31, .24);
+  transform: translate(-50%, calc(-100% - 8px));
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+body.camp-prototype-editing .camp-prototype-placement-actions {
+  display: flex;
+}
 .camp-prototype-placement-actions[hidden] {
   display: none !important;
 }
-body.camp-prototype-editing .camp-prototype-rotate,
 body.camp-prototype-editing .camp-prototype-delete,
-body.camp-prototype-editing .camp-prototype-placement-confirm,
-body.camp-prototype-editing .camp-prototype-placement-cancel {
+body.camp-prototype-editing .camp-prototype-placement-action {
   min-height: 42px;
-  padding: 8px 12px;
   border-radius: 999px;
   font-weight: 900;
   box-shadow: 0 4px 14px rgba(74, 40, 31, .18);
 }
+body.camp-prototype-editing .camp-prototype-placement-action {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  padding: 6px;
+  align-items: center;
+  justify-content: center;
+}
 body.camp-prototype-editing .camp-prototype-rotate {
-  border: 1px solid #bd6a2d;
+  border: 2px solid #bd6a2d;
   background: #fff7ea;
   color: #8d440f;
 }
 body.camp-prototype-editing .camp-prototype-delete {
+  padding: 8px 12px;
   border: 1px solid #bc4738;
   background: #fff7f4;
   color: #9b3024;
 }
 body.camp-prototype-editing .camp-prototype-placement-confirm {
-  border: 1px solid #397e4d;
-  background: #2f8a50;
-  color: white;
+  border: 2px solid #4f8b58;
+  background: #f7fff3;
 }
 body.camp-prototype-editing .camp-prototype-placement-cancel {
-  border: 1px solid #ac3c31;
-  background: #b94639;
-  color: white;
+  border: 2px solid #b94d3f;
+  background: #fff7f3;
+}
+.camp-prototype-placement-action img {
+  display: block;
+  width: 29px;
+  height: 29px;
+  object-fit: contain;
+  pointer-events: none;
 }
 body.camp-prototype-editing .camp-prototype-placement-confirm:disabled {
   border-color: #aaa298;
-  background: #d5d0c8;
-  color: #746e67;
+  background: #eee9e1;
   box-shadow: none;
   cursor: not-allowed;
-  opacity: 1;
+  opacity: .58;
+  filter: grayscale(.7);
 }
 body.camp-prototype-editing .camp-prototype-rotate:disabled,
 body.camp-prototype-editing .camp-prototype-delete:disabled {
@@ -8907,19 +8964,28 @@ body.camp-prototype-editing .camp-prototype-help {
   body.camp-prototype-editing .camp-prototype-selection-actions {
     right: max(10px, env(safe-area-inset-right));
     bottom: max(88px, calc(78px + env(safe-area-inset-bottom)));
-    gap: 6px;
   }
-  body.camp-prototype-editing .camp-prototype-rotate,
-  body.camp-prototype-editing .camp-prototype-delete,
-  body.camp-prototype-editing .camp-prototype-placement-confirm,
-  body.camp-prototype-editing .camp-prototype-placement-cancel {
+  body.camp-prototype-editing .camp-prototype-delete {
     min-height: 38px;
     padding: 6px 10px;
     font-size: .68rem;
   }
-  body.camp-prototype-editing .camp-prototype-placement-confirm,
-  body.camp-prototype-editing .camp-prototype-placement-cancel {
-    min-height: 44px;
+  .camp-prototype-placement-actions {
+    left: clamp(70px, var(--camp-placement-center-x), calc(100% - 70px));
+    gap: 5px;
+    padding: 4px;
+    transform: translate(-50%, calc(-100% - 6px));
+  }
+  body.camp-prototype-editing .camp-prototype-placement-action {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 5px;
+  }
+  .camp-prototype-placement-action img {
+    width: 27px;
+    height: 27px;
   }
   body.camp-prototype-editing .camp-prototype-edit-dock {
     bottom: max(7px, env(safe-area-inset-bottom));

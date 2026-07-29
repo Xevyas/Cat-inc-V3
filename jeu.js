@@ -10222,6 +10222,7 @@ let campPrototypeDerniereActivationTactile = 0;
 let campPrototypeMessage = "";
 let campPrototypeAppuiProlongeTimer = null;
 let campPrototypePincement = null;
+const campPrototypeAssetsRotationPrecharges = new Map();
 
 function typeCampPrototype(typeId) {
   return campPrototypeApi.ITEM_TYPES[typeId] || null;
@@ -10393,6 +10394,10 @@ function commencerPlacementExistantCampPrototype(item) {
     raison: ""
   };
   actualiserValiditePlacementCampPrototype();
+  prechargerRotationSuivanteCampPrototype(
+    typeCampPrototype(item.type),
+    campPrototypePlacementEnCours.rotation
+  );
   return campPrototypePlacementEnCours;
 }
 
@@ -10410,6 +10415,7 @@ function commencerNouveauPlacementCampPrototype(typeId) {
     valide: false,
     raison: "Choose a position on the grid."
   };
+  prechargerRotationSuivanteCampPrototype(type, 0);
   return campPrototypePlacementEnCours;
 }
 
@@ -10720,6 +10726,27 @@ function appliquerCadreTerrainCampPrototype(element, x, y, width, height) {
   element.style.height = ((height || 1) / campPrototypeApi.GRID_HEIGHT * 100) + "%";
 }
 
+function assetCampPrototypePourRotation(type, rotation) {
+  if (!type || !type.asset) return "";
+  const rotationNormalisee = campPrototypeApi.normaliserRotation(rotation);
+  if (rotationNormalisee === 0) return type.asset;
+  return type.asset.replace(
+    /(\.[a-z0-9]+)(\?[^#]*)?$/i,
+    "_r" + rotationNormalisee + "$1$2"
+  );
+}
+
+function prechargerRotationSuivanteCampPrototype(type, rotation) {
+  if (!type || !type.rotatable || !type.asset || typeof Image !== "function") return;
+  const rotationSuivante = campPrototypeApi.normaliserRotation((rotation || 0) + 90);
+  if (rotationSuivante === 0) return;
+  const src = assetCampPrototypePourRotation(type, rotationSuivante);
+  if (!src || campPrototypeAssetsRotationPrecharges.has(src)) return;
+  const image = new Image();
+  image.src = src;
+  campPrototypeAssetsRotationPrecharges.set(src, image);
+}
+
 function remplirItemCampPrototype(element, type, rotation) {
   if (!element || !type) return;
   const dimensions = dimensionsCampPrototype(type.id, rotation);
@@ -10727,12 +10754,12 @@ function remplirItemCampPrototype(element, type, rotation) {
   if (type.asset) {
     const image = document.createElement("img");
     image.className = "camp-prototype-building-sprite";
-    image.src = type.asset;
+    image.src = assetCampPrototypePourRotation(type, dimensions.rotation);
     image.alt = "";
     image.draggable = false;
-    image.style.width = (type.width / dimensions.width * 100) + "%";
-    image.style.height = (type.height / dimensions.height * 100) + "%";
-    image.style.transform = "translate(-50%, -50%) rotate(" + dimensions.rotation + "deg)";
+    image.style.width = "100%";
+    image.style.height = "100%";
+    image.style.transform = "translate(-50%, -50%)";
     element.classList.add("camp-prototype-item-has-sprite");
     element.appendChild(image);
     const label = document.createElement("span");
@@ -11194,6 +11221,24 @@ function rendreTerrainCampPrototype() {
   });
 }
 
+function positionnerActionsPlacementCampPrototype(typeId, x, y, rotation) {
+  const actionsPlacement = document.getElementById("camp-prototype-placement-actions");
+  const type = typeCampPrototype(typeId);
+  if (
+    !actionsPlacement
+    || !type
+    || type.continuous
+    || !Number.isFinite(x)
+    || !Number.isFinite(y)
+  ) return false;
+  const dimensions = dimensionsCampPrototype(typeId, rotation);
+  const centreX = (x + dimensions.width / 2) / campPrototypeApi.GRID_WIDTH * 100;
+  const haut = y / campPrototypeApi.GRID_HEIGHT * 100;
+  actionsPlacement.style.setProperty("--camp-placement-center-x", centreX + "%");
+  actionsPlacement.style.setProperty("--camp-placement-top", haut + "%");
+  return true;
+}
+
 function actualiserCommandesCampPrototype() {
   const palette = document.getElementById("camp-prototype-palette");
   if (palette) {
@@ -11222,7 +11267,22 @@ function actualiserCommandesCampPrototype() {
     && typeCampPrototype(campPrototypePlacementEnCours.type)
     && !typeCampPrototype(campPrototypePlacementEnCours.type).continuous
   );
-  if (actionsPlacement) actionsPlacement.hidden = !placementActif;
+  const placementAffichable = Boolean(
+    placementActif
+    && Number.isFinite(campPrototypePlacementEnCours.x)
+    && Number.isFinite(campPrototypePlacementEnCours.y)
+  );
+  if (actionsPlacement) {
+    actionsPlacement.hidden = !placementAffichable;
+    if (placementAffichable) {
+      positionnerActionsPlacementCampPrototype(
+        campPrototypePlacementEnCours.type,
+        campPrototypePlacementEnCours.x,
+        campPrototypePlacementEnCours.y,
+        campPrototypePlacementEnCours.rotation
+      );
+    }
+  }
   if (confirmerPlacement) {
     confirmerPlacement.disabled = !(
       placementActif
@@ -11281,6 +11341,7 @@ function rendrePaletteCampPrototype() {
     building: "Buildings",
     decoration: "Decorations",
     road: "Paths",
+    junk: "Junk",
     terrain: "Terrain"
   };
   ecrireTexte(document.getElementById("camp-prototype-category-title"), labels[categorie] || "Camp items");
@@ -11378,7 +11439,7 @@ function rendrePaletteCampPrototype() {
 
 function ouvrirCategorieCampPrototype(categorie) {
   if (!DEV_MODE || !campPrototypeModeEdition) return;
-  if (!["building", "decoration", "road", "terrain"].includes(categorie)) return;
+  if (!["building", "decoration", "road", "junk", "terrain"].includes(categorie)) return;
   campPrototypeCategorieOuverte = campPrototypeCategorieOuverte === categorie ? null : categorie;
   rendrePaletteCampPrototype();
   actualiserCommandesCampPrototype();
@@ -11608,6 +11669,9 @@ function afficherApercuCampPrototype(typeId, x, y, ignoreUid, rotation) {
     + type.color + (resultat.valide ? " camp-prototype-ghost-valid" : " camp-prototype-ghost-invalid");
   remplirItemCampPrototype(ghost, type, rotation);
   appliquerCadreCampPrototype(ghost, type, x, y, rotation);
+  if (campPrototypePlacementEnCours) {
+    positionnerActionsPlacementCampPrototype(typeId, x, y, rotation);
+  }
   return resultat;
 }
 
@@ -11779,6 +11843,7 @@ function tournerSelectionCampPrototype() {
   if (!placement || !type || !type.rotatable) return false;
   placement.rotation = campPrototypeApi.normaliserRotation((placement.rotation || 0) + 90);
   if (placement.mode === "new") campPrototypeRotationAPlacer = placement.rotation;
+  prechargerRotationSuivanteCampPrototype(type, placement.rotation);
   const resultat = actualiserValiditePlacementCampPrototype();
   const dimensions = dimensionsCampPrototype(placement.type, placement.rotation);
   definirMessageCampPrototype(type.label + " rotated to " + placement.rotation
@@ -12151,7 +12216,8 @@ function initialiserCampPrototype() {
   const board = document.getElementById("camp-prototype-board");
   const viewport = document.querySelector(".camp-prototype-viewport");
   const menuInteraction = document.getElementById("camp-prototype-interaction-menu");
-  if (!board || !viewport || !menuInteraction) return;
+  const actionsPlacement = document.getElementById("camp-prototype-placement-actions");
+  if (!board || !viewport || !menuInteraction || !actionsPlacement) return;
   campPrototypeInitialise = true;
   chargerCampPrototype();
   board.addEventListener("pointerdown", demarrerInteractionCampPrototype);
@@ -12177,6 +12243,12 @@ function initialiserCampPrototype() {
     }
   }, { passive: true });
   board.addEventListener("keydown", gererClavierCampPrototype);
+  actionsPlacement.addEventListener("pointerdown", function(event) {
+    event.stopPropagation();
+  });
+  actionsPlacement.addEventListener("click", function(event) {
+    event.stopPropagation();
+  });
   menuInteraction.addEventListener("pointerup", gererPointeurActionMenuCampPrototype);
   menuInteraction.addEventListener("click", gererClicActionMenuCampPrototype);
   window.addEventListener("resize", function() {

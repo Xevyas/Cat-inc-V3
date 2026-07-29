@@ -35,7 +35,24 @@ test('Camp prototype exposes an 18 by 12 collision-safe placement model', functi
   assert.equal(Object.isFrozen(camp.ITEM_TYPES), true);
   assert.deepEqual(
     Array.from(Object.keys(camp.ITEM_TYPES)),
-    ['cardboardBox', 'jobCenter', 'sawmill', 'catchen', 'pawsonry', 'trainingCenter', 'tree', 'catToy', 'road']
+    [
+      'cardboardBox', 'jobCenter', 'sawmill', 'catchen', 'pawsonry', 'trainingCenter',
+      'tree', 'catToy', 'junkGreenBush', 'junkThornBush', 'junkFlowerBush',
+      'junkPebblePile', 'junkStoneBlockPile', 'junkTallGrass', 'road'
+    ]
+  );
+  assert.deepEqual(
+    Array.from(Object.values(camp.ITEM_TYPES)
+      .filter(function(type) { return type.category === 'junk'; })
+      .map(function(type) { return [type.label, type.width, type.height]; })),
+    [
+      ['Green Bush', 2, 1],
+      ['Thorny Bramble Bush', 2, 1],
+      ['Flowering Bush', 2, 1],
+      ['Pile of Pebbles', 1, 1],
+      ['Pile of Stone Blocks', 2, 2],
+      ['Tall Green Grass', 1, 1]
+    ]
   );
   assert.deepEqual(
     JSON.parse(JSON.stringify(camp.dimensionsType('cardboardBox', 90))),
@@ -95,15 +112,17 @@ test('Camp prototype normalizes persisted layouts without overlaps or invalid it
     { uid: 'outside', type: 'trainingCenter', x: 14, y: 11 },
     { uid: 'unknown', type: 'pond', x: 10, y: 10 },
     { uid: 'second', type: 'kitchen', x: 8, y: 8 },
-    { uid: 'rotated', type: 'jobCenter', x: 12, y: 7, rotation: 90 }
+    { uid: 'rotated', type: 'jobCenter', x: 12, y: 7, rotation: 90 },
+    { uid: 'junk', type: 'junkTallGrass', x: 17, y: 11 }
   ]);
   assert.deepEqual(
     Array.from(normalized, function(item) { return item.uid; }),
-    ['valid', 'second', 'rotated']
+    ['valid', 'second', 'rotated', 'junk']
   );
   assert.equal(normalized[0].rotation, 0);
   assert.equal(normalized[1].type, 'catchen');
   assert.equal(normalized[2].rotation, 90);
+  assert.equal(normalized[3].type, 'junkTallGrass');
   assert.deepEqual(
     JSON.parse(JSON.stringify(camp.rectangleItem(normalized[2]))),
     { x: 12, y: 7, width: 4, height: 3 }
@@ -296,31 +315,69 @@ test('Camp uses optimized building sprites with rotatable footprints', function(
   assert.match(campSource, /const LEGACY_TYPE_ALIASES[\s\S]*?kitchen:\s*"catchen"/);
   assert.match(htmlSource, /id="camp-prototype-rotate"[\s\S]*?tournerSelectionCampPrototype\(\)/);
   assert.match(gameSource, /function tournerSelectionCampPrototype\(\)[\s\S]*?placement\.rotation = campPrototypeApi\.normaliserRotation[\s\S]*?actualiserValiditePlacementCampPrototype\(\)[\s\S]*?return true/);
-  assert.match(gameSource, /function remplirItemCampPrototype\([\s\S]*?camp-prototype-building-sprite[\s\S]*?rotate\(/);
+  assert.match(gameSource, /function assetCampPrototypePourRotation\(type, rotation\)[\s\S]*?_r" \+ rotationNormalisee[\s\S]*?function remplirItemCampPrototype\([\s\S]*?image\.src = assetCampPrototypePourRotation\(type, dimensions\.rotation\)[\s\S]*?image\.style\.transform = "translate\(-50%, -50%\)"/);
+  assert.doesNotMatch(gameSource, /image\.style\.transform = [^\n]*rotate\(/);
+  assert.match(gameSource, /function prechargerRotationSuivanteCampPrototype\(type, rotation\)[\s\S]*?new Image\(\)[\s\S]*?campPrototypeAssetsRotationPrecharges\.set/);
+  assert.match(gameSource, /function commencerPlacementExistantCampPrototype\([\s\S]*?prechargerRotationSuivanteCampPrototype\([\s\S]*?function commencerNouveauPlacementCampPrototype\([\s\S]*?prechargerRotationSuivanteCampPrototype\(type, 0\)/);
+  assert.match(gameSource, /function tournerSelectionCampPrototype\(\)[\s\S]*?prechargerRotationSuivanteCampPrototype\(type, placement\.rotation\)/);
   assert.match(cssSource, /\.camp-prototype-building-sprite\s*\{[\s\S]*?object-fit:\s*contain[\s\S]*?pointer-events:\s*none/);
+  const camp = chargerCampApi();
+  Object.values(camp.ITEM_TYPES).filter(function(type) {
+    return type.rotatable && type.asset;
+  }).forEach(function(type) {
+    const assetPath = decodeURIComponent(type.asset.split("?")[0]);
+    const extension = path.extname(assetPath);
+    const base = assetPath.slice(0, -extension.length);
+    const basePng = fs.readFileSync(path.join(root, assetPath));
+    const baseWidth = basePng.readUInt32BE(16);
+    const baseHeight = basePng.readUInt32BE(20);
+    [90, 180, 270].forEach(function(rotation) {
+      const variantPath = path.join(root, base + "_r" + rotation + extension);
+      assert.equal(fs.existsSync(variantPath), true,
+        type.label + " must provide a native " + rotation + " degree sprite");
+      const variantPng = fs.readFileSync(variantPath);
+      assert.equal(variantPng.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+      assert.equal(
+        variantPng.readUInt32BE(16),
+        rotation === 90 || rotation === 270 ? baseHeight : baseWidth
+      );
+      assert.equal(
+        variantPng.readUInt32BE(20),
+        rotation === 90 || rotation === 270 ? baseWidth : baseHeight
+      );
+    });
+  });
 });
 
 test('Camp layout editing is isolated in a full-screen mode with category menus', function() {
   assert.match(htmlSource, /id="camp-prototype-edit-open"[\s\S]*?entrerEditionCampPrototype\(\)/);
   assert.match(htmlSource, /id="camp-prototype-edit-done"[\s\S]*?quitterEditionCampPrototype\(\)/);
-  assert.equal((htmlSource.match(/data-camp-category="(?:building|decoration|road|terrain)"/g) || []).length, 4);
+  assert.equal((htmlSource.match(/data-camp-category="(?:building|decoration|road|junk|terrain)"/g) || []).length, 5);
+  assert.match(htmlSource, /data-camp-category="junk"[\s\S]*?camp-prototype-category-icon-junk[\s\S]*?<span>Junk<\/span>/);
   assert.match(htmlSource, /id="camp-prototype-category-sheet"[^>]*hidden/);
-  assert.match(htmlSource, /id="camp-prototype-placement-actions"[^>]*hidden[\s\S]*?id="camp-prototype-placement-confirm"[\s\S]*?validerPlacementCampPrototype\(\)[\s\S]*?id="camp-prototype-placement-cancel"[\s\S]*?annulerPlacementCampPrototype\(\)/);
+  assert.match(htmlSource, /id="camp-prototype-ghost"[\s\S]*?id="camp-prototype-placement-actions"[^>]*hidden[\s\S]*?id="camp-prototype-rotate"[^>]*tournerSelectionCampPrototype\(\)[\s\S]*?Rotate_Final\.png[\s\S]*?id="camp-prototype-placement-confirm"[^>]*validerPlacementCampPrototype\(\)[\s\S]*?✅_Final\.png[\s\S]*?id="camp-prototype-placement-cancel"[^>]*annulerPlacementCampPrototype\(\)[\s\S]*?Red Cross_Final\.png/);
   assert.match(gameSource, /let campPrototypeModeEdition = false/);
   assert.match(gameSource, /let campPrototypePlacementEnCours = null/);
   assert.match(gameSource, /function entrerEditionCampPrototype\(\)[\s\S]*?campPrototypeModeEdition = true[\s\S]*?renduCampPrototype\(\)/);
   assert.match(gameSource, /function quitterEditionCampPrototype\(restaurerFocus\)[\s\S]*?campPrototypeModeEdition = false[\s\S]*?campPrototypeTypeAPlacer = null[\s\S]*?campPrototypeGommeRoutes = false/);
   assert.match(gameSource, /function demarrerInteractionCampPrototype\(event\)\s*\{\s*if \(!DEV_MODE \|\| !campPrototypeModeEdition/);
-  assert.match(gameSource, /function ouvrirCategorieCampPrototype\(categorie\)[\s\S]*?\["building", "decoration", "road", "terrain"\]/);
+  assert.match(gameSource, /function ouvrirCategorieCampPrototype\(categorie\)[\s\S]*?\["building", "decoration", "road", "junk", "terrain"\]/);
+  assert.match(gameSource, /const labels = \{[\s\S]*?junk:\s*"Junk"/);
+  assert.match(cssSource, /\.camp-prototype-category-icon-junk::before[\s\S]*?\.camp-prototype-category-icon-junk::after/);
   assert.match(gameSource, /function validerPlacementCampPrototype\(\)[\s\S]*?actualiserValiditePlacementCampPrototype\(\)[\s\S]*?if \(!type \|\| !resultat\.valide\)[\s\S]*?item\.x = placement\.x[\s\S]*?campPrototypeLayout\.push\(item\)[\s\S]*?sauvegarderCampPrototype\(\)/);
   assert.match(gameSource, /function annulerPlacementCampPrototype\(\)[\s\S]*?campPrototypePlacementEnCours = null[\s\S]*?returned to its original position/);
   assert.match(gameSource, /function placerItemCampPrototype\(typeId, x, y, rotation\)[\s\S]*?definirPositionPlacementCampPrototype\(typeId, x, y, rotation, null\)/);
   assert.match(gameSource, /function deplacerItemCampPrototype\(uid, x, y\)[\s\S]*?definirPositionPlacementCampPrototype\([\s\S]*?uid/);
   assert.match(cssSource, /\.camp-prototype-placement-actions\[hidden\]\s*\{[\s\S]*?display:\s*none !important/);
+  assert.match(cssSource, /\.camp-prototype-placement-actions\s*\{[\s\S]*?position:\s*absolute[\s\S]*?left:\s*clamp\([\s\S]*?z-index:\s*8[\s\S]*?transform:\s*translate\(-50%, calc\(-100% - 8px\)\)[\s\S]*?pointer-events:\s*auto/);
+  assert.match(cssSource, /\.camp-prototype-placement-action img\s*\{[\s\S]*?width:\s*29px[\s\S]*?pointer-events:\s*none/);
   assert.match(cssSource, /\.camp-prototype-item-placement-valid\s*\{[\s\S]*?rgba\(47, 138, 80/);
   assert.match(cssSource, /\.camp-prototype-item-placement-invalid\s*\{[\s\S]*?rgba\(185, 70, 57/);
-  assert.match(cssSource, /body\.camp-prototype-editing \.camp-prototype-placement-confirm\s*\{[\s\S]*?background:\s*#2f8a50/);
-  assert.match(cssSource, /body\.camp-prototype-editing \.camp-prototype-placement-cancel\s*\{[\s\S]*?background:\s*#b94639/);
+  assert.match(cssSource, /body\.camp-prototype-editing \.camp-prototype-placement-confirm\s*\{[\s\S]*?background:\s*#f7fff3/);
+  assert.match(cssSource, /body\.camp-prototype-editing \.camp-prototype-placement-cancel\s*\{[\s\S]*?background:\s*#fff7f3/);
+  assert.match(gameSource, /function positionnerActionsPlacementCampPrototype\(typeId, x, y, rotation\)[\s\S]*?--camp-placement-center-x[\s\S]*?--camp-placement-top/);
+  assert.match(gameSource, /function afficherApercuCampPrototype\([\s\S]*?positionnerActionsPlacementCampPrototype\(typeId, x, y, rotation\)/);
+  assert.match(gameSource, /actionsPlacement\.addEventListener\("pointerdown"[\s\S]*?event\.stopPropagation\(\)[\s\S]*?actionsPlacement\.addEventListener\("click"/);
   assert.match(gameSource, /Its gameplay interaction will be connected later/);
   assert.match(gameSource, /const CAMP_PROTOTYPE_WORK_FAMILY_BY_TYPE = Object\.freeze\(\{[\s\S]*?sawmill:\s*"wood"[\s\S]*?catchen:\s*"food"[\s\S]*?pawsonry:\s*"rock"/);
   assert.match(htmlSource, /id="camp-prototype-interaction-menu"[^>]*role="menu"[^>]*hidden/);
@@ -347,9 +404,11 @@ test('Camp floating actions activate on the first touch across the complete popu
 });
 
 test('Camp grid is visible only while editing', function() {
-  assert.match(cssSource, /body:not\(\.camp-prototype-editing\) \.camp-prototype-grid\s*\{[\s\S]*?opacity:\s*0/);
+  assert.match(cssSource, /body:not\(\.camp-prototype-editing\) \.camp-prototype-grid,\s*body:not\(\.camp-prototype-editing\) \.camp-prototype-terrain-cleared\s*\{[\s\S]*?opacity:\s*0/);
   assert.match(cssSource, /\.camp-prototype-grid\s*\{[\s\S]*?background-image:[\s\S]*?linear-gradient\(to right[\s\S]*?linear-gradient\(to bottom/);
+  assert.match(cssSource, /\.camp-prototype-terrain-cleared\s*\{[\s\S]*?border:\s*1px solid[\s\S]*?background:/);
   assert.doesNotMatch(cssSource, /body\.camp-prototype-editing \.camp-prototype-grid\s*\{[\s\S]*?opacity:\s*0/);
+  assert.doesNotMatch(cssSource, /body\.camp-prototype-editing \.camp-prototype-terrain-cleared\s*\{[\s\S]*?opacity:\s*0/);
 });
 
 test('Camp normal view chains vertical touch scrolling while containing horizontal camera movement', function() {
@@ -387,7 +446,7 @@ test('Camp edit navigation keeps vertical scrolling and requires a long press to
 
 test('Camp camera zoom and terrain interactions stay renderer-independent and mobile-safe', function() {
   assert.match(htmlSource, /id="camp-prototype-title">Base Camp<\/h2>[\s\S]*?aria-label="Explain Base Camp"[\s\S]*?id="base-camp-help"/);
-  assert.match(htmlSource, /id="base-camp-help"[\s\S]*?Tap a camp element to interact with it[\s\S]*?Debris cannot be edited directly/);
+  assert.match(htmlSource, /id="base-camp-help"[\s\S]*?Tap a camp element to interact with it[\s\S]*?Natural clearing debris cannot be moved[\s\S]*?Junk menu/);
   assert.doesNotMatch(htmlSource, /class="camp-prototype-(?:view|edit)-copy"/);
   assert.match(htmlSource, /id="camp-prototype-status"[^>]*><\/p>/);
   assert.match(cssSource, /\.camp-prototype-status:empty\s*\{\s*display:\s*none/);

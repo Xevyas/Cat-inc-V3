@@ -5,6 +5,7 @@
   const GRID_WIDTH = 18;
   const GRID_HEIGHT = 12;
   const HOUSE_DECOR_HEIGHT = 4;
+  const OBSTACLE_ASSET_ROOT = "img/Maps/Camp%20Prototypes/Obstacles/";
 
   const ITEM_TYPES = Object.freeze({
     cardboardBox: Object.freeze({
@@ -84,6 +85,60 @@
       color: "toy",
       category: "decoration"
     }),
+    junkGreenBush: Object.freeze({
+      id: "junkGreenBush",
+      label: "Green Bush",
+      width: 2,
+      height: 1,
+      color: "junk",
+      category: "junk",
+      asset: OBSTACLE_ASSET_ROOT + "Green%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+    }),
+    junkThornBush: Object.freeze({
+      id: "junkThornBush",
+      label: "Thorny Bramble Bush",
+      width: 2,
+      height: 1,
+      color: "junk",
+      category: "junk",
+      asset: OBSTACLE_ASSET_ROOT + "Thorn%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+    }),
+    junkFlowerBush: Object.freeze({
+      id: "junkFlowerBush",
+      label: "Flowering Bush",
+      width: 2,
+      height: 1,
+      color: "junk",
+      category: "junk",
+      asset: OBSTACLE_ASSET_ROOT + "Flower%20Bush_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+    }),
+    junkPebblePile: Object.freeze({
+      id: "junkPebblePile",
+      label: "Pile of Pebbles",
+      width: 1,
+      height: 1,
+      color: "junk",
+      category: "junk",
+      asset: OBSTACLE_ASSET_ROOT + "Pebble%20Pile_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+    }),
+    junkStoneBlockPile: Object.freeze({
+      id: "junkStoneBlockPile",
+      label: "Pile of Stone Blocks",
+      width: 2,
+      height: 2,
+      color: "junk",
+      category: "junk",
+      asset: OBSTACLE_ASSET_ROOT + "Stone%20Block%20Pile_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+    }),
+    junkTallGrass: Object.freeze({
+      id: "junkTallGrass",
+      label: "Tall Green Grass",
+      width: 1,
+      height: 1,
+      color: "junk",
+      category: "junk",
+      asset: OBSTACLE_ASSET_ROOT + "Tall%20Grass_Camp_Obstacle_Watercolor_Game_v1.png?v=0.0001"
+    }),
     road: Object.freeze({
       id: "road",
       label: "Basic Trail",
@@ -135,7 +190,6 @@
     const zone = TERRITORY_ZONES[zoneId];
     return total + zone.width * zone.height;
   }, 0);
-  const OBSTACLE_ASSET_ROOT = "img/Maps/Camp%20Prototypes/Obstacles/";
   const OBSTACLE_TYPES = Object.freeze([
     Object.freeze({
       id: "greenBush",
