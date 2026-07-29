@@ -5,8 +5,8 @@
 The v0.0038 development Camp prototype and changelog-display update were validated on 2026-07-28 against the working copy `V3 - ChatGPT`.
 
 - Release status: published as game version v0.0038.
-- Interface references: CSS `0.0120`, JavaScript `0.0137`, Camp module `0.0003`, production module `0.0036`, save module `0.0042`, state module `0.0040`, audio module `0.0007`, config data `0.0043`, content data `0.0052`.
-- Automated suite: 183/183 tests passing.
+- Interface references: CSS `0.0127`, JavaScript `0.0140`, Camp module `0.0010`, production module `0.0036`, save module `0.0042`, state module `0.0040`, audio module `0.0007`, config data `0.0043`, content data `0.0052`.
+- Automated suite: 185/185 tests passing.
 - Browser load: no JavaScript exception and no missing runtime asset.
 
 This file is the release gate for future changes. A release is ready only when every automated gate passes and the relevant manual journeys have been replayed.
@@ -19,7 +19,7 @@ From the game folder, run:
 node --test --test-reporter=spec tests\*.test.js
 ```
 
-Required result: zero failed, cancelled, skipped or todo tests (183 tests currently).
+Required result: zero failed, cancelled, skipped or todo tests (185 tests currently).
 
 The suite currently validates:
 
@@ -67,6 +67,7 @@ Validated in headless Chrome with fresh storage and an advanced seeded state.
 | Short mobile | 390 × 667 introduction and guide | Pass |
 | Landscape mobile | 844 × 390 introduction remains scrollable and its action reachable | Pass |
 | Exploration | Map and page do not create document-level horizontal overflow; mobile returns to the map landing view when reopening the tab or launching a zone mission | Pass |
+| Camp (`?debug=1`) | 390 px and 1200 px views: three matching rear facades, upright full-height fences, three equal 6 × 8 gardens and the first three blue-garden rows cleared | Pass |
 | Accessibility tree | No unnamed interactive control | Pass |
 
 Compact desktop controls below 44 px are intentional secondary controls. They remain above the WCAG 2.2 pointer-target minimum or have sufficient surrounding spacing. Automated contrast reports on tab labels must be visually checked because their painted pseudo-element background is not represented correctly by a simple DOM color sampler.

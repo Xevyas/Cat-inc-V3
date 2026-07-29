@@ -2599,6 +2599,42 @@ body:not([data-dev-mode="true"]) .onglet-camp-dev { display: none !important; }
   font-weight: 800;
   white-space: nowrap;
 }
+.camp-prototype-zoom {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid #d8c5aa;
+  border-radius: 999px;
+  background: #fff8ed;
+}
+.camp-prototype-zoom button {
+  display: grid;
+  min-width: 32px;
+  height: 32px;
+  place-items: center;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #75451f;
+  font-size: .9rem;
+  font-weight: 900;
+  line-height: 1;
+}
+.camp-prototype-zoom button:hover,
+.camp-prototype-zoom button:focus-visible {
+  background: #f1dfc9;
+}
+.camp-prototype-zoom button:disabled {
+  color: #b9aa9b;
+  opacity: .65;
+}
+#camp-prototype-zoom-value {
+  min-width: 48px;
+  font-size: .66rem;
+}
 .camp-prototype-edit-open,
 .camp-prototype-edit-done,
 .camp-prototype-clear {
@@ -2654,6 +2690,30 @@ body:not([data-dev-mode="true"]) .onglet-camp-dev { display: none !important; }
   border-color: var(--couleur-accent);
   box-shadow: 0 0 0 2px rgba(224, 123, 57, .2);
 }
+.camp-prototype-terrain-summary {
+  grid-column: 1 / -1;
+  padding: 8px 10px;
+  border: 1px solid #c8d5a1;
+  border-radius: 9px;
+  background: #f4f8e9;
+  color: #526337;
+  font-size: .7rem;
+  font-weight: 800;
+}
+.camp-prototype-terrain-zone-action {
+  --camp-prototype-color: #9caf6d;
+  justify-content: space-between;
+  text-align: left;
+}
+.camp-prototype-terrain-zone-action:disabled {
+  border-color: #d7d0c6;
+  background: #f3f0eb;
+  color: #968d84;
+  opacity: .82;
+}
+.camp-prototype-terrain-reset {
+  --camp-prototype-color: #c98979;
+}
 .camp-prototype-road-eraser {
   --camp-prototype-color: #c67f71;
 }
@@ -2681,21 +2741,21 @@ body:not([data-dev-mode="true"]) .onglet-camp-dev { display: none !important; }
 .camp-prototype-board {
   position: relative;
   width: min(100%, 600px);
-  aspect-ratio: 2 / 3;
+  aspect-ratio: 3 / 2;
   margin: 0 auto;
   overflow: hidden;
   border: 2px solid #705a3d;
   border-radius: 12px;
   background: #b9ca86;
   box-shadow: inset 0 0 28px rgba(58, 70, 34, .22);
-  touch-action: pan-y;
+  touch-action: pan-x pan-y;
   user-select: none;
 }
 body:not(.camp-prototype-editing) .camp-prototype-item {
-  touch-action: manipulation;
+  touch-action: pan-x pan-y;
 }
 body.camp-prototype-editing .camp-prototype-item:not(.camp-prototype-item-selected) {
-  touch-action: pan-y;
+  touch-action: pan-x pan-y;
 }
 body.camp-prototype-editing .camp-prototype-board.camp-prototype-tool-continuous,
 body.camp-prototype-editing .camp-prototype-board.camp-prototype-tool-continuous .camp-prototype-item {
@@ -2708,22 +2768,184 @@ body:not(.camp-prototype-editing) .camp-prototype-grid {
   outline: 3px solid var(--couleur-accent);
   outline-offset: -4px;
 }
+.camp-prototype-environment,
+.camp-prototype-territory-zones,
+.camp-prototype-terrain,
 .camp-prototype-grid,
 .camp-prototype-items {
   position: absolute;
   inset: 0;
 }
+.camp-prototype-environment {
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.camp-prototype-houses,
+.camp-prototype-gardens,
+.camp-prototype-fence {
+  position: absolute;
+  display: block;
+}
+.camp-prototype-houses {
+  inset: 0 0 auto;
+  width: 100%;
+  height: 33.333333%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr);
+  background-color: #b9d86a;
+  background-image: url("img/Maps/Camp%20Prototypes/Camp_Grass_Texture_Prototype_v1.webp?v=0.0001");
+  background-repeat: repeat;
+  background-size: 38% auto;
+  border-bottom: 2px solid rgba(87, 105, 49, .38);
+}
+.camp-prototype-house-plot {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.camp-prototype-house {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+  filter: saturate(.96);
+  transform: scale(1.04);
+  transform-origin: center bottom;
+}
+.camp-prototype-shrub {
+  position: absolute;
+  bottom: 3%;
+  z-index: 2;
+  display: block;
+  width: 32%;
+  height: 42%;
+  background: url("img/Maps/Camp%20Prototypes/Camp_Garden_Shrub_Watercolor_HighAngle_v2.webp?v=0.0001") center bottom / contain no-repeat;
+}
+.camp-prototype-shrub-left {
+  left: 8%;
+}
+.camp-prototype-shrub-right {
+  right: 8%;
+  transform: scaleX(-1);
+}
+.camp-prototype-gardens {
+  inset: 33.333333% 0 0;
+  background-color: #b9d86a;
+  background-image: url("img/Maps/Camp%20Prototypes/Camp_Grass_Texture_Prototype_v1.webp?v=0.0001");
+  background-repeat: repeat;
+  background-size: 38% auto;
+}
+.camp-prototype-fence {
+  top: 0;
+  bottom: 0;
+  width: 5%;
+  height: 100%;
+  object-fit: fill;
+  filter: drop-shadow(1px 1px 1px rgba(78, 52, 24, .34));
+  transform: translateX(-50%);
+}
+.camp-prototype-fence-west { left: 33.333333%; }
+.camp-prototype-fence-east { left: 66.666667%; }
+.camp-prototype-territory-zones {
+  z-index: 1;
+  pointer-events: none;
+}
+.camp-prototype-territory-zone {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(68, 57, 43, .3);
+  background:
+    repeating-linear-gradient(135deg, rgba(51, 58, 41, .18) 0 7px, rgba(38, 46, 31, .25) 7px 14px),
+    rgba(63, 70, 49, .48);
+  color: rgba(255, 253, 244, .92);
+  text-align: center;
+}
+.camp-prototype-territory-zone span {
+  max-width: 90%;
+  padding: 3px 5px;
+  border-radius: 5px;
+  background: rgba(45, 40, 32, .64);
+  font-size: clamp(.42rem, 1.4vw, .66rem);
+  font-weight: 900;
+  line-height: 1.1;
+}
+.camp-prototype-territory-zone-claimable {
+  border: 2px dashed #f0ad49;
+  box-shadow: inset 0 0 0 2px rgba(255, 236, 187, .25);
+}
+.camp-prototype-terrain {
+  z-index: 3;
+  pointer-events: none;
+}
+.camp-prototype-terrain-cleared {
+  position: absolute;
+  border: 1px solid rgba(89, 111, 53, .16);
+  background: rgba(224, 235, 180, .18);
+  pointer-events: none;
+}
+.camp-prototype-obstacle {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 24%;
+  background: rgba(91, 104, 57, .2);
+  filter: saturate(.78);
+  color: #5e6f31;
+  font-size: var(--camp-prototype-obstacle-size, 16px);
+  line-height: 1;
+  opacity: .82;
+  touch-action: pan-x pan-y;
+  pointer-events: auto;
+}
+.camp-prototype-obstacle-clearable {
+  background: rgba(245, 209, 120, .32);
+  box-shadow: inset 0 0 0 2px rgba(177, 105, 29, .66);
+  filter: none;
+  opacity: 1;
+}
+.camp-prototype-obstacle-brokenPot { color: #b45b31; }
+.camp-prototype-obstacle-brambles { color: #8b632e; }
+.camp-prototype-obstacle-rubble { color: #756e64; }
+.camp-prototype-board.camp-prototype-terrain-mode .camp-prototype-obstacle {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.camp-prototype-board.camp-prototype-terrain-mode .camp-prototype-obstacle:not(.camp-prototype-obstacle-clearable) {
+  opacity: .48;
+}
 .camp-prototype-grid {
+  inset: 33.333333% 0 0;
+  z-index: 2;
   pointer-events: none;
   background-image:
     linear-gradient(to right, rgba(72, 83, 48, .2) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(72, 83, 48, .2) 1px, transparent 1px);
-  background-size: 5% 3.333333%;
+  background-size: 5.555556% 12.5%;
+}
+.camp-prototype-items {
+  z-index: 4;
+  pointer-events: none;
 }
 .camp-prototype-item {
   --camp-prototype-color: #d0a06d;
   position: absolute;
-  z-index: 2;
+  z-index: 5;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2740,6 +2962,7 @@ body:not(.camp-prototype-editing) .camp-prototype-grid {
   line-height: 1.05;
   text-align: center;
   touch-action: none;
+  pointer-events: auto;
 }
 .camp-prototype-item strong {
   max-width: 100%;
@@ -2816,12 +3039,13 @@ body:not(.camp-prototype-editing) .camp-prototype-grid {
 .camp-prototype-color-cardboard { --camp-prototype-color: #d99757; }
 .camp-prototype-color-job-center { --camp-prototype-color: #d6aa65; }
 .camp-prototype-color-food { --camp-prototype-color: #89b971; }
+.camp-prototype-color-stone { --camp-prototype-color: #b8a283; }
 .camp-prototype-color-training { --camp-prototype-color: #83a8cc; }
 .camp-prototype-color-nature { --camp-prototype-color: #72a45f; }
 .camp-prototype-color-toy { --camp-prototype-color: #d38cb1; }
 .camp-prototype-color-road { --camp-prototype-color: #a18b70; }
 .camp-prototype-road {
-  z-index: 1;
+  z-index: 2;
   padding: 0;
   overflow: visible;
   border: none;
@@ -2994,6 +3218,29 @@ body:not(.camp-prototype-editing) .camp-prototype-grid {
 }
 .camp-prototype-category-icon-road::before { left: 4px; }
 .camp-prototype-category-icon-road::after { right: 4px; }
+.camp-prototype-category-icon-terrain::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: 1px;
+  height: 9px;
+  border: 2px solid currentColor;
+  border-radius: 50% 50% 35% 35%;
+  background: rgba(126, 153, 76, .3);
+}
+.camp-prototype-category-icon-terrain::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 0;
+  width: 9px;
+  height: 15px;
+  border-left: 3px solid currentColor;
+  border-radius: 60% 0;
+  box-shadow: -5px 4px 0 -2px currentColor, 4px 7px 0 -2px currentColor;
+  transform: rotate(12deg);
+}
 
 body.camp-prototype-editing {
   overflow: hidden;
@@ -3039,16 +3286,16 @@ body.camp-prototype-editing .camp-prototype-viewport {
   min-height: 0;
   flex: 1 1 auto;
   align-items: flex-start;
-  justify-content: center;
+  justify-content: flex-start;
   overflow: auto;
   background: #d8ccb9;
   -webkit-overflow-scrolling: touch;
 }
 body.camp-prototype-editing .camp-prototype-board {
-  width: min(100%, calc((100dvh - 190px) * .666667), 700px);
+  width: min(100%, calc((100dvh - 190px) * .75), 700px);
   flex: 0 0 auto;
   margin: 0 auto;
-  touch-action: pan-y;
+  touch-action: pan-x pan-y;
 }
 body.camp-prototype-editing .camp-prototype-selection-actions {
   position: absolute;
@@ -3102,7 +3349,7 @@ body.camp-prototype-editing .camp-prototype-edit-dock {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
+  gap: 14px;
   transform: translateX(-50%);
 }
 body.camp-prototype-editing .camp-prototype-help {
@@ -8305,6 +8552,9 @@ body.camp-prototype-editing .camp-prototype-help {
   .camp-prototype-heading p { font-size: .72rem; }
   .camp-prototype-heading-actions { justify-content: flex-start; flex-wrap: wrap; margin-top: 8px; }
   .camp-prototype-size { display: inline-block; margin-top: 7px; padding: 4px 8px; font-size: .62rem; }
+  .camp-prototype-zoom { padding: 2px; }
+  .camp-prototype-zoom button { min-width: 29px; height: 29px; padding-inline: 5px; }
+  #camp-prototype-zoom-value { min-width: 43px; }
   .camp-prototype-palette { grid-template-columns: minmax(0, 1fr); gap: 6px; }
   .camp-prototype-palette-item {
     min-height: 44px;
@@ -8316,7 +8566,12 @@ body.camp-prototype-editing .camp-prototype-help {
   }
   .camp-prototype-palette-item span { margin-top: 0; }
   .camp-prototype-status { font-size: .68rem; }
-  .camp-prototype-viewport { max-height: none; overflow: visible; background: transparent; }
+  .camp-prototype-viewport {
+    max-height: min(66vh, 620px);
+    overflow: auto;
+    background: #d8ccb9;
+    -webkit-overflow-scrolling: touch;
+  }
   .camp-prototype-board { width: 100%; border-radius: 8px; }
   .camp-prototype-help { font-size: .62rem; }
   body.camp-prototype-editing .camp-prototype-panel {
@@ -8339,6 +8594,14 @@ body.camp-prototype-editing .camp-prototype-help {
   body.camp-prototype-editing .camp-prototype-heading-actions {
     flex-wrap: nowrap;
     margin-top: 0;
+  }
+  body.camp-prototype-editing .camp-prototype-zoom button {
+    min-width: 27px;
+    height: 28px;
+  }
+  body.camp-prototype-editing #camp-prototype-zoom-value {
+    min-width: 40px;
+    font-size: .6rem;
   }
   body.camp-prototype-editing .camp-prototype-edit-done {
     min-height: 38px;
@@ -8368,12 +8631,12 @@ body.camp-prototype-editing .camp-prototype-help {
   }
   body.camp-prototype-editing .camp-prototype-edit-dock {
     bottom: max(7px, env(safe-area-inset-bottom));
-    gap: 12px;
+    gap: 8px;
   }
   .camp-prototype-edit-dock > button {
-    width: 62px;
-    height: 62px;
-    font-size: .52rem;
+    width: 58px;
+    height: 58px;
+    font-size: .48rem;
   }
   .camp-prototype-category-icon {
     width: 24px;
@@ -9209,6 +9472,12 @@ body.camp-prototype-editing .camp-prototype-help {
   .sphere-detail-panel {
     height: 158px;
     max-height: 158px;
+  }
+}
+
+@media (max-width: 360px) {
+  body.camp-prototype-editing .camp-prototype-clear {
+    display: none;
   }
 }
 
