@@ -1,5 +1,14 @@
 # Cat Inc
 
+## V3 Legacy
+
+This repository is frozen on the v0.0037 gameplay baseline. It no longer
+receives feature or balancing updates. A separate, incompatible V4 is under
+development and will eventually be available from a new link with a mandatory
+hard reset.
+
+The permanent in-game Legacy banner intentionally has no V4 link yet.
+
 Cat Inc is a vanilla HTML/CSS/JavaScript incremental game. It has no build step and no runtime dependency.
 
 ## Run the game

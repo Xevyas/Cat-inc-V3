@@ -119,33 +119,6 @@
     })
   ]);
 
-  const release0038Categories = Object.freeze([
-    Object.freeze({
-      label: "New Features",
-      changes: Object.freeze([
-        "A development-only Base Camp prototype now supports manual building and decoration placement plus connected road painting on a 20 by 30 grid."
-      ])
-    }),
-    Object.freeze({
-      label: "Balancing",
-      changes: Object.freeze([])
-    }),
-    Object.freeze({
-      label: "Quality of Life",
-      changes: Object.freeze([
-        "Release notes and changelog history now hide categories that contain no listed changes."
-      ])
-    }),
-    Object.freeze({
-      label: "Bug Fixes",
-      changes: Object.freeze([])
-    }),
-    Object.freeze({
-      label: "Other",
-      changes: Object.freeze([])
-    })
-  ]);
-
   const release0035Categories = Object.freeze([
     Object.freeze({
       label: "Quality of Life",
@@ -173,7 +146,7 @@
   // On publication, promote this entry to `releases`, assign its version/date,
   // then replace these categories with a fresh empty pending release.
   const pendingRelease = Object.freeze({
-    baseVersion: "0.0038",
+    baseVersion: "0.0037",
     categories: Object.freeze([
       Object.freeze({ label: "New Features", changes: Object.freeze([]) }),
       Object.freeze({ label: "Balancing", changes: Object.freeze([]) }),
@@ -186,11 +159,6 @@
   // Keep the newest release first. The game uses the first entry for the
   // one-time launch panel and renders the complete array in Settings.
   const releases = [
-    Object.freeze({
-      version: "0.0038",
-      date: "2026-07-28",
-      categories: release0038Categories
-    }),
     Object.freeze({
       version: "0.0037",
       date: "2026-07-28",

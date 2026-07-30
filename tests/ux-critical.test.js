@@ -501,14 +501,9 @@ test('catch and recruit use a passive saved cooldown with an active claim action
   assert.match(offline, /terminerExplo\(explo\)[\s\S]*?terminerExploZone\(\)[\s\S]*?terminerScouting\(scoutingId, runs\)/);
   assert.match(offline, /terminerApprentissage\(etat\.learningEnCours\.itemId\)[\s\S]*?terminerFormation\(\)/);
   assert.match(gameSource, /function rattraperProgressionAfk\(\)[\s\S]*?appliquerProgressionHorsLigne\(\)[\s\S]*?renduManagement\(\)/);
-  assert.match(gameSource, /let suspensionAfkConfirmee = false/);
-  assert.match(gameSource, /function marquerSuspensionAfk\(\)[\s\S]*?suspensionAfkConfirmee = true[\s\S]*?sauvegarderAvantSuspension\(\)/);
-  assert.match(gameSource, /function rattraperApresSuspensionAfk\(\)[\s\S]*?!suspensionAfkConfirmee[\s\S]*?suspensionAfkConfirmee = false[\s\S]*?rattraperProgressionAfk\(\)/);
-  assert.match(gameSource, /visibilitychange[\s\S]*?marquerSuspensionAfk\(\)[\s\S]*?rattraperApresSuspensionAfk\(\)/);
-  assert.match(gameSource, /pageshow[\s\S]*?rattraperApresSuspensionAfk\(\)/);
-  assert.match(gameSource, /focus[\s\S]*?rattraperApresSuspensionAfk\(\)/);
-  assert.match(gameSource, /pagehide", marquerSuspensionAfk/);
-  assert.match(gameSource, /freeze", marquerSuspensionAfk/);
+  assert.match(gameSource, /visibilitychange[\s\S]*?sauvegarderAvantSuspension\(\)[\s\S]*?rattraperProgressionAfk\(\)/);
+  assert.match(gameSource, /pageshow[\s\S]*?rattraperProgressionAfk\(\)/);
+  assert.match(gameSource, /pagehide[\s\S]*?sauvegarderAvantSuspension/);
   assert.match(gameSource, /bouton-intro"\)\.addEventListener\("click"[\s\S]*?etat\.chatons === 0 && !etat\.sequenceEnCours[\s\S]*?demarrerRechargeCatch\(\)[\s\S]*?sauvegarder\(\)/);
   assert.match(gameSource, /function reset\(\)[\s\S]*?reinitialiserEtat\(\)[\s\S]*?renduManagement\(\)[\s\S]*?afficherModal\("ecran-intro"\)/);
 });
@@ -812,12 +807,11 @@ test('Gang, Work, Inventory and Exploration expose their custom controls to keyb
 test('every custom modal exposes dialog semantics and an accessible name', function() {
   const dialogs = htmlSource.match(/role="dialog"/g) || [];
   const modalFlags = htmlSource.match(/aria-modal="true"/g) || [];
-  assert.equal(dialogs.length, 40);
+  assert.equal(dialogs.length, 39);
   assert.equal(modalFlags.length, dialogs.length);
   assert.match(htmlSource, /id="settings-modal"[\s\S]*?aria-labelledby="settings-modal-titre"/);
   assert.match(htmlSource, /id="jc-modal"[\s\S]*?aria-labelledby="jc-modal-titre"/);
   assert.match(htmlSource, /id="worker-modal"[\s\S]*?aria-labelledby="worker-modal-titre"/);
-  assert.match(htmlSource, /id="camp-demolition-modal"[\s\S]*?aria-labelledby="camp-demolition-modal-title"/);
   assert.match(htmlSource, /id="recipe-modal"[\s\S]*?aria-labelledby="recipe-modal-title"/);
   assert.match(htmlSource, /id="explo-modal"[\s\S]*?aria-labelledby="explo-modal-titre"/);
   assert.match(htmlSource, /id="scouting-reward-summary-modal"[\s\S]*?aria-labelledby="scouting-reward-summary-title"/);
@@ -1084,9 +1078,9 @@ test('exploration map scouting status dots are highly visible', function() {
 
 test('main sections expose one selected tab and one associated visible panel', function() {
   assert.match(htmlSource, /class="barre-onglets"[^>]*role="tablist"[^>]*aria-label="Main sections"/);
-  assert.equal((htmlSource.match(/class="onglet(?: [^"]*)?" role="tab"/g) || []).length, 8);
-  assert.equal((htmlSource.match(/id="contenu-(?:gang|camp|work|buildings|facilities|explorations|inventaire|logs)" role="tabpanel"/g) || []).length, 8);
-  ['gang', 'camp', 'work', 'buildings', 'facilities', 'explorations', 'inventaire', 'logs'].forEach(function(id) {
+  assert.equal((htmlSource.match(/class="onglet(?: [^"]*)?" role="tab"/g) || []).length, 7);
+  assert.equal((htmlSource.match(/id="contenu-(?:gang|work|buildings|facilities|explorations|inventaire|logs)" role="tabpanel"/g) || []).length, 7);
+  ['gang', 'work', 'buildings', 'facilities', 'explorations', 'inventaire', 'logs'].forEach(function(id) {
     assert.match(htmlSource, new RegExp('id="onglet-' + id + '"[^>]*aria-controls="contenu-' + id + '"'));
     assert.match(htmlSource, new RegExp('id="contenu-' + id + '"[^>]*aria-labelledby="onglet-' + id + '"'));
   });
@@ -1166,16 +1160,25 @@ test('expandable stats and filter buttons expose their current state', function(
 });
 
 test('Settings exposes the published game version separately from save and cache versions', function() {
-  assert.match(htmlSource, /class="settings-version"[^>]*aria-label="Game version"[^>]*>Version <strong>v0\.0038<\/strong>/);
+  assert.match(htmlSource, /class="settings-version"[^>]*aria-label="Game version"[^>]*>Version <strong>v0\.0037<\/strong>/);
   assert.match(cssSource, /\.settings-version\s*\{[\s\S]*?text-align: center/);
   assert.doesNotMatch(gameSource, /SAVE_VERSION\s*=\s*['"]0\.0028/);
 });
 
+test('V3 is frozen as a visible Legacy build without the Camp prototype', function() {
+  assert.match(htmlSource, /id="legacy-version-banner"[^>]*role="note"[^>]*aria-label="Legacy version notice"[\s\S]*?This version will no longer be updated - a new one is coming shortly with hard reset via a new link\./);
+  assert.match(cssSource, /\.legacy-version-banner\s*\{[\s\S]*?flex:\s*0 0 auto[\s\S]*?background:\s*#9c4212[\s\S]*?text-align:\s*center/);
+  assert.match(htmlSource, /style\.css\?v=0\.0116/);
+  assert.match(htmlSource, /jeu\.js\?v=0\.0132/);
+  assert.doesNotMatch(htmlSource + gameSource + cssSource, /camp-prototype|onglet-camp/);
+});
+
 test('release notes are versioned, persisted and shown before the AFK summary', function() {
   assert.match(htmlSource, /id="ecran-release-notes"[\s\S]*?id="release-notes-list"/);
-  assert.match(htmlSource, /js\/data\/changelog\.js\?v=0\.0038/);
+  assert.match(htmlSource, /js\/data\/changelog\.js\?v=0\.0037/);
   assert.match(gameSource, /const changelogData = globalThis\.CatInc\.data\.changelog/);
   assert.match(gameSource, /const GAME_RELEASE_VERSION = changelogData\.currentVersion/);
+  assert.match(gameSource, /const GAME_UPDATE_VERSION = "0\.0039"/);
   assert.match(gameSource, /const GAME_RELEASE_NOTES = changelogData\.releases\[0\]\.categories/);
   assert.match(gameSource, /const GAME_CHANGELOG = changelogData\.releases/);
   assert.match(fs.readFileSync(path.join(root, 'js/data/changelog.js'), 'utf8'), /version: "0\.0035"/);
@@ -1184,46 +1187,36 @@ test('release notes are versioned, persisted and shown before the AFK summary', 
   assert.match(changelogSource, /label: "New Features"[\s\S]*label: "Balancing"[\s\S]*label: "Quality of Life"[\s\S]*label: "Other"/);
   assert.match(changelogSource, /label: "Balancing"[\s\S]*Exploration missions now require an Explorator/);
   assert.match(changelogSource, /label: "Other"[\s\S]*D1 house description[\s\S]*Undiscovered zone names/);
-  assert.match(changelogSource, /version: "0\.0038"[\s\S]*date: "2026-07-28"/);
-  assert.match(changelogSource, /const pendingRelease = Object\.freeze\(\{[\s\S]*baseVersion: "0\.0038"/);
+  assert.match(changelogSource, /version: "0\.0037"[\s\S]*date: "2026-07-28"/);
+  assert.match(changelogSource, /const pendingRelease = Object\.freeze\(\{[\s\S]*baseVersion: "0\.0037"/);
   assert.match(changelogSource, /pendingRelease: pendingRelease/);
   assert.match(changelogSource, /label: "Bug Fixes"[\s\S]*A Cat can no longer be assigned to more than one action/);
   const pendingSection = changelogSource.slice(changelogSource.indexOf('const pendingRelease = Object.freeze({'), changelogSource.indexOf('// Keep the newest release first.'));
-  assert.doesNotMatch(pendingSection, /Release notes and changelog history now hide categories that contain no listed changes/);
-  assert.doesNotMatch(pendingSection, /development-only Base Camp prototype/);
   assert.doesNotMatch(pendingSection, /Returning from an AFK period now checks the published version without cache/);
   assert.doesNotMatch(pendingSection, /Map selection outlines, locks and unknown-zone markers are visible again above the fog layer/);
   assert.match(changelogSource.slice(changelogSource.indexOf('const release0037Categories'), changelogSource.indexOf('const release0035Categories')), /Returning from an AFK period now checks the published version without cache[\s\S]*Map selection outlines, locks and unknown-zone markers are visible again above the fog layer/);
-  assert.match(changelogSource.slice(changelogSource.indexOf('const release0038Categories'), changelogSource.indexOf('const release0035Categories')), /development-only Base Camp prototype[\s\S]*Release notes and changelog history now hide categories that contain no listed changes/);
   assert.doesNotMatch(pendingSection, /Story dialogue now gives Bernardo, Mochi and Luna clearer personalities/);
   assert.doesNotMatch(pendingSection, /Manual Focus power upgrades now cost 2 and 4/);
-  const changelogCategoryContext = vm.createContext({});
-  vm.runInContext(extraire('function categoriesChangelogNonVides(', 'function rendreChangelog()'), changelogCategoryContext);
-  const categoriesVisibles = changelogCategoryContext.categoriesChangelogNonVides([
-    { label: 'Balancing', changes: [] },
-    { label: 'Bug Fixes', changes: ['Visible fix'] },
-    { label: 'Other' }
-  ]);
-  assert.deepEqual(Array.from(categoriesVisibles, function(category) { return category.label; }), ['Bug Fixes']);
-  assert.match(gameSource, /function rendreChangelog\(\)[\s\S]*?categoriesChangelogNonVides\(release\.categories\)\.forEach/);
-  assert.match(gameSource, /function afficherNotesVersion\(suite\)[\s\S]*?categoriesChangelogNonVides\(GAME_RELEASE_NOTES\)\.forEach/);
+  assert.match(gameSource, /const changes = category\.changes \|\| \[\];[\s\S]*?if \(changes\.length === 0\) return/);
   assert.match(gameSource, /const formaterDateRelease = function\(date\)/);
   assert.match(gameSource, /What's new in v" \+ GAME_RELEASE_VERSION[\s\S]*?currentReleaseDate/);
   assert.match(gameSource, /releaseNotesSeenVersion/);
+  assert.match(gameSource, /function releaseNotesNecessaires\(\)[\s\S]*?versionPublieePlusRecente\(etat\.releaseNotesSeenVersion, GAME_RELEASE_VERSION\)[\s\S]*?return false/);
   assert.match(gameSource, /releaseNotesDeadline = Date\.now\(\) \+ 5000/);
   assert.match(gameSource, /else if \(releaseNotesNecessaires\(\)\)\s*\{\s*afficherNotesVersion\(lancerOuvertureInitiale\)/);
   assert.match(gameSource, /if \(resumeAbsence\) afficherResumeAbsence\(resumeAbsence\);/);
   const versionManifest = JSON.parse(fs.readFileSync(path.join(root, 'version.json'), 'utf8'));
-  assert.equal(versionManifest.version, '0.0038');
+  assert.equal(versionManifest.version, '0.0039');
   assert.match(gameSource, /const VERSION_MANIFEST_PATH = "version\.json"/);
-  assert.match(gameSource, /function miseAJourPublieeDisponible\(\)[\s\S]*?VERSION_MANIFEST_PATH[\s\S]*?cacheBust[\s\S]*?cache:\s*"no-store"[\s\S]*?versionPublieePlusRecente\(manifest\.version, GAME_RELEASE_VERSION\)/);
+  assert.match(gameSource, /function miseAJourPublieeDisponible\(\)[\s\S]*?VERSION_MANIFEST_PATH[\s\S]*?cacheBust[\s\S]*?cache:\s*"no-store"[\s\S]*?versionPublieePlusRecente\(manifest\.version, GAME_UPDATE_VERSION\)/);
   assert.match(gameSource, /function verifierMiseAJourApresResumeAfk\(resume\)[\s\S]*?sessionStorage\.setItem\(AFK_RESUME_RELOAD_KEY[\s\S]*?if \(!disponible\)[\s\S]*?supprimerResumeAbsenceStocke\(\)[\s\S]*?afkReloadProgramme = true/);
   assert.match(gameSource, /function fermerResumeAbsenceEtRecharger\(\)[\s\S]*?if \(resumeAbsenceRechargeEffectue \|\| !afkReloadProgramme\) return/);
   const versionCompareContext = vm.createContext({});
   vm.runInContext(extraire('function versionPublieePlusRecente(', 'function miseAJourPublieeDisponible()'), versionCompareContext);
-  assert.equal(versionCompareContext.versionPublieePlusRecente('0.0039', '0.0038'), true);
-  assert.equal(versionCompareContext.versionPublieePlusRecente('0.0038', '0.0038'), false);
-  assert.equal(versionCompareContext.versionPublieePlusRecente('0.0037', '0.0038'), false);
+  assert.equal(versionCompareContext.versionPublieePlusRecente('0.0038', '0.0037'), true);
+  assert.equal(versionCompareContext.versionPublieePlusRecente('0.0039', '0.0039'), false);
+  assert.equal(versionCompareContext.versionPublieePlusRecente('0.0037', '0.0037'), false);
+  assert.equal(versionCompareContext.versionPublieePlusRecente('0.0036', '0.0037'), false);
 });
 
 test('assignment audio and persistent volume controls are wired', function() {
@@ -1772,7 +1765,9 @@ test('panel explanations move behind compact help buttons', function() {
 });
 
 test('the job story hands off Bernardo role discovery to a focused second popup', function() {
-  const story = htmlSource.slice(htmlSource.indexOf('id="ecran-story-6b"'), htmlSource.indexOf('</div>\n  </div>', htmlSource.indexOf('id="ecran-story-6b"')));
+  const storyStart = htmlSource.indexOf('id="ecran-story-6b"');
+  const storyEnd = htmlSource.indexOf('<!-- JOB DISCOVERY', storyStart);
+  const story = htmlSource.slice(storyStart, storyEnd);
   assert.doesNotMatch(story, /Bernardo has just become the Gang Leader/);
   assert.match(story, /onclick="validerStoryJob\(\)"/);
   assert.match(htmlSource, /id="gang-leader-unlock-modal"[\s\S]*?Bernardo has just become the Gang Leader[\s\S]*?Go check Bernardo's job/);

@@ -4,9 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>🐱 Cat Inc</title>
-  <link rel="stylesheet" href="style.css?v=0.0145" />
+  <link rel="stylesheet" href="style.css?v=0.0116" />
 </head>
 <body>
+
+  <aside id="legacy-version-banner" class="legacy-version-banner" role="note" aria-label="Legacy version notice">
+    This version will no longer be updated - a new one is coming shortly with hard reset via a new link.
+  </aside>
 
   <!-- INTRO -->
   <div id="ecran-intro" class="ecran-intro" role="dialog" aria-modal="true" aria-hidden="true" style="display:none">
@@ -377,7 +381,7 @@
     <div class="intro-boite release-notes-box" role="document" tabindex="-1">
       <div class="intro-dialogue">
         <p class="intro-ligne intro-miaou">Cat Inc has changed</p>
-        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0038 · July 28, 2026</h2>
+        <h2 id="release-notes-title" class="release-notes-title">What's new in v0.0037 · July 28, 2026</h2>
         <p id="release-notes-copy" class="release-notes-copy">Here are the latest changes since the previous publication.</p>
           <div id="release-notes-list" class="release-notes-list"></div>
         <p id="release-notes-countdown" class="release-notes-countdown" role="status" aria-live="polite">Please read the changes. Continue in 5s.</p>
@@ -566,7 +570,6 @@
   <!-- ONGLETS: moved to bottom via flex order on mobile; stays here on desktop -->
   <div class="barre-onglets" role="tablist" aria-label="Main sections" aria-orientation="horizontal">
     <button id="onglet-gang"         class="onglet onglet-actif" role="tab" aria-selected="true" aria-controls="contenu-gang" tabindex="0" onclick="changerOnglet('gang')"><img class="onglet-icone" src="img/interface/Gang_Final.png?v=0.0029" alt=""> <span class="onglet-label" data-mobile-label="Gang">Gang</span></button>
-    <button id="onglet-camp"         class="onglet onglet-camp-dev" role="tab" aria-selected="false" aria-controls="contenu-camp" tabindex="-1" style="display:none" onclick="changerOnglet('camp')"><span class="onglet-icone camp-tab-icon" aria-hidden="true"><i></i><i></i><i></i></span> <span class="onglet-label" data-mobile-label="Camp">Camp</span></button>
     <button id="onglet-work"         class="onglet" role="tab" aria-selected="false" aria-controls="contenu-work" tabindex="-1" style="display:none" onclick="changerOnglet('work')"><img class="onglet-icone" src="img/interface/Work_Final.png?v=2" alt=""> <span class="onglet-label" data-mobile-label="Work">Work</span></button>
     <button id="onglet-buildings"    class="onglet" role="tab" aria-selected="false" aria-controls="contenu-buildings" tabindex="-1" style="display:none" onclick="changerOnglet('buildings')"><img class="onglet-icone" src="img/interface/Building_Tier1_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Houses">Houses</span></button>
     <button id="onglet-facilities"   class="onglet" role="tab" aria-selected="false" aria-controls="contenu-facilities" tabindex="-1" style="display:none" onclick="changerOnglet('facilities')"><img class="onglet-icone" src="img/Buildings/Job Center_Final.png" alt=""> <span class="onglet-label" data-mobile-label="Jobs">Facilities</span></button>
@@ -579,119 +582,6 @@
 
   <!-- SCROLLABLE CONTENT AREA -->
   <main id="contenu-principal">
-
-  <!-- CONTENU CAMP: development-only placement prototype -->
-  <div id="contenu-camp" role="tabpanel" aria-labelledby="onglet-camp" aria-hidden="true" style="display:none">
-    <section id="camp-prototype-panel" class="panneau camp-prototype-panel" aria-labelledby="camp-prototype-title">
-      <div class="camp-prototype-heading">
-        <div>
-          <span class="camp-prototype-kicker">DEV PROTOTYPE</span>
-          <div class="camp-prototype-title-row">
-            <h2 id="camp-prototype-title">Base Camp</h2>
-            <span class="panneau-aide-wrap">
-              <button type="button" class="detail-help-btn panneau-aide-btn" aria-label="Explain Base Camp" aria-expanded="false" aria-controls="base-camp-help" onclick="togglePanneauAide(event)">?</button>
-              <span id="base-camp-help" class="detail-help-popover panneau-aide-popover" role="note" aria-hidden="true" style="display:none">
-                <span>Tap a camp element to interact with it. Tap reachable debris to assign an available Cat and start its demolition.</span>
-                <span>Enter Edit mode to build and rearrange the camp or claim adjacent territory. Natural clearing debris cannot be moved; the dev-only Junk menu provides independent decorative copies.</span>
-              </span>
-            </span>
-          </div>
-          <p id="camp-prototype-status" class="camp-prototype-status" role="status" aria-live="polite"></p>
-        </div>
-        <div class="camp-prototype-heading-actions">
-          <span class="camp-prototype-size" aria-label="Three gardens, each 6 columns by 8 rows">3 gardens · 6 × 8</span>
-          <div class="camp-prototype-zoom" role="group" aria-label="Camp camera zoom">
-            <button id="camp-prototype-zoom-out" type="button" aria-label="Zoom out" onclick="ajusterZoomCampPrototype(-0.25)">−</button>
-            <button id="camp-prototype-zoom-value" type="button" aria-label="Reset Camp zoom" onclick="definirZoomCampPrototype(1)">100%</button>
-            <button id="camp-prototype-zoom-in" type="button" aria-label="Zoom in" onclick="ajusterZoomCampPrototype(0.25)">+</button>
-          </div>
-          <button id="camp-prototype-edit-open" class="camp-prototype-edit-open" type="button" onclick="entrerEditionCampPrototype()">Edit camp</button>
-          <button class="camp-prototype-edit-only camp-prototype-clear" type="button" onclick="reinitialiserCampPrototype()">Clear</button>
-          <button id="camp-prototype-edit-done" class="camp-prototype-edit-only camp-prototype-edit-done" type="button" onclick="quitterEditionCampPrototype()">Done</button>
-        </div>
-      </div>
-      <div class="camp-prototype-viewport">
-        <div id="camp-prototype-board" class="camp-prototype-board" tabindex="0" role="application" aria-label="Base Camp map, with three fixed rear-house facades above three equal 6 by 8 gardens">
-          <div class="camp-prototype-environment" aria-hidden="true">
-            <div class="camp-prototype-houses">
-              <div class="camp-prototype-house-plot">
-                <img class="camp-prototype-house" src="img/Maps/Camp%20Prototypes/Camp_Red_House_Rear_Watercolor_HighAngle_v3.webp?v=0.0001" alt="">
-                <span class="camp-prototype-shrub camp-prototype-shrub-left"></span>
-                <span class="camp-prototype-shrub camp-prototype-shrub-right"></span>
-              </div>
-              <div class="camp-prototype-house-plot">
-                <img class="camp-prototype-house" src="img/Maps/Camp%20Prototypes/Camp_Blue_House_Rear_Watercolor_HighAngle_v3.webp?v=0.0001" alt="">
-                <span class="camp-prototype-shrub camp-prototype-shrub-left"></span>
-                <span class="camp-prototype-shrub camp-prototype-shrub-right"></span>
-              </div>
-              <div class="camp-prototype-house-plot">
-                <img class="camp-prototype-house" src="img/Maps/Camp%20Prototypes/Camp_Green_House_Rear_Watercolor_HighAngle_v3.webp?v=0.0001" alt="">
-                <span class="camp-prototype-shrub camp-prototype-shrub-left"></span>
-                <span class="camp-prototype-shrub camp-prototype-shrub-right"></span>
-              </div>
-            </div>
-            <span class="camp-prototype-gardens"></span>
-          </div>
-          <div id="camp-prototype-territory-zones" class="camp-prototype-territory-zones" aria-hidden="true"></div>
-          <div id="camp-prototype-terrain" class="camp-prototype-terrain"></div>
-          <div class="camp-prototype-grid" aria-hidden="true"></div>
-          <div id="camp-prototype-items" class="camp-prototype-items"></div>
-          <div class="camp-prototype-fences" aria-hidden="true">
-            <img class="camp-prototype-fence camp-prototype-fence-west" data-camp-boundary-zone="redGarden" src="img/Maps/Camp%20Prototypes/Camp_Garden_Fence_Upright_Prototype_v2.webp?v=0.0001" alt="">
-            <img class="camp-prototype-fence camp-prototype-fence-east" data-camp-boundary-zone="greenGarden" src="img/Maps/Camp%20Prototypes/Camp_Garden_Fence_Upright_Prototype_v2.webp?v=0.0001" alt="">
-          </div>
-          <div id="camp-prototype-interaction-menu" class="camp-prototype-interaction-menu" role="menu" aria-label="Camp element actions" hidden></div>
-          <div id="camp-prototype-ghost" class="camp-prototype-item camp-prototype-ghost" aria-hidden="true" hidden></div>
-          <div id="camp-prototype-placement-actions" class="camp-prototype-placement-actions camp-prototype-edit-only" role="group" aria-label="Rotate, confirm or cancel placement" hidden>
-            <button id="camp-prototype-rotate" class="camp-prototype-placement-action camp-prototype-rotate" type="button" aria-label="Rotate 90 degrees" title="Rotate 90°" onclick="tournerSelectionCampPrototype()" disabled>
-              <img src="img/interface/Rotate_Final.png?v=0.0001" alt="">
-            </button>
-            <button id="camp-prototype-placement-confirm" class="camp-prototype-placement-action camp-prototype-placement-confirm" type="button" aria-label="Confirm placement" aria-describedby="camp-prototype-status" title="Confirm placement" onclick="validerPlacementCampPrototype()" disabled>
-              <img src="img/interface/✅_Final.png?v=0.0026" alt="">
-            </button>
-            <button id="camp-prototype-placement-cancel" class="camp-prototype-placement-action camp-prototype-placement-cancel" type="button" aria-label="Cancel placement" title="Cancel placement" onclick="annulerPlacementCampPrototype()">
-              <img src="img/interface/Red Cross_Final.png?v=0.0029" alt="">
-            </button>
-          </div>
-        </div>
-      </div>
-      <div class="camp-prototype-selection-actions camp-prototype-edit-only">
-        <div class="camp-prototype-selection-tools">
-          <button id="camp-prototype-delete" class="camp-prototype-delete" type="button" onclick="supprimerSelectionCampPrototype()" disabled>Remove selected</button>
-        </div>
-      </div>
-      <section id="camp-prototype-category-sheet" class="camp-prototype-category-sheet camp-prototype-edit-only" aria-label="Camp item menu" hidden>
-        <div class="camp-prototype-category-sheet-heading">
-          <h3 id="camp-prototype-category-title">Buildings</h3>
-          <button type="button" aria-label="Close item menu" onclick="fermerCategorieCampPrototype()">×</button>
-        </div>
-        <div id="camp-prototype-palette" class="camp-prototype-palette" role="toolbar" aria-label="Prototype camp items"></div>
-      </section>
-      <nav class="camp-prototype-edit-dock camp-prototype-edit-only" aria-label="Camp edit categories">
-        <button type="button" data-camp-category="building" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('building')">
-          <span class="camp-prototype-category-icon camp-prototype-category-icon-building" aria-hidden="true"></span>
-          <span>Buildings</span>
-        </button>
-        <button type="button" data-camp-category="decoration" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('decoration')">
-          <span class="camp-prototype-category-icon camp-prototype-category-icon-decoration" aria-hidden="true"></span>
-          <span>Decorations</span>
-        </button>
-        <button type="button" data-camp-category="road" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('road')">
-          <span class="camp-prototype-category-icon camp-prototype-category-icon-road" aria-hidden="true"></span>
-          <span>Paths</span>
-        </button>
-        <button type="button" data-camp-category="junk" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('junk')">
-          <span class="camp-prototype-category-icon camp-prototype-category-icon-junk" aria-hidden="true"></span>
-          <span>Junk</span>
-        </button>
-        <button type="button" data-camp-category="terrain" aria-pressed="false" onclick="ouvrirCategorieCampPrototype('terrain')">
-          <span class="camp-prototype-category-icon camp-prototype-category-icon-terrain" aria-hidden="true"></span>
-          <span>Terrain</span>
-        </button>
-      </nav>
-      <p class="camp-prototype-help camp-prototype-edit-only">Choose a category below. Junk places decorative debris copies; Terrain manages land progression. Press and hold placed items before moving them.</p>
-    </section>
-  </div>
 
   <!-- CONTENU WORK: family recipe slots -->
   <div id="contenu-work" role="tabpanel" aria-labelledby="onglet-work" aria-hidden="true" style="display:none">
@@ -1037,7 +927,7 @@
         </label>
         <div class="settings-separateur"></div>
         <div class="settings-version-row">
-          <div class="settings-version" aria-label="Game version">Version <strong>v0.0038</strong></div>
+          <div class="settings-version" aria-label="Game version">Version <strong>v0.0037</strong></div>
           <button class="settings-changelog-btn" type="button" onclick="ouvrirChangelog()">Changelog</button>
         </div>
         <button class="settings-btn settings-btn-danger" onclick="reset()">↺ Start over</button>
@@ -1078,19 +968,6 @@
         <button class="explo-modal-close" aria-label="Close worker selection" onclick="fermerModalWorker()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
       </div>
       <div id="worker-modal-kitties"></div>
-    </div>
-  </div>
-
-  <!-- MODAL CAMP DEMOLITION -->
-  <div id="camp-demolition-modal" class="explo-modal camp-demolition-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="camp-demolition-modal-title" style="display:none">
-    <div class="explo-modal-overlay" aria-hidden="true" onclick="fermerModalDemolitionCamp()"></div>
-    <div class="explo-modal-panneau" role="document" tabindex="-1">
-      <div class="explo-modal-header">
-        <span class="explo-modal-titre" id="camp-demolition-modal-title">Assign a Cat</span>
-        <button class="explo-modal-close" aria-label="Close demolition assignment" onclick="fermerModalDemolitionCamp()"><img src="img/interface/Red Cross_Final.png?v=0.0029" alt=""></button>
-      </div>
-      <p id="camp-demolition-modal-summary" class="camp-demolition-modal-summary"></p>
-      <div id="camp-demolition-modal-kitties" class="camp-demolition-modal-kitties"></div>
     </div>
   </div>
 
@@ -1245,14 +1122,13 @@
   <script src="js/cat-inc.js?v=0.0033"></script>
   <script src="js/data/config.js?v=0.0043"></script>
   <script src="js/data/content.js?v=0.0052"></script>
-  <script src="js/data/changelog.js?v=0.0038&build=1"></script>
+  <script src="js/data/changelog.js?v=0.0037&build=1"></script>
   <script src="js/core/state.js?v=0.0040"></script>
   <script src="js/core/save.js?v=0.0042"></script>
   <script src="js/core/production.js?v=0.0036"></script>
   <script src="js/ui/dom.js?v=0.0033"></script>
   <script src="js/ui/audio.js?v=0.0007"></script>
-  <script src="js/ui/camp.js?v=0.0014"></script>
-  <script src="jeu.js?v=0.0153"></script>
+  <script src="jeu.js?v=0.0132"></script>
   <script>document.addEventListener("click", function() { if(typeof hideResPopup==="function") hideResPopup(); });</script>
 </body>
 </html>
